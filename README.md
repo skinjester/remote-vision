@@ -4,8 +4,7 @@ This script runs the Deep Dream neural visualization on camera input to produce 
 
 Neural visualization is computationally intensive and the Caffe/OpenCV/CUDA implementation isn't designed for real time output of neural visualization. 30fps output seems out of reach - even at lower resolutions, with reduced iteration rates, running on a fast GPU (TITAN X). From a performance perspective, there would appear to be quite a bit of headroom available. My CPU rarely goes above 20%, and the GPU Load remains under 70%. Is Python itself the bottleneck? Many aspects of this technology are a black box to me, so perhaps further optimizations are possible.
 
-
-
+*Design*
 The script captures a video frame and will dream about that frame indefinitely, using the output of the last cycle as the input of the next cycle, zooming in slightly each time. The real world soon disappears.
 
 Requirements
