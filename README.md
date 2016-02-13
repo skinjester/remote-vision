@@ -10,11 +10,15 @@ Detail supplied by the neural network is amplified and aggregated by repeated pa
 
 ## Requirements
 [What are deep dream images? How do I make my own?](https://www.reddit.com/r/deepdream/comments/3cawxb/what_are_deepdream_images_how_do_i_make_my_own/)
+
 [Running Google’s Deep Dream on Windows – The Easy Way](http://thirdeyesqueegee.com/deepdream/2015/07/19/running-googles-deep-dream-on-windows-with-or-without-cuda-the-easy-way/)
 
 Python
+
 Caffe (and related dependencies)
+
 FFMPEG
+
 CV2 (if you use optical flow)
 
 
