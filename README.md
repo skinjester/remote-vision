@@ -14,11 +14,8 @@ Detail supplied by the neural network is amplified and aggregated by repeated pa
 [Running Google’s Deep Dream on Windows – The Easy Way](http://thirdeyesqueegee.com/deepdream/2015/07/19/running-googles-deep-dream-on-windows-with-or-without-cuda-the-easy-way/)
 
 Python
-
 Caffe (and related dependencies)
-
 FFMPEG
-
 CV2 (if you use optical flow)
 
 
