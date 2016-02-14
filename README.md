@@ -13,10 +13,10 @@ Detail supplied by the neural network is amplified and aggregated by repeated pa
 
 [Running Google’s Deep Dream on Windows – The Easy Way](http://thirdeyesqueegee.com/deepdream/2015/07/19/running-googles-deep-dream-on-windows-with-or-without-cuda-the-easy-way/)
 
-[Python 2.7](https://www.continuum.io/downloads)  
-[Caffe deep learning framework](http://caffe.berkeleyvision.org/)
-[FFMPEG](https://www.ffmpeg.org/) 
-[OpenCV 2.7](http://opencv.org/)
+Python  
+Caffe (deep learning framework)  
+OpenCV  
+CUDA
 
 ## References
 samim23:[DeepDream Animator](https://github.com/samim23/DeepDreamAnim)  
