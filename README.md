@@ -4,11 +4,16 @@ This script runs the Deep Dream neural visualization on camera input to produce 
 Neural visualization is computationally intensive and the Caffe/OpenCV/CUDA implementation isn't designed for real time output of neural visualization. 30fps output seems out of reach - even at lower resolutions, with reduced iteration rates, running on a fast GPU (TITAN X). From a performance perspective, there would appear to be quite a bit of headroom available. My CPU rarely goes above 20%, and the GPU Load remains under 70%. Is Python itself the bottleneck? Many aspects of this technology are a black box to me, so perhaps further optimizations are possible.
 
 ## Design
-Capture a video frame and dream about that frame indefinitely, using the output of the last cycle as the input of the next cycle, zooming in slightly each time
+1. Capture a video frame and dream about that frame indefinitely, using the output of the last cycle as the input of the next cycle, zooming in slightly each time
+2. Detail supplied by the neural network is amplified and aggregated by repeated passes of the source image through the network.
+3. With each iteration, grab another frame from the webcam
+4. Detect motion by comparing a rolling queue of the last 3 captured frames.
+5. When motion is detected, stop dreaming and grab another camera image to begin the "REM cycle" again.
+6. Keyboard input allows adjustments to amplification and neural activation while the software dreams.
+7. An Xbox game controller mapped to the keyboard makes controls easily discoverable and increases user mobility
 
-Detail supplied by the neural network is amplified and aggregated by repeated passes of the source image through the network. With each iteration, neural activation trends toward a local maximum. After each pass, grab another frame from the webcam. Detect motion by comparing a rolling queue of the last 3 frames captured in this way. When motion is detected, stop dreaming, grab another camera image and begin the "REM cycle" again. Keyboard input allows control over parameters used for neural computation while the REM cycle continues. I use an Xbox game controller mapped to the keyboard so that you can move around while having your vision quest.
-
-In practice Ive found that mobility combined with novelty and stillness encompass 3 interaction "channels" operating at different timescales.
+## Observations
+Yes
 
 
 ## References
