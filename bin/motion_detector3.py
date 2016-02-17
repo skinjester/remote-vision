@@ -82,8 +82,7 @@ import sys
 import time
 #from pexpect import run, spawn
 
-DELTA_COUNT_THRESHOLD = 1000
-DELTA_RESPONSE_THRESHOLD = 15000
+DELTA_COUNT_THRESHOLD = 20000
 
 def delta_images(t0, t1, t2):
     d1 = cv2.absdiff(t2, t0)
@@ -117,19 +116,29 @@ t_minus = cv2.resize(t_minus, (cam_w, cam_h))
 t_plus = cv2.resize(t_plus, (cam_w, cam_h))
 
 delta_count_last = 1
+response = [0,1,2,3,4]
 
 
 start_time = time.time()
 record_video_state = False
 
 while True:
+
     delta_view = delta_images(t_minus, t_now, t_plus)
     retval, delta_view = cv2.threshold(delta_view, 16, 255, 3)
     cv2.normalize(delta_view, delta_view, 0, 255, cv2.NORM_MINMAX)
     img_count_view = cv2.cvtColor(delta_view, cv2.COLOR_RGB2GRAY)
     delta_count = cv2.countNonZero(img_count_view)
     delta_view = cv2.flip(delta_view, 1)
-    cv2.putText(delta_view, "DELTA: %d"%(delta_count), (5, 15), cv2.FONT_HERSHEY_PLAIN, 0.8, (255,255,255))
+
+    response[0] = 'last: {:07d} '.format(delta_count_last)
+    response[1] = 'current: {:07d} '.format(delta_count)
+    response[2] = 'threshold: {:07d} '.format(DELTA_COUNT_THRESHOLD)
+    response[3] = 'size: {:07d} '.format(cam_w * cam_h)
+    response[4] = 'size: {:05.2f} '.format(100.0 * DELTA_COUNT_THRESHOLD/(cam_w * cam_h))
+
+    for i in range(0,5):
+        cv2.putText(delta_view, response[i], (5, i*15+15), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
     cv2.imshow(winName, delta_view)
 
     ''
@@ -137,17 +146,22 @@ while True:
 #        print("%d\n"%(delta_count))
     if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
         record_video_state = True
-        print("MOVEMENT %f" % time.time())
-    elif delta_count_last >= DELTA_COUNT_THRESHOLD and delta_count < DELTA_COUNT_THRESHOLD:
+        print 'MOVEMENT'
+        
+    elif delta_count_last >= DELTA_COUNT_THRESHOLD:
         record_video_state = False
-        print("STILL    %f" % time.time())
-    now=time.time()
-    if record_video_state == True:
+
+    #if record_video_state == True:
         # return new camera image
         # delta_view
-        if delta_count > DELTA_RESPONSE_THRESHOLD:
-            print 'Return new camera image'
+        
+    #print '{}'.format(time.time())
+
+    # update frame buffer
+
+    now=time.time()
     delta_count_last = delta_count
+
     # move images through the queue.
     t_minus = t_now
     t_now = t_plus
@@ -161,3 +175,10 @@ while True:
     if key == 0x1b or key == ord('q'):
         cv2.destroyWindow(winName)
         break
+    elif key == 43:
+        DELTA_COUNT_THRESHOLD += 100
+    elif key == 45:
+        DELTA_COUNT_THRESHOLD -= 100
+        if DELTA_COUNT_THRESHOLD < 1:
+            DELTA_COUNT_THRESHOLD = 1
+    print DELTA_COUNT_THRESHOLD
