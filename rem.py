@@ -24,11 +24,11 @@ import caffe
 net = None # will become global reference to the network model once inside the loop
 
 # viewport
-viewport_w, viewport_h = 1920,1080 # display resolution
+viewport_w, viewport_h = 1280,720 # display resolution
 
 # camera object
 cap = cv2.VideoCapture(0)
-cap_w, cap_h = 960,540 # capture resolution
+cap_w, cap_h = 1280,720 # capture resolution
 cap.set(3,cap_w)
 cap.set(4,cap_h)
 
@@ -37,34 +37,27 @@ cap.set(4,cap_h)
 t_minus = cap.read()[1]
 t_now = cap.read()[1]
 t_plus = cap.read()[1]
-#t_now = cv2.resize(t_now, (cap_w, cap_h))
-#t_minus = cv2.resize(t_minus, (cap_w, cap_h))
-#t_plus = cv2.resize(t_plus, (cap_w, cap_h))
 delta_count_last = 1
 record_video_state = False
-DELTA_COUNT_THRESHOLD = 20000
-
+DELTA_COUNT_THRESHOLD = 80000
 
 # this creates a RGB image from our image matrix
 def showarray(window_name, a):
     # convert and clip our floating point matrix into 0-255 values for RGB image
     a = np.uint8(np.clip(a, 0, 255))
 
-    # rotate color channels to BGR for openCV
-    # a = cv2.cvtColor(a, cv2.COLOR_RGB2BGR)
-
-    # scaling factor to fit image to viewport
-    #scale_x = 1.0 * (cap_w * 2) / a.shape[1]
-    #scale_y = 1.0 * (cap_h * 2) / a.shape[0]
-
     # resize takes its arguments as w,h in that order
     dim = (viewport_w, viewport_h)
     a = cv2.resize(a, dim, interpolation = cv2.INTER_LINEAR)
 
+    # write text to image buffer
+    message = 'delta_count_last: {:10d}'.format(delta_count_last)
+    cv2.putText(a, message, (5, 30), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
     # write to window
     cv2.imshow(window_name, a)
 
-    # force update the display 
+    # refresh the display 
     key = cv2.waitKey(1) & 0xFF
     if key == 27: # Escape key
         sys.exit()
@@ -139,20 +132,15 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     global t_now,t_minus,t_plus,delta_count_last,record_video_state,cap
 
-    # every image that goes into the image array has been preprocessed to read
-    # in caffe image format
+    record_video_state = False # motion detect flag
+    src = net.blobs['data']
+
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
-
-    src = net.blobs['data']
     detail = np.zeros_like(octaves[-1])
 
-    loop_reset_state = False # we check this to know if we must restart the loop cycle when motion detected
-
-    # -------------
-    # The REM cycle 
-    # -------------
+    # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
         h, w = octave_base.shape[-2:]
         if octave > 0:
@@ -162,6 +150,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
+        # iterate on current octave
         for i in xrange(iter_n):
             # motion detect
             delta_view = delta_images(t_minus, t_now, t_plus)
@@ -171,61 +160,41 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             delta_count = cv2.countNonZero(img_count_view)
             delta_view = cv2.flip(delta_view, 1)
 
-            if octave > 0:
-                print '[deepdream] last:{} current:{} threshold:{} size:{} percent:{}'.format(delta_count_last, delta_count, DELTA_COUNT_THRESHOLD, cap_w * cap_h, 100.0 * DELTA_COUNT_THRESHOLD/(cap_w * cap_h)  )
+            print '[deepdream] last:{} current:{} threshold:{} size:{} percent:{}'.format(delta_count_last, delta_count, DELTA_COUNT_THRESHOLD, cap_w * cap_h, 100.0 * DELTA_COUNT_THRESHOLD/(cap_w * cap_h)  )
 
-                if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
-                    record_video_state = True
-                    print "+ MOVEMENT"
-
-                elif delta_count_last >= DELTA_COUNT_THRESHOLD:
-                    record_video_state = False
-
-                now=time.time()
-                if record_video_state == True:
-                    # return new camera image
-                    # delta_view
-                    #if delta_count > DELTA_RESPONSE_THRESHOLD:
-                    loop_reset_state = False
-                    print '[deepdream] loop_reset_state:{}'.format(loop_reset_state)
-                    #break
-            
-            '''
-            if octave > 2:
-                print '+ EXIT REM CYCLE'
-                loop_reset_state = True
-                break
-            '''
+            if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
+                record_video_state = True
+                print "+ MOVEMENT DETECTED"
 
 
             delta_count_last = delta_count
 
-            # move images through the queue.
-            # note that these images are used for motion detect
+            # move images through the motion detect queue.
             t_minus = t_now
             t_now = t_plus
             t_plus = cap.read()[1]
             t_plus = cv2.blur(t_plus,(8,8))
-            #t_plus = cv2.resize(t_plus, (cap_w, cap_h))
+            t_plus = cv2.resize(t_plus, (cap_w, cap_h))
+
+            if record_video_state == True:
+                print '+ TERMINATE OCTAVE LOOP'
+                break
 
             # calls the neural net step function
             make_step(net, end=end, clip=clip, **step_params)
 
             # output
             showcaffe('new',src.data[0])
-            print '[deepdream] octave:{:3} iteration:{:3} end:{:} shape:{:<10}'.format(octave, i, end, src.data[0].shape)
+            #print '[deepdream] octave:{:3} iteration:{:3} end:{:} shape:{:<10}'.format(octave, i, end, src.data[0].shape)
 
-        # if loop_reset_state:
-            #print '+ TERMINATING OCTAVE LOOP'
-            #break
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_base
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    if loop_reset_state:
+    if record_video_state:
         print '[deepdream] return new camera img from loopreset'
-        #return cap.read()[1]
+        return cap.read()[1]
     else:
         print '[deepdream] return RGB from net blob'
         #return cap.read()[1]
@@ -251,7 +220,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     #cv2.namedWindow('input',cv2.WINDOW_AUTOSIZE)
     #cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
 
-    # the neural network definitions
+    # parameters
     model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
     net_fn = model_path + 'deploy.prototxt'
     param_fn = model_path + 'bvlc_googlenet.caffemodel'
@@ -260,11 +229,11 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 20
-    if stepsize is None: stepsize = 2
-    if octaves is None: octaves = 6
-    if octave_scale is None: octave_scale = 1.5
-    if end is None: end = 'inception_4d/5x5_reduce'
+    if iterations is None: iterations = 5
+    if stepsize is None: stepsize = 4
+    if octaves is None: octaves = 4
+    if octave_scale is None: octave_scale = 1.6
+    if end is None: end = 'inception_4b/5x5'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
@@ -280,14 +249,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
 
     frame = cap.read()[1] # initial camera image for init
-    print frame.shape
-
-    counter = 0
-    s = 0.1 # scaPe coefficient for uninterrupted dreaming
+    s = 0.05 # scale coefficient for uninterrupted dreaming
     while True:
-        #frame = cv2.addWeighted(frame,0.7,cap.read()[1],0.3,0)
-        #frame = frame*(255.0/np.percentile(frame, 99.98))
-
         # zoom in a bit on the frame
         frame = frame*(255.0/np.percentile(cap.read()[1], 98))
         frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
@@ -303,25 +266,15 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
 
-        # kicks off rem sleep
-        # this will begin continual iteration of the image through the model
+        # kicks off rem sleep - will begin continual iteration of the image through the model
         frame = deepdream(net, frame, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
-
-        #showarray('new',frame)
-
-         # saves output file
-        #PIL.Image.fromarray(np.uint8(frame)).save(output_rgb)
 
         # a bit later
         later = time.time()
         difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
 
-        counter += 1
 
-    # cleanup before exit
-    cv2.destroyAllWindows() 
-    cv2.VideoCapture(0).release()
 
 # ------- 
 # INIT
