@@ -17,14 +17,15 @@ import PIL.Image
 from google.protobuf import text_format
 import cv2
 
-os.environ['GLOG_minloglevel'] = '2'    # suppress verbose caffe logging
+os.environ['GLOG_minloglevel'] = '2'    # suppress verbose caffe logging before caffe import
 import caffe
 
-# GRB: must it be like this? seems sloppy
+# GRB: why not just define the neural network here instead?
 net = None # will become global reference to the network model once inside the loop
 
 # viewport
 viewport_w, viewport_h = 1280,720 # display resolution
+b_debug = False
 
 # camera object
 cap = cv2.VideoCapture(0)
@@ -32,17 +33,74 @@ cap_w, cap_h = 1280,720 # capture resolution
 cap.set(3,cap_w)
 cap.set(4,cap_h)
 
-
 # motion detection - prepopulate queue before we enter the loop
 t_minus = cap.read()[1]
 t_now = cap.read()[1]
 t_plus = cap.read()[1]
 delta_count_last = 1
 record_video_state = False
-DELTA_COUNT_THRESHOLD = 80000
+DELTA_COUNT_THRESHOLD = 100000
+
+log = {
+    'threshold':'{:0>10}'.format(10000),
+    'last':'{:0>10}'.format(43),
+    'now':'{:0>10}'.format(9540),
+    'ratio':'{:0>1.4f}'.format(0.5646584),
+    'octave':'{}'.format(0.564),
+    'pixels':'{:0>10}'.format(960*540),
+    'width':'{}'.format(960),
+    'height':'{}'.format(540),
+    'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
+    'layer':'inception_4c_pool'
+}
+
+def show_HUD(image):
+    # rectangle
+    overlay = image.copy()
+    opacity = 0.5
+    cv2.rectangle(overlay,(0,0),(viewport_w,170),(0,0,0),-1)
+
+    # write text to image buffer
+    x,y,x1,y1 = 5,20,100,15
+
+    cv2.putText(overlay, 'pixels', (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['pixels'], (x+x1, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'threshold', (x, y+y1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['threshold'], (x+x1, y+y1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'last', (x, y+y1*2), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['last'], (x+x1, y+y1*2), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'now', (x, y+y1*3), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['now'], (x+x1, y+y1*3), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'ratio', (x, y+y1*4), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['ratio'], (x+x1, y+y1*4), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'octave', (x, y+y1*5), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['octave'], (x+x1, y+y1*5), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'width', (x, y+y1*6), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['width'], (x+x1, y+y1*6), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'height', (x, y+y1*7), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['height'], (x+x1, y+y1*7), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'model', (x, y+y1*8), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['model'], (x+x1, y+y1*8), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    cv2.putText(overlay, 'layer', (x, y+y1*9), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    cv2.putText(overlay, log['layer'], (x+x1, y+y1*9), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+
+    # add overlay back to source
+    cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
+
 
 # this creates a RGB image from our image matrix
 def showarray(window_name, a):
+    global b_debug
+
     # convert and clip our floating point matrix into 0-255 values for RGB image
     a = np.uint8(np.clip(a, 0, 255))
 
@@ -50,17 +108,19 @@ def showarray(window_name, a):
     dim = (viewport_w, viewport_h)
     a = cv2.resize(a, dim, interpolation = cv2.INTER_LINEAR)
 
-    # write text to image buffer
-    message = 'delta_count_last: {:10d}'.format(delta_count_last)
-    cv2.putText(a, message, (5, 30), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    if b_debug:
+        show_HUD(a)
 
     # write to window
     cv2.imshow(window_name, a)
 
     # refresh the display 
     key = cv2.waitKey(1) & 0xFF
-    if key == 27: # Escape key
+    if key == 27: # Escape key: Exit
         sys.exit()
+    elif key == 96: # `(tilde) key: toggle HUD
+        b_debug = not b_debug
+    print key
 
 # writes opencv img to window and updates display
 def showimg(window_name, a):
@@ -221,19 +281,19 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     #cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
 
     # parameters
-    model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
+    model_path = 'E:/Users/Gary/Documents/code/models/cars/'
     net_fn = model_path + 'deploy.prototxt'
-    param_fn = model_path + 'bvlc_googlenet.caffemodel'
+    param_fn = model_path + 'googlenet_finetune_web_car_iter_10000.caffemodel'
 
     nrframes = 1
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 5
-    if stepsize is None: stepsize = 4
-    if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.6
-    if end is None: end = 'inception_4b/5x5'
+    if iterations is None: iterations = 10
+    if stepsize is None: stepsize = 1.5
+    if octaves is None: octaves = 5
+    if octave_scale is None: octave_scale = 1.8
+    if end is None: end = 'inception_4c_pool'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
