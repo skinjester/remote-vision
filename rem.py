@@ -41,7 +41,7 @@ t_now = cap.read()[1]
 t_plus = cap.read()[1]
 delta_count_last = 1
 record_video_state = False
-DELTA_COUNT_THRESHOLD = 100000
+DELTA_COUNT_THRESHOLD = 80000
 
 # dictionary for the values we'll be logging
 log = {
@@ -55,7 +55,8 @@ log = {
     'height':'{}'.format(540),
     'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
     'layer':'inception_4c_pool',
-    'iteration':'{}'.format(10)
+    'iteration':'{}'.format(10),
+    'detect':'*'
 }
 
 # -------
@@ -82,10 +83,10 @@ def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(viewport_w,200),(0,0,0),-1)
+    cv2.rectangle(overlay,(0,0),(viewport_w,240),(0,0,0),-1)
 
     # list setup
-    col1,y,col2,y1 = 5,20,100,15
+    col1,y,col2,y1 = 5,50,100,15
 
     def write_Text(row,subject):
         cv2.putText(overlay, subject, (col1,row), font, 1.0, white)
@@ -103,6 +104,7 @@ def show_HUD(image):
     write_Text(y + y1 * 8, 'height')
     write_Text(y + y1 * 9, 'octave')
     write_Text(y + y1 * 10, 'iteration')
+    cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
 
     # add overlay back to source
     cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
@@ -211,7 +213,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     global t_now,t_minus,t_plus,delta_count_last,record_video_state,cap
 
-    record_video_state = False # motion detect flag
+    
     src = net.blobs['data']
 
     octaves = [preprocess(net, base_img)]
@@ -235,7 +237,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         # iterate on current octave
         for i in xrange(iter_n):
 
-            
             # motion detect
             delta_view = delta_images(t_minus, t_now, t_plus)
             retval, delta_view = cv2.threshold(delta_view, 16, 255, 3)
@@ -245,7 +246,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             delta_view = cv2.flip(delta_view, 1)
 
             # logging
-            update_log('octave',octave)
+            update_log('octave',len(octaves) - octave - 1)
             update_log('width',w)
             update_log('height',h)
             update_log('pixels',w*h)
@@ -258,7 +259,12 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
             if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
                 record_video_state = True
+                update_log('detect','*')
                 print "+ MOVEMENT DETECTED"
+            elif delta_count_last >= DELTA_COUNT_THRESHOLD and delta_count < DELTA_COUNT_THRESHOLD:
+                record_video_state = False
+                update_log('detect','')
+                print "+ MOVEMENT CLEARED"
 
             # move images through the motion detect queue.
             delta_count_last = delta_count
@@ -269,7 +275,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             t_plus = cv2.resize(t_plus, (cap_w, cap_h)) # necessary to resize?
 
             if record_video_state == True:
-                print '+ TERMINATE OCTAVE LOOP'
+                print '+ TERMINATE ITERATION'
                 break
 
             # calls the neural net step function
@@ -289,7 +295,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         return cap.read()[1]
     else:
         print '[deepdream] return RGB from net blob'
-        #return cap.read()[1]
         return deprocess(net, src.data[0])
 
 
@@ -323,8 +328,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 
     if iterations is None: iterations = 10
     if stepsize is None: stepsize = 2
-    if octaves is None: octaves = 3
-    if octave_scale is None: octave_scale = 2
+    if octaves is None: octaves = 4
+    if octave_scale is None: octave_scale = 1.5
     if end is None: end = 'inception_5a_pool'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
