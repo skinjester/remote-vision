@@ -26,6 +26,8 @@ net = None # will become global reference to the network model once inside the l
 # viewport
 viewport_w, viewport_h = 1280,720 # display resolution
 b_debug = False
+font = cv2.FONT_HERSHEY_PLAIN
+white = (255,255,255)
 
 # camera object
 cap = cv2.VideoCapture(0)
@@ -41,65 +43,76 @@ delta_count_last = 1
 record_video_state = False
 DELTA_COUNT_THRESHOLD = 100000
 
+# dictionary for the values we'll be logging
 log = {
-    'threshold':'{:0>10}'.format(10000),
-    'last':'{:0>10}'.format(43),
-    'now':'{:0>10}'.format(9540),
+    'threshold':'{:0>6}'.format(10000),
+    'last':'{:0>6}'.format(43),
+    'now':'{:0>6}'.format(9540),
     'ratio':'{:0>1.4f}'.format(0.5646584),
     'octave':'{}'.format(0.564),
-    'pixels':'{:0>10}'.format(960*540),
+    'pixels':'{:0>6}'.format(960*540),
     'width':'{}'.format(960),
     'height':'{}'.format(540),
     'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
-    'layer':'inception_4c_pool'
+    'layer':'inception_4c_pool',
+    'iteration':'{}'.format(10)
 }
+
+# -------
+# utility
+# ------- 
+
+# GRB: if these values were all global there'd be no need to pass them explicitly to this function
+def update_log(key,new_value):
+    if key=='threshold':
+        log[key] = '{:0>6}'.format(new_value)
+    elif key=='last':
+        log[key] = '{:0>6}'.format(new_value)
+    elif key=='now':
+        log[key] = '{:0>6}'.format(new_value)
+    elif key=='ratio':
+        log[key] = '{:0>1.4f}'.format(new_value)
+    elif key=='pixels':
+        log[key] = '{:0>6}'.format(new_value)
+    else:
+        log[key] = '{}'.format(new_value)
+
 
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(viewport_w,170),(0,0,0),-1)
+    cv2.rectangle(overlay,(0,0),(viewport_w,200),(0,0,0),-1)
 
-    # write text to image buffer
-    x,y,x1,y1 = 5,20,100,15
+    # list setup
+    col1,y,col2,y1 = 5,20,100,15
 
-    cv2.putText(overlay, 'pixels', (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['pixels'], (x+x1, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    def write_Text(row,subject):
+        cv2.putText(overlay, subject, (col1,row), font, 1.0, white)
+        cv2.putText(overlay, log[subject], (col2, row), font, 1.0, white)
 
-    cv2.putText(overlay, 'threshold', (x, y+y1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['threshold'], (x+x1, y+y1), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'last', (x, y+y1*2), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['last'], (x+x1, y+y1*2), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'now', (x, y+y1*3), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['now'], (x+x1, y+y1*3), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'ratio', (x, y+y1*4), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['ratio'], (x+x1, y+y1*4), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'octave', (x, y+y1*5), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['octave'], (x+x1, y+y1*5), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'width', (x, y+y1*6), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['width'], (x+x1, y+y1*6), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'height', (x, y+y1*7), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['height'], (x+x1, y+y1*7), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'model', (x, y+y1*8), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['model'], (x+x1, y+y1*8), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-
-    cv2.putText(overlay, 'layer', (x, y+y1*9), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
-    cv2.putText(overlay, log['layer'], (x+x1, y+y1*9), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
+    # write text to overlay
+    write_Text(y, 'pixels')
+    write_Text(y + y1, 'threshold')
+    write_Text(y + y1 * 2, 'ratio')
+    write_Text(y + y1 * 3, 'last')
+    write_Text(y + y1 * 4, 'now')
+    write_Text(y + y1 * 5, 'model')
+    write_Text(y + y1 * 6, 'layer')
+    write_Text(y + y1 * 7, 'width')
+    write_Text(y + y1 * 8, 'height')
+    write_Text(y + y1 * 9, 'octave')
+    write_Text(y + y1 * 10, 'iteration')
 
     # add overlay back to source
     cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
 
 
 # this creates a RGB image from our image matrix
+# GRB: what is the expected input here??
+# GRB: why do I have 3 functions (below) to write images to the display?
 def showarray(window_name, a):
-    global b_debug
+    global b_debug, DELTA_COUNT_THRESHOLD
 
     # convert and clip our floating point matrix into 0-255 values for RGB image
     a = np.uint8(np.clip(a, 0, 255))
@@ -120,13 +133,19 @@ def showarray(window_name, a):
         sys.exit()
     elif key == 96: # `(tilde) key: toggle HUD
         b_debug = not b_debug
-    print key
+    elif key == 43: # + key : increase motion threshold
+        DELTA_COUNT_THRESHOLD += 100
+    elif key == 45: # - key : decrease motion threshold
+        DELTA_COUNT_THRESHOLD -= 100
+        if DELTA_COUNT_THRESHOLD < 1:
+            DELTA_COUNT_THRESHOLD = 1
 
 # writes opencv img to window and updates display
 def showimg(window_name, a):
     cv2.imshow(window_name, a)
     key = cv2.waitKey(1)
 
+# GRB: don't the preprocess/deprocess functions already do this?
 def showcaffe(signal_name, caffe_array):
     # convert caffe format to Row,Col,RGB array for visualizing
     vis = deprocess(net, caffe_array)
@@ -202,6 +221,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
+        
         h, w = octave_base.shape[-2:]
         if octave > 0:
             h1, w1 = detail.shape[-2:]
@@ -210,8 +230,12 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
+        # logging
+
         # iterate on current octave
         for i in xrange(iter_n):
+
+            
             # motion detect
             delta_view = delta_images(t_minus, t_now, t_plus)
             retval, delta_view = cv2.threshold(delta_view, 16, 255, 3)
@@ -220,21 +244,29 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             delta_count = cv2.countNonZero(img_count_view)
             delta_view = cv2.flip(delta_view, 1)
 
-            print '[deepdream] last:{} current:{} threshold:{} size:{} percent:{}'.format(delta_count_last, delta_count, DELTA_COUNT_THRESHOLD, cap_w * cap_h, 100.0 * DELTA_COUNT_THRESHOLD/(cap_w * cap_h)  )
+            # logging
+            update_log('octave',octave)
+            update_log('width',w)
+            update_log('height',h)
+            update_log('pixels',w*h)
+            update_log('layer',end)
+            update_log('iteration',i)
+            update_log('threshold',DELTA_COUNT_THRESHOLD)
+            update_log('last',delta_count_last)
+            update_log('now',delta_count)
+            update_log('ratio',1.0 * DELTA_COUNT_THRESHOLD/(w * h)*100)
 
             if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
                 record_video_state = True
                 print "+ MOVEMENT DETECTED"
 
-
-            delta_count_last = delta_count
-
             # move images through the motion detect queue.
+            delta_count_last = delta_count
             t_minus = t_now
             t_now = t_plus
             t_plus = cap.read()[1]
             t_plus = cv2.blur(t_plus,(8,8))
-            t_plus = cv2.resize(t_plus, (cap_w, cap_h))
+            t_plus = cv2.resize(t_plus, (cap_w, cap_h)) # necessary to resize?
 
             if record_video_state == True:
                 print '+ TERMINATE OCTAVE LOOP'
@@ -290,10 +322,10 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     zoom = 1
 
     if iterations is None: iterations = 10
-    if stepsize is None: stepsize = 1.5
-    if octaves is None: octaves = 5
-    if octave_scale is None: octave_scale = 1.8
-    if end is None: end = 'inception_4c_pool'
+    if stepsize is None: stepsize = 2
+    if octaves is None: octaves = 3
+    if octave_scale is None: octave_scale = 2
+    if end is None: end = 'inception_5a_pool'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
@@ -307,6 +339,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     net = caffe.Classifier('tmp.prototxt', param_fn,
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
+
 
     frame = cap.read()[1] # initial camera image for init
     s = 0.05 # scale coefficient for uninterrupted dreaming
