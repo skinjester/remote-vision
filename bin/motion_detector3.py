@@ -116,7 +116,7 @@ t_minus = cv2.resize(t_minus, (cam_w, cam_h))
 t_plus = cv2.resize(t_plus, (cam_w, cam_h))
 
 delta_count_last = 1
-response = [0,1,2,3,4]
+response = [0]*6
 
 
 start_time = time.time()
@@ -135,9 +135,10 @@ while True:
     response[1] = 'current: {:07d} '.format(delta_count)
     response[2] = 'threshold: {:07d} '.format(DELTA_COUNT_THRESHOLD)
     response[3] = 'size: {:07d} '.format(cam_w * cam_h)
-    response[4] = 'size: {:05.2f} '.format(100.0 * DELTA_COUNT_THRESHOLD/(cam_w * cam_h))
+    response[4] = 'ratio: {:05.2f} '.format(100.0 * DELTA_COUNT_THRESHOLD/(cam_w * cam_h))
+    response[5] = 'detect: {} '.format(record_video_state)
 
-    for i in range(0,5):
+    for i in range(0,len(response)):
         cv2.putText(delta_view, response[i], (5, i*15+15), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255))
     cv2.imshow(winName, delta_view)
 
@@ -148,7 +149,7 @@ while True:
         record_video_state = True
         print 'MOVEMENT'
         
-    elif delta_count_last >= DELTA_COUNT_THRESHOLD:
+    elif delta_count_last >= DELTA_COUNT_THRESHOLD and delta_count < DELTA_COUNT_THRESHOLD:
         record_video_state = False
 
     #if record_video_state == True:
@@ -180,5 +181,5 @@ while True:
     elif key == 45:
         DELTA_COUNT_THRESHOLD -= 100
         if DELTA_COUNT_THRESHOLD < 1:
-            DELTA_COUNT_THRESHOLD = 1
+            DELTA_COUNT_THRESHOLD = 0
     print DELTA_COUNT_THRESHOLD
