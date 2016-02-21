@@ -42,6 +42,7 @@ t_plus = cap.read()[1]
 delta_count_last = 1
 record_video_state = False
 DELTA_COUNT_THRESHOLD = 80000
+DETECTION_RATIO = 1.93
 
 # dictionary for the values we'll be logging
 log = {
@@ -56,7 +57,8 @@ log = {
     'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
     'layer':'inception_4c_pool',
     'iteration':'{}'.format(10),
-    'detect':'*'
+    'detect':'*',
+    'cyclelength':'0 sec'
 }
 
 # -------
@@ -223,6 +225,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
+
         
         h, w = octave_base.shape[-2:]
         if octave > 0:
@@ -232,7 +235,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
-        # logging
+        # normalize detection threshold to match octave size
+        DELTA_COUNT_THRESHOLD = (w * h) * DETECTION_RATIO / 100
 
         # iterate on current octave
         for i in xrange(iter_n):
@@ -326,7 +330,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 10
+    if iterations is None: iterations = 20
     if stepsize is None: stepsize = 2
     if octaves is None: octaves = 4
     if octave_scale is None: octave_scale = 1.5
@@ -371,6 +375,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         later = time.time()
         difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
+
+        now = time.time()
 
 
 
