@@ -73,36 +73,46 @@ class MotionDetector(object):
         self.width = cap.get(3)
         self.height = cap.get(4)
         self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
+        self.isMotionDetected = False
+        self.isMotionDetected_last = False
     def delta_images(self,t0, t1, t2):
         d1 = cv2.absdiff(t2, t0)
         return d1
     def repopulate_queue(self):
+        print 'repopulating'
         self.t_minus = cap.read()[1] 
         self.t_now = cap.read()[1]
         self.t_plus = cap.read()[1]
     def process(self):
+        print 'processing'
         self.delta_view = self.delta_images(self.t_minus, self.t_now, self.t_plus)
         retval, self.delta_view = cv2.threshold(self.delta_view, 16, 255, 3)
         cv2.normalize(self.delta_view, self.delta_view, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
         self.delta_view = cv2.flip(self.delta_view, 1)
-    def isActive(self):
-        # returns True if movement started
-        # returns False if movement stops
-        # returns None otherwise
+
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
-            #update_log('detect','*') #how does this get called now?
+            update_log('detect','*')
             print "+ MOVEMENT STARTED"
-            return True
+            self.isMotionDetected = True
         elif (self.delta_count_last >= self.delta_count_threshold and self.delta_count < self.delta_count_threshold):
-            #update_log('detect',' ') #how does this get called now/
+            update_log('detect',' ')
             print "+ MOVEMENT ENDED"
-            return False
-        print 'unresolved'
-        return None
-    def refresh(self):
+            self.isMotionDetected = False
+
+        print self.delta_count_threshold, self.delta_count, self.delta_count_last, self.isMotionDetected
+
+        # logging
+        update_log('threshold',DELTA_COUNT_THRESHOLD)
+        update_log('last',Tracker.delta_count_last)
+        update_log('now',Tracker.delta_count)
+        self.refresh_queue()
+
+    def refresh_queue(self):
+        print 'refreshing'
         self.delta_count_last = self.delta_count
+        self.isMotionDetected_last = self.isMotionDetected
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = cap.read()[1]
@@ -282,10 +292,13 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     detail = np.zeros_like(octaves[-1])
 
+    
     # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
+        Tracker.process()
+
         h, w = octave_base.shape[-2:]
-        if octave > 0:
+        if octave > 0: # GRB: why is this conditional necessary?
             h1, w1 = detail.shape[-2:]
             detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
 
@@ -294,9 +307,10 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
         # iterate on current octave
         i=0
-        while i < iter_n:
 
+        while (i < iter_n) and (Tracker.isMotionDetected == False):
 
+            Tracker.process()
 
             # logging
             update_log('octave',len(octaves) - octave - 1)
@@ -305,14 +319,10 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('pixels',w*h)
             update_log('layer',end)
             update_log('iteration',i)
-            update_log('threshold',DELTA_COUNT_THRESHOLD)
-            #update_log('last',delta_count_last)
-            #update_log('now',delta_count)
-            #update_log('ratio',1.0 * DELTA_COUNT_THRESHOLD/(w * h)*100)
+            
 
-
-
-
+            # GRB: current setup where a function is called on the Tracker object isnt what I want
+            # GRB: the conditional (Tracker.isMoving) should be checked on the while loop
 
             # calls the neural net step function
             make_step(net, end=end, clip=clip, **step_params)
@@ -336,11 +346,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 # ------- 
 def main(iterations, stepsize, octaves, octave_scale, end):
     global net
-
-    # GRB: testing this class setup
-    print '***',Tracker.isActive()
-    Tracker.prepopulate()
-    print Tracker.isActive()
 
     # start timer
     print '+ TIMER START :REM.main'
@@ -380,7 +385,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
 
-
+    Tracker.process()
     frame = cap.read()[1] # initial camera image for init
     s = 0.05 # scale coefficient for uninterrupted dreaming
     while True:
@@ -394,6 +399,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         later = time.time()
         difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
+
+        Tracker.process()
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
         frame = deepdream(net, frame, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
