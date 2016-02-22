@@ -135,7 +135,7 @@ while True:
     response[1] = 'current: {:07d} '.format(delta_count)
     response[2] = 'threshold: {:07d} '.format(DELTA_COUNT_THRESHOLD)
     response[3] = 'size: {:07d} '.format(cam_w * cam_h)
-    response[4] = 'ratio: {:05.2f} '.format(100.0 * DELTA_COUNT_THRESHOLD/(cam_w * cam_h))
+    response[4] = 'ratio: {:05.2f} '.format(1.0 * DELTA_COUNT_THRESHOLD/(cam_w * cam_h)*100.0)
     response[5] = 'detect: {} '.format(record_video_state)
 
     for i in range(0,len(response)):
