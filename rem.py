@@ -61,6 +61,27 @@ log = {
 # utility
 # ------- 
 
+class MotionDetector(object):
+    # cap: global capture object
+    def __init__(self, delta_count_threshold=10000):
+        self.delta_count_threshold = delta_count_threshold
+        self.t_minus = cap.read()[1] 
+        self.t_now = cap.read()[1]
+        self.t_plus = cap.read()[1]
+        self.width = cap.get(3)
+        self.height = cap.get(4)
+        self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
+        self.record_video_state = False
+    def prepopulate(self):
+        pass
+    def process(self):
+        pass
+    def refresh(self):
+        pass
+    def isActive(self):
+        return self.record_video_state
+
+
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
     if key=='threshold':
@@ -212,13 +233,16 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     bias = net.transformer.mean['data']
     src.data[:] = np.clip(src.data, -bias, 255-bias)
 
+
+
+
 # -------
 # sets up image buffers and octave structure for iterating thru and amplifying neural output
 # iterates ththru the neural network 
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-    global t_now,t_minus,t_plus,delta_count_last,cap
+    global t_now,t_minus,t_plus,delta_count_last
     src = net.blobs['data']
 
     octaves = [preprocess(net, base_img)]
@@ -281,6 +305,9 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 # ------- 
 def main(iterations, stepsize, octaves, octave_scale, end):
     global net
+
+    testobject = MotionDetector()
+    print testobject.isActive()
 
     # start timer
     print '+ TIMER START :REM.main'
@@ -384,5 +411,3 @@ if __name__ == "__main__":
         help='Step Size. Default: 1.5')
     args = parser.parse_args()
     main(args.iterations, args.stepsize, args.octaves,  args.octavescale, args.end)
-
-.0-255
