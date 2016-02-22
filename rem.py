@@ -28,6 +28,7 @@ viewport_w, viewport_h = 1280,720 # display resolution
 b_debug = False
 font = cv2.FONT_HERSHEY_PLAIN
 white = (255,255,255)
+b_showMotionDetect = False # flag for motion detection view
 
 # camera object
 cap = cv2.VideoCapture(0)
@@ -36,13 +37,8 @@ cap.set(3,cap_w)
 cap.set(4,cap_h)
 
 # motion detection - prepopulate queue before we enter the loop
-t_minus = cap.read()[1]
-t_now = cap.read()[1]
-t_plus = cap.read()[1]
-delta_count_last = 1
 record_video_state = False
-DELTA_COUNT_THRESHOLD = 80000
-DETECTION_RATIO = 1.93
+DELTA_COUNT_THRESHOLD = 50000
 
 # dictionary for the values we'll be logging
 log = {
@@ -116,7 +112,7 @@ def show_HUD(image):
 # GRB: what is the expected input here??
 # GRB: why do I have 3 functions (below) to write images to the display?
 def showarray(window_name, a):
-    global b_debug, DELTA_COUNT_THRESHOLD
+    global b_debug, DELTA_COUNT_THRESHOLD, b_showMotionDetect
 
     # convert and clip our floating point matrix into 0-255 values for RGB image
     a = np.uint8(np.clip(a, 0, 255))
@@ -133,16 +129,26 @@ def showarray(window_name, a):
 
     # refresh the display 
     key = cv2.waitKey(1) & 0xFF
+
     if key == 27: # Escape key: Exit
         sys.exit()
     elif key == 96: # `(tilde) key: toggle HUD
         b_debug = not b_debug
     elif key == 43: # + key : increase motion threshold
-        DELTA_COUNT_THRESHOLD += 100
+        DELTA_COUNT_THRESHOLD += 1000
+        print DELTA_COUNT_THRESHOLD
     elif key == 45: # - key : decrease motion threshold
-        DELTA_COUNT_THRESHOLD -= 100
+        DELTA_COUNT_THRESHOLD -= 1000
         if DELTA_COUNT_THRESHOLD < 1:
-            DELTA_COUNT_THRESHOLD = 1
+            DELTA_COUNT_THRESHOLD = 0
+        print DELTA_COUNT_THRESHOLD
+    elif key == 49: # 1 key : toggle motion detect window
+        b_showMotionDetect = not b_showMotionDetect
+        if b_showMotionDetect:
+            cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
+        else:
+            cv2.destroyWindow('delta_view')
+
 
 # writes opencv img to window and updates display
 def showimg(window_name, a):
@@ -212,21 +218,17 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-
-    global t_now,t_minus,t_plus,delta_count_last,record_video_state,cap
-
-    
+    global t_now,t_minus,t_plus,delta_count_last,cap
     src = net.blobs['data']
 
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
+
     detail = np.zeros_like(octaves[-1])
 
     # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
-
-        
         h, w = octave_base.shape[-2:]
         if octave > 0:
             h1, w1 = detail.shape[-2:]
@@ -235,19 +237,11 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
-        # normalize detection threshold to match octave size
-        DELTA_COUNT_THRESHOLD = (w * h) * DETECTION_RATIO / 100
-
         # iterate on current octave
-        for i in xrange(iter_n):
+        i=0
+        while i < iter_n:
 
-            # motion detect
-            delta_view = delta_images(t_minus, t_now, t_plus)
-            retval, delta_view = cv2.threshold(delta_view, 16, 255, 3)
-            cv2.normalize(delta_view, delta_view, 0, 255, cv2.NORM_MINMAX)
-            img_count_view = cv2.cvtColor(delta_view, cv2.COLOR_RGB2GRAY)
-            delta_count = cv2.countNonZero(img_count_view)
-            delta_view = cv2.flip(delta_view, 1)
+
 
             # logging
             update_log('octave',len(octaves) - octave - 1)
@@ -257,49 +251,29 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('layer',end)
             update_log('iteration',i)
             update_log('threshold',DELTA_COUNT_THRESHOLD)
-            update_log('last',delta_count_last)
-            update_log('now',delta_count)
-            update_log('ratio',1.0 * DELTA_COUNT_THRESHOLD/(w * h)*100)
+            #update_log('last',delta_count_last)
+            #update_log('now',delta_count)
+            #update_log('ratio',1.0 * DELTA_COUNT_THRESHOLD/(w * h)*100)
 
-            if (delta_count_last < DELTA_COUNT_THRESHOLD and delta_count >= DELTA_COUNT_THRESHOLD):
-                record_video_state = True
-                update_log('detect','*')
-                print "+ MOVEMENT DETECTED"
-            elif delta_count_last >= DELTA_COUNT_THRESHOLD and delta_count < DELTA_COUNT_THRESHOLD:
-                record_video_state = False
-                update_log('detect','')
-                print "+ MOVEMENT CLEARED"
 
-            # move images through the motion detect queue.
-            delta_count_last = delta_count
-            t_minus = t_now
-            t_now = t_plus
-            t_plus = cap.read()[1]
-            t_plus = cv2.blur(t_plus,(8,8))
-            t_plus = cv2.resize(t_plus, (cap_w, cap_h)) # necessary to resize?
 
-            if record_video_state == True:
-                print '+ TERMINATE ITERATION'
-                break
+
 
             # calls the neural net step function
             make_step(net, end=end, clip=clip, **step_params)
 
             # output
             showcaffe('new',src.data[0])
-            #print '[deepdream] octave:{:3} iteration:{:3} end:{:} shape:{:<10}'.format(octave, i, end, src.data[0].shape)
 
+            # increment
+            i += 1
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_base
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    if record_video_state:
-        print '[deepdream] return new camera img from loopreset'
-        return cap.read()[1]
-    else:
-        print '[deepdream] return RGB from net blob'
-        return deprocess(net, src.data[0])
+    print '[deepdream] return RGB from net blob'
+    return deprocess(net, src.data[0])
 
 
 # -------
@@ -316,10 +290,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    cv2.startWindowThread()
+    #cv2.startWindowThread()
     cv2.namedWindow('new',cv2.WINDOW_AUTOSIZE)
-    #cv2.namedWindow('input',cv2.WINDOW_AUTOSIZE)
-    #cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
 
     # parameters
     model_path = 'E:/Users/Gary/Documents/code/models/cars/'
@@ -330,10 +302,10 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 20
+    if iterations is None: iterations = 10
     if stepsize is None: stepsize = 2
     if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.5
+    if octave_scale is None: octave_scale = 1.8
     if end is None: end = 'inception_5a_pool'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
@@ -362,10 +334,6 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         # a bit later
         later = time.time()
         difference = int(later - now)
-
-        # a bit later
-        later = time.time()
-        difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
@@ -380,9 +348,9 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 
 
 
-# ------- 
+# -------- 
 # INIT
-# ------- 
+# --------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='REM')
     parser.add_argument(
@@ -416,3 +384,5 @@ if __name__ == "__main__":
         help='Step Size. Default: 1.5')
     args = parser.parse_args()
     main(args.iterations, args.stepsize, args.octaves,  args.octavescale, args.end)
+
+.0-255
