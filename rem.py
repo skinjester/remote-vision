@@ -65,21 +65,54 @@ class MotionDetector(object):
     # cap: global capture object
     def __init__(self, delta_count_threshold=10000):
         self.delta_count_threshold = delta_count_threshold
+        self.delta_count = 0
+        self.delta_count_last = 0
         self.t_minus = cap.read()[1] 
         self.t_now = cap.read()[1]
         self.t_plus = cap.read()[1]
         self.width = cap.get(3)
         self.height = cap.get(4)
         self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
-        self.record_video_state = False
-    def prepopulate(self):
-        pass
+    def delta_images(self,t0, t1, t2):
+        d1 = cv2.absdiff(t2, t0)
+        return d1
+    def repopulate_queue(self):
+        self.t_minus = cap.read()[1] 
+        self.t_now = cap.read()[1]
+        self.t_plus = cap.read()[1]
     def process(self):
-        pass
-    def refresh(self):
-        pass
+        self.delta_view = self.delta_images(self.t_minus, self.t_now, self.t_plus)
+        retval, self.delta_view = cv2.threshold(self.delta_view, 16, 255, 3)
+        cv2.normalize(self.delta_view, self.delta_view, 0, 255, cv2.NORM_MINMAX)
+        img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
+        self.delta_count = cv2.countNonZero(img_count_view)
+        self.delta_view = cv2.flip(self.delta_view, 1)
     def isActive(self):
-        return self.record_video_state
+        # returns True if movement started
+        # returns False if movement stops
+        # returns None otherwise
+        if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
+            #update_log('detect','*') #how does this get called now?
+            print "+ MOVEMENT STARTED"
+            return True
+        elif (self.delta_count_last >= self.delta_count_threshold and self.delta_count < self.delta_count_threshold):
+            #update_log('detect',' ') #how does this get called now/
+            print "+ MOVEMENT ENDED"
+            return False
+        print 'unresolved'
+        return None
+    def refresh(self):
+        self.delta_count_last = self.delta_count
+        self.t_minus = self.t_now
+        self.t_now = self.t_plus
+        self.t_plus = cap.read()[1]
+        self.t_plus = cv2.blur(self.t_plus,(8,8))
+    def monitor(self,isEnabled):
+        # I want to do two things:
+        # - if monitoring is enabled then initially create a window for the display
+        # - write self.delta_view to this window
+        # this method will be called from within the showarray() function
+        pass
 
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
@@ -200,9 +233,7 @@ def objective_L2(dst):
 # -------
 # motion detector utility functions
 # ------- 
-def delta_images(t0, t1, t2):
-    d1 = cv2.absdiff(t2, t0)
-    return d1
+
     
 
 # -------
@@ -306,8 +337,10 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 def main(iterations, stepsize, octaves, octave_scale, end):
     global net
 
-    testobject = MotionDetector()
-    print testobject.isActive()
+    # GRB: testing this class setup
+    print '***',Tracker.isActive()
+    Tracker.prepopulate()
+    print Tracker.isActive()
 
     # start timer
     print '+ TIMER START :REM.main'
@@ -317,7 +350,6 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    #cv2.startWindowThread()
     cv2.namedWindow('new',cv2.WINDOW_AUTOSIZE)
 
     # parameters
@@ -378,6 +410,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 # -------- 
 # INIT
 # --------
+Tracker = MotionDetector() # motion detector object
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='REM')
     parser.add_argument(
