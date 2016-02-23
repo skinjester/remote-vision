@@ -272,10 +272,14 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-    
-    print '****', Tracker.isResting()
+    counter = 0
+    while Tracker.isResting():
+        Tracker.process()
+        print counter
+        counter += 1
     return cap.read()[1]
 
+'''
     global t_now,t_minus,t_plus,delta_count_last
     src = net.blobs['data']
 
@@ -333,6 +337,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
+    '''
 
 
 # -------
@@ -379,7 +384,6 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
 
-    Tracker.process()
     frame = cap.read()[1] # initial camera image for init
     s = 0.001 # scale coefficient for uninterrupted dreaming
     while True:
@@ -393,7 +397,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         # a bit later
         later = time.time()
         difference = int(later - now)
-        print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
+        #print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
 
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
@@ -402,7 +406,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         # a bit later
         later = time.time()
         difference = int(later - now)
-        print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
+        #print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
 
         now = time.time()
 
