@@ -63,7 +63,7 @@ log = {
 
 class MotionDetector(object):
     # cap: global capture object
-    def __init__(self, delta_count_threshold=10000):
+    def __init__(self, delta_count_threshold=5000):
         self.delta_count_threshold = delta_count_threshold
         self.delta_count = 0
         self.delta_count_last = 0
@@ -91,7 +91,6 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
         self.delta_view = cv2.flip(self.delta_view, 1)
-
         self.isMotionDetected_last = self.isMotionDetected
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
             update_log('detect','*')
@@ -101,13 +100,10 @@ class MotionDetector(object):
             update_log('detect',' ')
             print "+ MOVEMENT ENDED"
             self.isMotionDetected = False
-
-        # logging
         update_log('threshold',DELTA_COUNT_THRESHOLD)
         update_log('last',Tracker.delta_count_last)
         update_log('now',Tracker.delta_count)
         self.refresh_queue()
-
     def isResting(self):
         return self.isMotionDetected == self.isMotionDetected_last
     def refresh_queue(self):
@@ -174,7 +170,7 @@ def show_HUD(image):
 
 # this creates a RGB image from our image matrix
 # GRB: what is the expected input here??
-# GRB: why do I have 3 functions (below) to write images to the display?
+# GRB: why do I have 2 functions (below) to write images to the display?
 def showarray(window_name, a):
     global b_debug, DELTA_COUNT_THRESHOLD, b_showMotionDetect
 
@@ -190,6 +186,15 @@ def showarray(window_name, a):
 
     # write to window
     cv2.imshow(window_name, a)
+    # weighted addition the input to buffer2
+    #   the usual ratio between the input at buffer2 is 1:0
+    #   if we knew when Tracker.isResting() had just toggled to false
+    #       we would start a timer
+    #           we could increment the ratio of input to buffer2 from 1:1 to 1:0
+    #           if the Tracker.isResting() state chaged to False again while we were doing this
+    #               we would write the result of our weighted addition to buffer2
+    #               we would re-set the ratio to be 1:1
+    # is it expensive to perform a weighted addition between 2 images each frame
 
     # refresh the display 
     key = cv2.waitKey(1) & 0xFF
@@ -214,12 +219,8 @@ def showarray(window_name, a):
             cv2.destroyWindow('delta_view')
 
 
-# writes opencv img to window and updates display
-def showimg(window_name, a):
-    cv2.imshow(window_name, a)
-    key = cv2.waitKey(1)
-
 # GRB: don't the preprocess/deprocess functions already do this?
+# or rather - why do it here?
 def showcaffe(signal_name, caffe_array):
     # convert caffe format to Row,Col,RGB array for visualizing
     vis = deprocess(net, caffe_array)
@@ -272,28 +273,35 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
+    
+    '''
     counter = 0
-    while Tracker.isResting():
+    while counter < 50 and Tracker.isResting():
         Tracker.process()
         print counter
         counter += 1
+    # if Tracker.isResting == False
+    # copy current webcam frame into buffer2 (this would be the net blob in real life)
+    #       where is that stored?
+    #           should it be stored in this "buffer2" by default?
+    #       where was it captured?
+
     return cap.read()[1]
+    '''
 
-'''
-    global t_now,t_minus,t_plus,delta_count_last
+    # before doing anything check the current value of Tracker.isResting()
+    # we sampled the webcam right before calling this function
+    if Tracker.isResting() == False:
+        return cap.read()[1]
+
     src = net.blobs['data']
-
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
-
     detail = np.zeros_like(octaves[-1])
 
-    
     # REM cycle on octaves
     for octave, octave_base in enumerate(octaves[::-1]):
-        Tracker.process()
-
         h, w = octave_base.shape[-2:]
         if octave > 0: # GRB: why is this conditional necessary?
             h1, w1 = detail.shape[-2:]
@@ -302,14 +310,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
-        # iterate on current octave
-        i=0
-
-        while (i < iter_n):
-
-            Tracker.process()
-            print '****', Tracker.isResting()
-
+        i=0 # iterate on current octave
+        while i < iter_n and Tracker.isResting():
             # logging
             update_log('octave',len(octaves) - octave - 1)
             update_log('width',w)
@@ -317,19 +319,20 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('pixels',w*h)
             update_log('layer',end)
             update_log('iteration',i)
-            
-
-            # GRB: current setup where a function is called on the Tracker object isnt what I want
-            # GRB: the conditional (Tracker.isMoving) should be checked on the while loop
 
             # calls the neural net step function
             make_step(net, end=end, clip=clip, **step_params)
 
             # output
             showcaffe('new',src.data[0])
+            Tracker.process()
 
             # increment
             i += 1
+
+        if Tracker.isResting() == False:
+            print '[deepdream] return camera image'
+            return cap.read()[1]
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_base
@@ -337,7 +340,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
-    '''
+
 
 
 # -------
@@ -366,10 +369,10 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     zoom = 1
 
     if iterations is None: iterations = 10
-    if stepsize is None: stepsize = 2
+    if stepsize is None: stepsize = 4
     if octaves is None: octaves = 4
     if octave_scale is None: octave_scale = 1.8
-    if end is None: end = 'inception_5a_pool'
+    if end is None: end = 'inception_5a_3x3'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
