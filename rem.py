@@ -84,7 +84,7 @@ class MotionDetector(object):
         self.t_now = cap.read()[1]
         self.t_plus = cap.read()[1]
     def process(self):
-        print 'processing'
+        #print 'processing'
         self.delta_view = self.delta_images(self.t_minus, self.t_now, self.t_plus)
         retval, self.delta_view = cv2.threshold(self.delta_view, 16, 255, 3)
         cv2.normalize(self.delta_view, self.delta_view, 0, 255, cv2.NORM_MINMAX)
@@ -92,6 +92,7 @@ class MotionDetector(object):
         self.delta_count = cv2.countNonZero(img_count_view)
         self.delta_view = cv2.flip(self.delta_view, 1)
 
+        self.isMotionDetected_last = self.isMotionDetected
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
             update_log('detect','*')
             print "+ MOVEMENT STARTED"
@@ -101,18 +102,17 @@ class MotionDetector(object):
             print "+ MOVEMENT ENDED"
             self.isMotionDetected = False
 
-        print self.delta_count_threshold, self.delta_count, self.delta_count_last, self.isMotionDetected
-
         # logging
         update_log('threshold',DELTA_COUNT_THRESHOLD)
         update_log('last',Tracker.delta_count_last)
         update_log('now',Tracker.delta_count)
         self.refresh_queue()
 
+    def isResting(self):
+        return self.isMotionDetected == self.isMotionDetected_last
     def refresh_queue(self):
-        print 'refreshing'
-        self.delta_count_last = self.delta_count
-        self.isMotionDetected_last = self.isMotionDetected
+        #print 'refreshing'
+        self.delta_count_last = self.delta_count    
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = cap.read()[1]
@@ -237,14 +237,7 @@ def deprocess(net, img):
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
-
-
-
-# -------
-# motion detector utility functions
-# ------- 
-
-    
+ 
 
 # -------
 # implements forward and backward passes thru the network
@@ -258,7 +251,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
 
     # this bit is where the neural net runs the computation
-
     net.forward(end=end)    # make sure we stop on the chosen neural layer
     dst.diff[:] = dst.data  # specify the optimization objective
     net.backward(start=end) # backwards propagation
@@ -274,15 +266,16 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     bias = net.transformer.mean['data']
     src.data[:] = np.clip(src.data, -bias, 255-bias)
 
-
-
-
 # -------
 # sets up image buffers and octave structure for iterating thru and amplifying neural output
 # iterates ththru the neural network 
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
+    
+    print '****', Tracker.isResting()
+    return cap.read()[1]
+
     global t_now,t_minus,t_plus,delta_count_last
     src = net.blobs['data']
 
@@ -308,9 +301,10 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         # iterate on current octave
         i=0
 
-        while (i < iter_n) and (Tracker.isMotionDetected == False):
+        while (i < iter_n):
 
             Tracker.process()
+            print '****', Tracker.isResting()
 
             # logging
             update_log('octave',len(octaves) - octave - 1)
@@ -387,20 +381,20 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 
     Tracker.process()
     frame = cap.read()[1] # initial camera image for init
-    s = 0.05 # scale coefficient for uninterrupted dreaming
+    s = 0.001 # scale coefficient for uninterrupted dreaming
     while True:
         # zoom in a bit on the frame
-        frame = frame*(255.0/np.percentile(cap.read()[1], 98))
-        frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
+        #frame = frame*(255.0/np.percentile(cap.read()[1], 98))
+        #frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
 
         showarray('new',frame)
+        Tracker.process()
 
         # a bit later
         later = time.time()
         difference = int(later - now)
         print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
 
-        Tracker.process()
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
         frame = deepdream(net, frame, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
