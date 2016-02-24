@@ -190,7 +190,7 @@ def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(viewport_w,240),(0,0,0),-1)
+    cv2.rectangle(overlay,(0,0),(Viewer.viewport_w,240),(0,0,0),-1)
 
     # list setup
     col1,y,col2,y1 = 5,50,100,15
