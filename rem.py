@@ -116,6 +116,20 @@ class MotionDetector(object):
         # this method will be called from within the showarray() function
         pass
 
+class Viewport(object):
+
+    def __init__(self):
+        self.delta_count_threshold = delta_count_threshold
+        self.delta_count = 0
+        self.delta_count_last = 0
+        self.t_minus = cap.read()[1] 
+        self.t_now = cap.read()[1]
+        self.t_plus = cap.read()[1]
+        self.width = cap.get(3)
+        self.height = cap.get(4)
+        self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
+        self.isMotionDetected = False
+        self.isMotionDetected_last = False
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
@@ -131,7 +145,6 @@ def update_log(key,new_value):
         log[key] = '{:0>6}'.format(new_value)
     else:
         log[key] = '{}'.format(new_value)
-
 
 def show_HUD(image):
     # rectangle
@@ -168,7 +181,9 @@ def show_HUD(image):
 # GRB: what is the expected input here??
 # GRB: why do I have 2 functions (below) to write images to the display?
 def showarray(window_name, a):
-    global b_debug, DELTA_COUNT_THRESHOLD, b_showMotionDetect
+    global b_debug, b_showMotionDetect
+
+    print a.shape
 
     # convert and clip our floating point matrix into 0-255 values for RGB image
     a = np.uint8(np.clip(a, 0, 255))
@@ -269,8 +284,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-    
-    '''
+
     counter = 0
     while counter < 50 and Tracker.isResting():
         Tracker.process()
@@ -283,8 +297,9 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     #       where was it captured?
 
     return cap.read()[1]
-    '''
 
+    
+    '''
     # before doing anything check the current value of Tracker.isResting()
     # we sampled the webcam right before calling this function
     if Tracker.isResting() == False:
@@ -336,6 +351,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
+    '''
+
 
 
 
@@ -356,19 +373,19 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     cv2.namedWindow('new',cv2.WINDOW_AUTOSIZE)
 
     # parameters
-    model_path = 'E:/Users/Gary/Documents/code/models/cars/'
+    model_path = 'E:/Users/Gary/Documents/code/models/googlenet_places205/'
     net_fn = model_path + 'deploy.prototxt'
-    param_fn = model_path + 'googlenet_finetune_web_car_iter_10000.caffemodel'
+    param_fn = model_path + 'googlelet_places205_train_iter_2400000.caffemodel'
 
     nrframes = 1
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 30
-    if stepsize is None: stepsize = 1.5
-    if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.8
-    if end is None: end = 'inception_5a_3x3'
+    if iterations is None: iterations = 20
+    if stepsize is None: stepsize = 2
+    if octaves is None: octaves = 5
+    if octave_scale is None: octave_scale = 1.6
+    if end is None: end = 'inception_4b/3x3'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
@@ -383,12 +400,17 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
 
+    net.blobs.keys()
+    
     frame = cap.read()[1] # initial camera image for init
     s = 0.001 # scale coefficient for uninterrupted dreaming
     while True:
         # zoom in a bit on the frame
         #frame = frame*(255.0/np.percentile(cap.read()[1], 98))
         #frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
+
+        # similar function but stretches only on one axis:
+        # frame = nd.affine_transform(frame, [1-s,1,1], [h*s/2,0,0], order=1)
 
         showarray('new',frame)
         Tracker.process()
