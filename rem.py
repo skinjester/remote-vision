@@ -365,9 +365,9 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     zoom = 1
 
     if iterations is None: iterations = 30
-    if stepsize is None: stepsize = 2
+    if stepsize is None: stepsize = 1.5
     if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.2
+    if octave_scale is None: octave_scale = 1.8
     if end is None: end = 'inception_5a_3x3'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
