@@ -36,10 +36,6 @@ cap_w, cap_h = 1280,720 # capture resolution
 cap.set(3,cap_w)
 cap.set(4,cap_h)
 
-# motion detection - prepopulate queue before we enter the loop
-record_video_state = False
-DELTA_COUNT_THRESHOLD = 50000
-
 # dictionary for the values we'll be logging
 log = {
     'threshold':'{:0>6}'.format(10000),
@@ -100,7 +96,7 @@ class MotionDetector(object):
             update_log('detect',' ')
             print "+ MOVEMENT ENDED"
             self.isMotionDetected = False
-        update_log('threshold',DELTA_COUNT_THRESHOLD)
+        update_log('threshold',Tracker.delta_count_threshold)
         update_log('last',Tracker.delta_count_last)
         update_log('now',Tracker.delta_count)
         self.refresh_queue()
@@ -204,13 +200,13 @@ def showarray(window_name, a):
     elif key == 96: # `(tilde) key: toggle HUD
         b_debug = not b_debug
     elif key == 43: # + key : increase motion threshold
-        DELTA_COUNT_THRESHOLD += 1000
-        print DELTA_COUNT_THRESHOLD
+        Tracker.delta_count_threshold += 1000
+        print Tracker.delta_count_threshold
     elif key == 45: # - key : decrease motion threshold
-        DELTA_COUNT_THRESHOLD -= 1000
-        if DELTA_COUNT_THRESHOLD < 1:
-            DELTA_COUNT_THRESHOLD = 0
-        print DELTA_COUNT_THRESHOLD
+        Tracker.delta_count_threshold -= 1000
+        if Tracker.delta_count_threshold < 1:
+            Tracker.delta_count_threshold = 0
+        print Tracker.delta_count_threshold
     elif key == 49: # 1 key : toggle motion detect window
         b_showMotionDetect = not b_showMotionDetect
         if b_showMotionDetect:
@@ -368,10 +364,10 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 10
-    if stepsize is None: stepsize = 4
+    if iterations is None: iterations = 30
+    if stepsize is None: stepsize = 2
     if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.8
+    if octave_scale is None: octave_scale = 1.2
     if end is None: end = 'inception_5a_3x3'
 
     print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
