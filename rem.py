@@ -23,14 +23,11 @@ import caffe
 # GRB: why not just define the neural network here instead?
 net = None # will become global reference to the network model once inside the loop
 
-# viewport
-viewport_w, viewport_h = 1280,720 # display resolution
-b_debug = False
+# HUD
 font = cv2.FONT_HERSHEY_PLAIN
 white = (255,255,255)
-b_showMotionDetect = False # flag for motion detection view
 
-# camera object
+# global camera object
 cap = cv2.VideoCapture(0)
 cap_w, cap_h = 1280,720 # capture resolution
 cap.set(3,cap_w)
@@ -118,18 +115,61 @@ class MotionDetector(object):
 
 class Viewport(object):
 
-    def __init__(self):
-        self.delta_count_threshold = delta_count_threshold
-        self.delta_count = 0
-        self.delta_count_last = 0
-        self.t_minus = cap.read()[1] 
-        self.t_now = cap.read()[1]
-        self.t_plus = cap.read()[1]
-        self.width = cap.get(3)
-        self.height = cap.get(4)
-        self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
-        self.isMotionDetected = False
-        self.isMotionDetected_last = False
+    def __init__(self, window_name='new', viewport_w=1280, viewport_h=720):
+        self.window_name = window_name
+        self.viewport_w = viewport_w
+        self.viewport_h = viewport_h
+        self.b_show_HUD = False
+        self.b_show_motiondetect = False
+        cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
+    def show(self,image):
+        # image is expected to be int/float array with shape (row,col,RGB)
+        # convert and clip floating point matrix into RGB bounds
+        image = np.uint8(np.clip(image, 0, 255))
+
+        # GRB: check image size and skip resize if already at full size
+        image = cv2.resize(image, (self.viewport_w, self.viewport_h), interpolation = cv2.INTER_LINEAR)
+        image = self.insertfx(image)
+        image = self.postfx(image)
+        cv2.imshow(self.window_name, image)
+        self.listener() # refresh display
+    def insertfx(self, image):
+        return fx1(image)
+    def postfx(self, image):
+        imgbuffer = image
+        if self.b_show_HUD:
+            imgbuffer = show_HUD(imgbuffer)
+        return imgbuffer
+    def listener(self):
+        # refresh the display 
+        key = cv2.waitKey(1) & 0xFF
+        if key == 27: # Escape key: Exit
+            self.shutdown()
+        elif key == 96: # `(tilde) key: toggle HUD
+            self.b_show_HUD = not self.b_show_HUD
+        elif key == 43: # + key : increase motion threshold
+            Tracker.delta_count_threshold += 1000
+            print Tracker.delta_count_threshold
+        elif key == 45: # - key : decrease motion threshold
+            Tracker.delta_count_threshold -= 1000
+            if Tracker.delta_count_threshold < 1:
+                Tracker.delta_count_threshold = 0
+            print Tracker.delta_count_threshold
+        elif key == 49: # 1 key : toggle motion detect window
+            self.b_show_motiondetect = not self.b_show_motiondetect
+            if self.b_show_motiondetect:
+                cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
+            else:
+                cv2.destroyWindow('delta_view')
+    def show_blob(self, net, caffe_array):
+        image = deprocess(net, caffe_array)
+        image = image * (255.0 / np.percentile(image, 100.0))
+        self.show(image)
+    def shutdown(self):
+        sys.exit()
+
+def fx1(image):
+    return image
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
@@ -174,70 +214,10 @@ def show_HUD(image):
     cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
 
     # add overlay back to source
-    cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
+    return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
 
 
-# this creates a RGB image from our image matrix
-# GRB: what is the expected input here??
-# GRB: why do I have 2 functions (below) to write images to the display?
-def showarray(window_name, a):
-    global b_debug, b_showMotionDetect
 
-    print a.shape
-
-    # convert and clip our floating point matrix into 0-255 values for RGB image
-    a = np.uint8(np.clip(a, 0, 255))
-
-    # resize takes its arguments as w,h in that order
-    dim = (viewport_w, viewport_h)
-    a = cv2.resize(a, dim, interpolation = cv2.INTER_LINEAR)
-
-    if b_debug:
-        show_HUD(a)
-
-    # write to window
-    cv2.imshow(window_name, a)
-    # weighted addition the input to buffer2
-    #   the usual ratio between the input at buffer2 is 1:0
-    #   if we knew when Tracker.isResting() had just toggled to false
-    #       we would start a timer
-    #           we could increment the ratio of input to buffer2 from 1:1 to 1:0
-    #           if the Tracker.isResting() state chaged to False again while we were doing this
-    #               we would write the result of our weighted addition to buffer2
-    #               we would re-set the ratio to be 1:1
-    # is it expensive to perform a weighted addition between 2 images each frame
-
-    # refresh the display 
-    key = cv2.waitKey(1) & 0xFF
-
-    if key == 27: # Escape key: Exit
-        sys.exit()
-    elif key == 96: # `(tilde) key: toggle HUD
-        b_debug = not b_debug
-    elif key == 43: # + key : increase motion threshold
-        Tracker.delta_count_threshold += 1000
-        print Tracker.delta_count_threshold
-    elif key == 45: # - key : decrease motion threshold
-        Tracker.delta_count_threshold -= 1000
-        if Tracker.delta_count_threshold < 1:
-            Tracker.delta_count_threshold = 0
-        print Tracker.delta_count_threshold
-    elif key == 49: # 1 key : toggle motion detect window
-        b_showMotionDetect = not b_showMotionDetect
-        if b_showMotionDetect:
-            cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
-        else:
-            cv2.destroyWindow('delta_view')
-
-
-# GRB: don't the preprocess/deprocess functions already do this?
-# or rather - why do it here?
-def showcaffe(signal_name, caffe_array):
-    # convert caffe format to Row,Col,RGB array for visualizing
-    vis = deprocess(net, caffe_array)
-    vis = vis * (255.0 / np.percentile(vis, 100.0))
-    showarray(signal_name,vis)
-    return vis
 
 # a couple of utility functions for converting to and from Caffe's input image layout
 def preprocess(net, img):
@@ -284,7 +264,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-
+    '''
     counter = 0
     while counter < 50 and Tracker.isResting():
         Tracker.process()
@@ -297,9 +277,10 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     #       where was it captured?
 
     return cap.read()[1]
+    '''
 
     
-    '''
+
     # before doing anything check the current value of Tracker.isResting()
     # we sampled the webcam right before calling this function
     if Tracker.isResting() == False:
@@ -335,7 +316,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             make_step(net, end=end, clip=clip, **step_params)
 
             # output
-            showcaffe('new',src.data[0])
+            #showcaffe('new',src.data[0])
+            Viewer.show_blob(net, src.data[0])
             Tracker.process()
 
             # increment
@@ -351,7 +333,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
-    '''
+
 
 
 
@@ -370,7 +352,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    cv2.namedWindow('new',cv2.WINDOW_AUTOSIZE)
+    
 
     # parameters
     model_path = 'E:/Users/Gary/Documents/code/models/googlenet_places205/'
@@ -412,7 +394,8 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         # similar function but stretches only on one axis:
         # frame = nd.affine_transform(frame, [1-s,1,1], [h*s/2,0,0], order=1)
 
-        showarray('new',frame)
+        #showarray('new',frame)
+        Viewer.show(frame)
         Tracker.process()
 
         # a bit later
@@ -437,6 +420,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 # INIT
 # --------
 Tracker = MotionDetector() # motion detector object
+Viewer = Viewport() # viewport object
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='REM')
