@@ -93,6 +93,8 @@ class MotionDetector(object):
             update_log('detect',' ')
             print "+ MOVEMENT ENDED"
             self.isMotionDetected = False
+        else:
+            self.isMotionDetected = False
         update_log('threshold',Tracker.delta_count_threshold)
         update_log('last',Tracker.delta_count_last)
         update_log('now',Tracker.delta_count)
@@ -181,7 +183,6 @@ class Viewport(object):
         sys.exit()
 
 def fx1(image):
-    print '***'
     opacity = 0.5
     return cv2.addWeighted(Viewer.image_buffer, opacity, image, 1-opacity, 0, image)
 
@@ -275,7 +276,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-
+    '''
     counter = 0
     while counter < 50 and Tracker.isResting():
         Tracker.process()
@@ -285,13 +286,13 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     if Tracker.isResting() == False:
         Viewer.image_buffer = newframe # pass current frame to viewport for insert fx
     return newframe
-
-
-
-
-
-
     '''
+
+
+
+
+
+
     # before doing anything check the current value of Tracker.isResting()
     # we sampled the webcam right before calling this function
     if Tracker.isResting() == False:
@@ -334,8 +335,9 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             i += 1
 
         if Tracker.isResting() == False:
-            print '[deepdream] return camera image'
-            return cap.read()[1]
+            print '[deepdream] return new camera image'
+            Viewer.image_buffer = cap.read()[1] # pass current frame to viewport for insert fx
+            return Viewer.image_buffer
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_base
@@ -343,7 +345,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
-    '''
+
 
 # -------
 # MAIN
@@ -370,9 +372,9 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     jitter = int(cap_w/2)
     zoom = 1
 
-    if iterations is None: iterations = 20
-    if stepsize is None: stepsize = 2
-    if octaves is None: octaves = 5
+    if iterations is None: iterations = 10
+    if stepsize is None: stepsize = 4
+    if octaves is None: octaves = 4
     if octave_scale is None: octave_scale = 1.6
     if end is None: end = 'inception_4b/3x3'
 
@@ -392,14 +394,14 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     net.blobs.keys()
     
     frame = cap.read()[1] # initial camera image for init
-    s = 0.001 # scale coefficient for uninterrupted dreaming
+    s = 0.1 # scale coefficient for uninterrupted dreaming
     while True:
         # zoom in a bit on the frame
-        #frame = frame*(255.0/np.percentile(cap.read()[1], 98))
+        frame = frame*(255.0/np.percentile(cap.read()[1], 98))
         #frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
 
         # similar function but stretches only on one axis:
-        # frame = nd.affine_transform(frame, [1-s,1,1], [h*s/2,0,0], order=1)
+        frame = nd.affine_transform(frame, [1-s,1,1], [cap_h*s/2,0,0], order=1)
 
         Viewer.show(frame)
         Tracker.process()
@@ -425,7 +427,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector() # motion detector object
+Tracker = MotionDetector(100000) # motion detector object
 Viewer = Viewport() # viewport object
 
 if __name__ == "__main__":
