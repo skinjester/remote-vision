@@ -121,6 +121,7 @@ class Viewport(object):
         self.viewport_h = viewport_h
         self.b_show_HUD = False
         self.b_show_motiondetect = False
+        self.image_buffer = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
     def show(self,image):
         # image is expected to be int/float array with shape (row,col,RGB)
@@ -136,12 +137,14 @@ class Viewport(object):
     def insertfx(self, image):
         return fx1(image)
     def postfx(self, image):
-        imgbuffer = image
         if self.b_show_HUD:
-            imgbuffer = show_HUD(imgbuffer)
-        return imgbuffer
+            image = show_HUD(image)
+        return image
+    def monitor(self):
+        if self.b_show_motiondetect:
+            cv2.imshow('deltaview', Tracker.delta_view)
     def listener(self):
-        # refresh the display 
+        self.monitor()
         key = cv2.waitKey(1) & 0xFF
         if key == 27: # Escape key: Exit
             self.shutdown()
@@ -161,6 +164,15 @@ class Viewport(object):
                 cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
             else:
                 cv2.destroyWindow('delta_view')
+            print self.b_show_motiondetect
+        '''elif key == 50: # 2 key : toggle image buffer window
+            self.b_show_buffer = not self.b_show_buffer
+            if self.b_show_buffer:
+                cv2.namedWindow('buffer',cv2.WINDOW_AUTOSIZE)
+            else:
+                cv2.destroyWindow('buffer')
+            print self.b_show_buffer'''
+        self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
         image = deprocess(net, caffe_array)
         image = image * (255.0 / np.percentile(image, 100.0))
@@ -169,7 +181,9 @@ class Viewport(object):
         sys.exit()
 
 def fx1(image):
-    return image
+    print '***'
+    opacity = 0.5
+    return cv2.addWeighted(Viewer.image_buffer, opacity, image, 1-opacity, 0, image)
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
@@ -216,9 +230,6 @@ def show_HUD(image):
     # add overlay back to source
     return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
 
-
-
-
 # a couple of utility functions for converting to and from Caffe's input image layout
 def preprocess(net, img):
     #print np.float32(img).shape
@@ -260,27 +271,27 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 
 # -------
 # sets up image buffers and octave structure for iterating thru and amplifying neural output
-# iterates ththru the neural network 
+# iterates thru the neural network 
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-    '''
+
     counter = 0
     while counter < 50 and Tracker.isResting():
         Tracker.process()
         print counter
         counter += 1
-    # if Tracker.isResting == False
-    # copy current webcam frame into buffer2 (this would be the net blob in real life)
-    #       where is that stored?
-    #           should it be stored in this "buffer2" by default?
-    #       where was it captured?
+    newframe = cap.read()[1]
+    if Tracker.isResting() == False:
+        Viewer.image_buffer = newframe # pass current frame to viewport for insert fx
+    return newframe
 
-    return cap.read()[1]
+
+
+
+
+
     '''
-
-    
-
     # before doing anything check the current value of Tracker.isResting()
     # we sampled the webcam right before calling this function
     if Tracker.isResting() == False:
@@ -316,7 +327,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             make_step(net, end=end, clip=clip, **step_params)
 
             # output
-            #showcaffe('new',src.data[0])
             Viewer.show_blob(net, src.data[0])
             Tracker.process()
 
@@ -333,10 +343,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
     return deprocess(net, src.data[0])
-
-
-
-
+    '''
 
 # -------
 # MAIN
@@ -394,7 +401,6 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         # similar function but stretches only on one axis:
         # frame = nd.affine_transform(frame, [1-s,1,1], [h*s/2,0,0], order=1)
 
-        #showarray('new',frame)
         Viewer.show(frame)
         Tracker.process()
 
