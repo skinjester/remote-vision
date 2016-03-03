@@ -24,16 +24,9 @@ import caffe
 net = None # will become global reference to the network model once inside the loop
 
 # HUD
+# dictionary is for the values we'll be logging
 font = cv2.FONT_HERSHEY_PLAIN
 white = (255,255,255)
-
-# global camera object
-cap = cv2.VideoCapture(0)
-cap_w, cap_h = 1280,720 # capture resolution
-cap.set(3,cap_w)
-cap.set(4,cap_h)
-
-# dictionary for the values we'll be logging
 log = {
     'threshold':'{:0>6}'.format(10000),
     'last':'{:0>6}'.format(43),
@@ -47,12 +40,17 @@ log = {
     'layer':'inception_4c_pool',
     'iteration':'{}'.format(10),
     'detect':'*',
-    'cyclelength':'0 sec'
+    'cyclelength':'0 sec',
+    'step_size':'{}'.format(0.0)
 }
 
-# -------
-# utility
-# ------- 
+# global camera object
+cap = cv2.VideoCapture(0)
+cap_w, cap_h = 1280,720 # capture resolution
+cap.set(3,cap_w)
+cap.set(4,cap_h)
+
+
 
 class MotionDetector(object):
     # cap: global capture object
@@ -68,39 +66,59 @@ class MotionDetector(object):
         self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
         self.isMotionDetected = False
         self.isMotionDetected_last = False
+        self.timer_enabled = False
+    
     def delta_images(self,t0, t1, t2):
         d1 = cv2.absdiff(t2, t0)
         return d1
+    
     def repopulate_queue(self):
         print 'repopulating'
         self.t_minus = cap.read()[1] 
         self.t_now = cap.read()[1]
         self.t_plus = cap.read()[1]
+    
     def process(self):
-        #print 'processing'
-        self.delta_view = self.delta_images(self.t_minus, self.t_now, self.t_plus)
+        self.delta_view = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
         retval, self.delta_view = cv2.threshold(self.delta_view, 16, 255, 3)
         cv2.normalize(self.delta_view, self.delta_view, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
         self.delta_view = cv2.flip(self.delta_view, 1)
-        self.isMotionDetected_last = self.isMotionDetected
+        self.isMotionDetected_last = self.isMotionDetected  
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
             update_log('detect','*')
             print "+ MOVEMENT STARTED"
             self.isMotionDetected = True
+            self.timer_start = time.time()
+            self.timer_enabled = True
+            # start timer/start counting    
         elif (self.delta_count_last >= self.delta_count_threshold and self.delta_count < self.delta_count_threshold):
             update_log('detect',' ')
             print "+ MOVEMENT ENDED"
             self.isMotionDetected = False
+            self.timer_enabled = False
+            # stop timer/stop counting    
+        elif self.timer_enabled:
+            now = time.time()
+            # sooo... we shouldn't end up here at all if the timer was properly reset
+            # if timer value > n fire stop timer event
+            if int(now - self.timer_start) > 8:
+                update_log('detect',' ')
+                print "+ FORCE MOVEMENT ENDED"
+                self.isMotionDetected = False
+                self.timer_enabled = False
         else:
             self.isMotionDetected = False
+    
         update_log('threshold',Tracker.delta_count_threshold)
         update_log('last',Tracker.delta_count_last)
         update_log('now',Tracker.delta_count)
         self.refresh_queue()
+    
     def isResting(self):
         return self.isMotionDetected == self.isMotionDetected_last
+    
     def refresh_queue(self):
         #print 'refreshing'
         self.delta_count_last = self.delta_count    
@@ -108,6 +126,7 @@ class MotionDetector(object):
         self.t_now = self.t_plus
         self.t_plus = cap.read()[1]
         self.t_plus = cv2.blur(self.t_plus,(8,8))
+    
     def monitor(self,isEnabled):
         # I want to do two things:
         # - if monitoring is enabled then initially create a window for the display
@@ -122,69 +141,112 @@ class Viewport(object):
         self.viewport_w = viewport_w
         self.viewport_h = viewport_h
         self.b_show_HUD = False
-        self.b_show_motiondetect = False
+        self.motiondetect_log_enabled = False
         self.image_buffer = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
+        self.blend_ratio = 0.0
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
+    
     def show(self,image):
         # image is expected to be int/float array with shape (row,col,RGB)
         # convert and clip floating point matrix into RGB bounds
         image = np.uint8(np.clip(image, 0, 255))
 
         # GRB: check image size and skip resize if already at full size
-        image = cv2.resize(image, (self.viewport_w, self.viewport_h), interpolation = cv2.INTER_LINEAR)
+        image = cv2.resize(image, (self.viewport_w, self.viewport_h), interpolation = cv2.INTER_CUBIC)
         image = self.insertfx(image)
-        image = self.postfx(image)
+        image = self.postfx(image) # HUD
         cv2.imshow(self.window_name, image)
         self.listener() # refresh display
+    
     def insertfx(self, image):
         return fx1(image)
+    
     def postfx(self, image):
         if self.b_show_HUD:
             image = show_HUD(image)
         return image
+    
     def monitor(self):
-        if self.b_show_motiondetect:
+        if self.motiondetect_log_enabled:
             cv2.imshow('deltaview', Tracker.delta_view)
+    
     def listener(self):
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
-        if key == 27: # Escape key: Exit
+
+         # Escape key: Exit
+        if key == 27:
             self.shutdown()
-        elif key == 96: # `(tilde) key: toggle HUD
+        # `(tilde) key: toggle HUD
+        elif key == 96:
             self.b_show_HUD = not self.b_show_HUD
-        elif key == 43: # + key : increase motion threshold
+
+        # + key : increase motion threshold
+        elif key == 43:
             Tracker.delta_count_threshold += 1000
             print Tracker.delta_count_threshold
-        elif key == 45: # - key : decrease motion threshold
+
+        # - key : decrease motion threshold    
+        elif key == 45: 
             Tracker.delta_count_threshold -= 1000
             if Tracker.delta_count_threshold < 1:
                 Tracker.delta_count_threshold = 0
             print Tracker.delta_count_threshold
-        elif key == 49: # 1 key : toggle motion detect window
-            self.b_show_motiondetect = not self.b_show_motiondetect
-            if self.b_show_motiondetect:
+
+        # 1 key : toggle motion detect window
+        elif key == 49: 
+            self.motiondetect_log_enabled = not self.motiondetect_log_enabled
+            if self.motiondetect_log_enabled:
                 cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
             else:
-                cv2.destroyWindow('delta_view')
-            print self.b_show_motiondetect
-        '''elif key == 50: # 2 key : toggle image buffer window
-            self.b_show_buffer = not self.b_show_buffer
-            if self.b_show_buffer:
+                cv2.destroyWindow('delta_view')   
+            print self.motiondetect_log_enabled
+
+        elif key == 50: # 2 key : toggle image buffer window
+            self.buffer2_log_enabled = not self.buffer2_log_enabled
+            if self.buffer2_log_enabled:
                 cv2.namedWindow('buffer',cv2.WINDOW_AUTOSIZE)
             else:
                 cv2.destroyWindow('buffer')
-            print self.b_show_buffer'''
-        self.monitor() # update the monitor windows
+            print self.buffer2_log_enabled
+
+    #self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
         image = deprocess(net, caffe_array)
         image = image * (255.0 / np.percentile(image, 100.0))
         self.show(image)
+
     def shutdown(self):
         sys.exit()
 
+class Framebuffer(object):
+
+    def __init__(self):
+        self.is_buffer_recycled = False
+        self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
+
+    def recycle(self):
+        s = 0.01
+        if self.is_buffer_recycled:
+            Frame.buffer1 = nd.affine_transform(Frame.buffer1, [1-s,1,1], [cap_h*s/2,0,0], order=1)
+
+
 def fx1(image):
-    opacity = 0.5
+    # pass opacity to this function as well
+    # set blend ratio to 0 when net blob is returned
+    # set blend ratio to 0.5 when new camera frame is returned
+
+    opacity = 0.0
     return cv2.addWeighted(Viewer.image_buffer, opacity, image, 1-opacity, 0, image)
+
+def fx2(image):
+    print 'FX2 called with rows {}'.format(image.shape[0])
+    def shiftfunc(n):
+        return time.time()
+    for n in xrange(image.shape[0]): #rows
+        image[:, n] = np.roll(image[:, n], 3*n)
+    return image
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
@@ -226,6 +288,7 @@ def show_HUD(image):
     write_Text(y + y1 * 8, 'height')
     write_Text(y + y1 * 9, 'octave')
     write_Text(y + y1 * 10, 'iteration')
+    write_Text(y + y1 * 11, 'step_size')
     cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
 
     # add overlay back to source
@@ -237,11 +300,12 @@ def preprocess(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
 
 def deprocess(net, img):
-    return np.dstack((img + net.transformer.mean['data'])[::-1])
+    a = np.dstack((img + net.transformer.mean['data'])[::-1])
+    return a
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
- 
+
 
 # -------
 # implements forward and backward passes thru the network
@@ -276,46 +340,48 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # REM sleep, in other words
 # ------- 
 def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
-    '''
-    counter = 0
-    while counter < 50 and Tracker.isResting():
-        Tracker.process()
-        print counter
-        counter += 1
-    newframe = cap.read()[1]
-    if Tracker.isResting() == False:
-        Viewer.image_buffer = newframe # pass current frame to viewport for insert fx
-    return newframe
-    '''
 
-
-
-
-
-
+    print 'DEEPDREAM'
     # before doing anything check the current value of Tracker.isResting()
-    # we sampled the webcam right before calling this function
     if Tracker.isResting() == False:
         return cap.read()[1]
 
+    # setup octaves
     src = net.blobs['data']
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
     detail = np.zeros_like(octaves[-1])
 
-    # REM cycle on octaves
+    # REM cycle, last octave first
     for octave, octave_base in enumerate(octaves[::-1]):
         h, w = octave_base.shape[-2:]
-        if octave > 0: # GRB: why is this conditional necessary?
-            h1, w1 = detail.shape[-2:]
-            detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
-
+        h1, w1 = detail.shape[-2:]
+        detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
 
         i=0 # iterate on current octave
-        while i < iter_n and Tracker.isResting():
+        while i < iter_n and Tracker.isMotionDetected == False:
+
+            # delegate gradient ascent to step function
+            make_step(net, end=end, clip=clip, **step_params)
+
+            # output - deprocess net blob and write to frame buffer
+            Frame.buffer1 = deprocess(net, src.data[0])
+            Frame.buffer1 = Frame.buffer1 * (255.0 / np.percentile(Frame.buffer1, 99.98)) # normalize contrast
+            Viewer.show(Frame.buffer1)
+            Tracker.process()
+            
+            # attenuate step size over first full rem cycle
+            if Frame.is_buffer_recycled:
+                print '+ RECYCLED'
+            x = step_params['step_size']
+            x = x + (x*0.1)
+            step_params['step_size'] = x
+
+            i += 1
+
             # logging
             update_log('octave',len(octaves) - octave - 1)
             update_log('width',w)
@@ -323,27 +389,35 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('pixels',w*h)
             update_log('layer',end)
             update_log('iteration',i)
+            update_log('step_size',step_params['step_size'])
+            print 'i:{} iter_n:{} octave:{} step_size:{}'.format(i,iter_n,octave,step_params['step_size'])
 
-            # calls the neural net step function
-            make_step(net, end=end, clip=clip, **step_params)
+        detail = src.data[0] - octave_base # extract details produced on the current octave
+        
+        # breakaway - this value will be the last octave calculated in the series
+        if octave == 3:
+            # take the net blob, deprocess and upscale to cap_w,h
+            # we'll be recyling this back through next iteration
+            Frame.is_buffer_recycled = True
+            early_exit = deprocess(net, src.data[0])
+            early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
+            print '[deepdream] breakaway. return RGB from net blob | i:{} iter_n:{}'.format(i,iter_n)
+            return early_exit
 
-            # output
-            Viewer.show_blob(net, src.data[0])
-            Tracker.process()
+        newframe = cap.read()[1]
+        if Tracker.isMotionDetected:
+            # motion was detected we're refreshing the rem cycle right after this bit
+            Frame.is_buffer_recycled = False
+            Frame.buffer2 = newframe # pass current frame to viewport for insert fx
+            print '[deepdream] return new camera frame'
+            return newframe
 
-            # increment
-            i += 1
-
-        if Tracker.isResting() == False:
-            print '[deepdream] return new camera image'
-            Viewer.image_buffer = cap.read()[1] # pass current frame to viewport for insert fx
-            return Viewer.image_buffer
-
-        # extract details produced on the current octave
-        detail = src.data[0] - octave_base
+        # reduce iteration count for lover octaves
+        iter_n = iter_n - int(iter_n*0.5)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return RGB from net blob'
+    Frame.is_buffer_recycled = True
     return deprocess(net, src.data[0])
 
 
@@ -361,24 +435,19 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    
-
     # parameters
-    model_path = 'E:/Users/Gary/Documents/code/models/googlenet_places205/'
+    model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
     net_fn = model_path + 'deploy.prototxt'
-    param_fn = model_path + 'googlelet_places205_train_iter_2400000.caffemodel'
+    model = 'bvlc_googlenet.caffemodel'
+    param_fn = model_path + model
+    jitter = int(cap_w/4)
+    if iterations is None: iterations = 20
+    if stepsize is None: stepsize = 0.1
+    if octaves is None: octaves = 5
+    if octave_scale is None: octave_scale = 1.5
+    if end is None: end = 'inception_4d/1x1'
+    update_log('model',model)
 
-    nrframes = 1
-    jitter = int(cap_w/2)
-    zoom = 1
-
-    if iterations is None: iterations = 10
-    if stepsize is None: stepsize = 4
-    if octaves is None: octaves = 4
-    if octave_scale is None: octave_scale = 1.6
-    if end is None: end = 'inception_4b/3x3'
-
-    print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
 
     # Patching model to be able to compute gradients.
     model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
@@ -391,34 +460,24 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
 
-    net.blobs.keys()
-    
-    frame = cap.read()[1] # initial camera image for init
-    s = 0.1 # scale coefficient for uninterrupted dreaming
+    # the madness begins 
+    Frame.buffer1 = cap.read()[1] # initial camera image for init
     while True:
-        # zoom in a bit on the frame
-        frame = frame*(255.0/np.percentile(cap.read()[1], 98))
-        #frame = nd.affine_transform(frame, [1-s,1-s,1], [cap_h*s/2,cap_w*s/2,0], order=1)
-
-        # similar function but stretches only on one axis:
-        frame = nd.affine_transform(frame, [1-s,1,1], [cap_h*s/2,0,0], order=1)
-
-        Viewer.show(frame)
+        Frame.recycle()
+        Viewer.show(Frame.buffer1)
         Tracker.process()
 
-        # a bit later
-        later = time.time()
-        difference = int(later - now)
-        #print '+ ELAPSED: {}s :{}'.format(difference,'start REM cycle')
-
-
         # kicks off rem sleep - will begin continual iteration of the image through the model
-        frame = deepdream(net, frame, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
+        print '[main] call deepdream'
+        print '[main] iterations:{arg1} step size:{arg2} octaves:{arg3} octave_scale:{arg4} end:{arg5}'.format(arg1=iterations,arg2=stepsize,arg3=octaves,arg4=octave_scale,arg5=end)
+        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
+
+        print '[main] just returned'
 
         # a bit later
         later = time.time()
         difference = int(later - now)
-        #print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
+        print '+ ELAPSED: {}s :{}'.format(difference,'finish REM cycle')
 
         now = time.time()
 
@@ -427,8 +486,9 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(100000) # motion detector object
+Tracker = MotionDetector(60000) # motion detector object
 Viewer = Viewport() # viewport object
+Frame = Framebuffer()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='REM')
@@ -453,11 +513,6 @@ if __name__ == "__main__":
         help='Iterations. Default: 10')
     parser.add_argument(
         '-s','--stepsize',
-        type=float,
-        required=False,
-        help='Step Size. Default: 1.5')
-    parser.add_argument(
-        '-c','--clip',
         type=float,
         required=False,
         help='Step Size. Default: 1.5')
