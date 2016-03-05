@@ -262,7 +262,7 @@ class Framebuffer(object):
                 if self.opacity >= 0.5:
                     self.opacity = 0.0
                     self.is_compositing_enabled = False
-                     print '[framebuffer] stopped compositing'
+                    print '[framebuffer] stopped compositing'
 
 
         return image
