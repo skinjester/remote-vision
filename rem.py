@@ -212,42 +212,69 @@ class Viewport(object):
 class Framebuffer(object):
 
     def __init__(self):
-        self.is_buffer_recycled = False # this tells us the type of the frame in buffer1
+        #self.is_buffer_recycled = False 
+        self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
+        #self.is_
         self.is_new_cycle = True
         self.buffer2_opacity = False
         self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
         self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
         self.opacity = 0.0
+        self.is_compositing_enabled = False
 
     def update(self, image):
         s = 0.01
-        opacity = 0.9
-        if self.is_buffer_recycled:
+        opacity = 0.1
+        if self.is_dirty: 
             print '[framebuffer] recycle'
+            print '[framebuffer] compositing disabled'
             if self.is_new_cycle:
                 # we only want to do this scaling at the beginning of each rem cycle
                 # we can assume this image is cap_w x cap_h
                 print '[framebuffer] idle fx'
                 image = nd.affine_transform(image, [1-s,1,1], [cap_h*s/2,0,0], order=1)
                 self.buffer1 = image
-            self.is_buffer_recycled = False
+            self.is_dirty = False
+            #self.is_compositing_enabled = False
         else:
             print '[framebuffer] refresh'
-            # make sure whatever is in buffer 1 matches viewport dimensions
-            #self.buffer2 = cv2.resize(self.buffer2, (Viewer.viewport_w, Viewer.viewport_h), interpolation = cv2.INTER_CUBIC)
-            # convert and clip buffer2 floating point matrix into RGB bounds
             if self.is_new_cycle and Tracker.isResting() == False:
-                print '[framebuffer] compositing fx'
-                #print Tracker.isResting()
-                #self.buffer2 = np.uint8(np.clip(self.buffer2, 0, 255))
+                # when this triggers need for the framebuffer to go into compositing mode
+                # while in compositing mode Framebuffer.output() returns image + buffer2
+                # when buffer2 is updated, it is locked until framebuffer refresh
+                # exit compositing mode on framebuffer refresh
+
+                print '[framebuffer] compositing enabled'
+                self.is_compositing_enabled = True
+
+            #if self.is_compositing_enabled:
+                #print '[framebuffer] compositing image + buffer2'
                 #image = cv2.addWeighted(self.buffer2, opacity, image, 1-opacity, 0, image)
             '''
-            
             self.opacity = self.opacity - self.opacity * 0.5
             if self.opacity < 0.1:
                 self.opacity = 0
             '''
+
+            if self.is_compositing_enabled:
+                print '[framebuffer] compositing'
+                self.opacity += 0.1
+                if self.opacity >= 0.5:
+                    self.opacity = 0.0
+                    self.is_compositing_enabled = False
+                     print '[framebuffer] stopped compositing'
+
+
         return image
+
+    def write_buffer2(self,image):
+        # buffer 2 is locked when compositing is enabled
+        if self.is_compositing_enabled == False:
+            # convert and clip floating point matrix into RGB bounds
+            self.buffer2 = np.uint8(np.clip(image, 0, 255))
+        return
+
+
 
 
 
@@ -414,7 +441,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         if octave == 6:
             # take the net blob, deprocess and upscale to cap_w,h
             # we'll be recyling this back through next iteration
-            Frame.is_buffer_recycled = True
+            Frame.is_dirty = True # yes, we'll be recycling the framebuffer
             early_exit = deprocess(net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
             print '[deepdream] return net blob iter_n:{0:01d} i:{0:03d}'.format(iter_n,i)
@@ -424,8 +451,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             # motion was detected so we're ending this REM cycle
             early_exit = deprocess(net, src.data[0])  # pass deprocessed network blob to buffer2 for fx
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
-            Frame.buffer2 = early_exit 
-            Frame.is_buffer_recycled = False # False means buffer2 was updated w a new image
+            Frame.write_buffer2(early_exit)
+            Frame.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'
             return cap.read()[1] 
 
@@ -434,7 +461,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] return net blob'
-    Frame.is_buffer_recycled = True
+    Frame.is_dirty = True # yes, we'll be recycling the framebuffer
     return deprocess(net, src.data[0])
 
 
