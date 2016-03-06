@@ -88,14 +88,14 @@ class MotionDetector(object):
         self.isMotionDetected_last = self.isMotionDetected  
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
             update_log('detect','*')
-            print "[motiondetector] movement started"
+            print "---- [motiondetector] movement started"
             self.isMotionDetected = True
             self.timer_start = time.time()
             self.timer_enabled = True
             # start timer/start counting    
         elif (self.delta_count_last >= self.delta_count_threshold and self.delta_count < self.delta_count_threshold):
             update_log('detect',' ')
-            print "[motiondetector] movement ended"
+            print "---- [motiondetector] movement ended"
             self.isMotionDetected = False
             self.timer_enabled = False
             # stop timer/stop counting    
@@ -105,7 +105,7 @@ class MotionDetector(object):
             # if timer value > n fire stop timer event
             if int(now - self.timer_start) > 8:
                 update_log('detect',' ')
-                print "[motiondetector] force movement end"
+                print "---- [motiondetector] force movement end"
                 self.isMotionDetected = False
                 self.timer_enabled = False
         else:
@@ -212,86 +212,47 @@ class Viewport(object):
 class Framebuffer(object):
 
     def __init__(self):
-        #self.is_buffer_recycled = False 
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
-        #self.is_
         self.is_new_cycle = True
-        self.buffer2_opacity = False
         self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
         self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
-        self.opacity = 0.0
+        self.opacity = 1.0
         self.is_compositing_enabled = False
 
     def update(self, image):
-        s = 0.01
-        opacity = 0.1
+        s = 0.07
         if self.is_dirty: 
             print '[framebuffer] recycle'
-            print '[framebuffer] compositing disabled'
             if self.is_new_cycle:
-                # we only want to do this scaling at the beginning of each rem cycle
-                # we can assume this image is cap_w x cap_h
-                print '[framebuffer] idle fx'
+                # we only transform at beginning of rem cycle
+                print '[framebuffer] attract fx'
                 image = nd.affine_transform(image, [1-s,1,1], [cap_h*s/2,0,0], order=1)
                 self.buffer1 = image
             self.is_dirty = False
-            #self.is_compositing_enabled = False
+            self.is_compositing_enabled = False
         else:
             print '[framebuffer] refresh'
             if self.is_new_cycle and Tracker.isResting() == False:
-                # when this triggers need for the framebuffer to go into compositing mode
-                # while in compositing mode Framebuffer.output() returns image + buffer2
-                # when buffer2 is updated, it is locked until framebuffer refresh
-                # exit compositing mode on framebuffer refresh
-
                 print '[framebuffer] compositing enabled'
                 self.is_compositing_enabled = True
-
-            #if self.is_compositing_enabled:
-                #print '[framebuffer] compositing image + buffer2'
-                #image = cv2.addWeighted(self.buffer2, opacity, image, 1-opacity, 0, image)
-            '''
-            self.opacity = self.opacity - self.opacity * 0.5
-            if self.opacity < 0.1:
-                self.opacity = 0
-            '''
-
             if self.is_compositing_enabled:
                 print '[framebuffer] compositing'
-                self.opacity += 0.1
-                if self.opacity >= 0.5:
-                    self.opacity = 0.0
+                image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
+                self.opacity -= 0.05
+                if self.opacity <= 0.0:
+                    self.opacity = 1.0
                     self.is_compositing_enabled = False
                     print '[framebuffer] stopped compositing'
-
-
         return image
 
     def write_buffer2(self,image):
         # buffer 2 is locked when compositing is enabled
         if self.is_compositing_enabled == False:
             # convert and clip floating point matrix into RGB bounds
+            print '[write_buffer2] copy net blob to buffer2'
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
         return
 
-
-
-
-
-def fx1(image):
-    # pass opacity to this function as well
-    # set blend ratio to 0 when net blob is returned
-    # set blend ratio to 0.5 when new camera frame is returned
-
-    opacity = 0.0
-    return cv2.addWeighted(Viewer.image_buffer, opacity, image, 1-opacity, 0, image)
-
-def fx2(image):
-    def shiftfunc(n):
-        return time.time()
-    for n in xrange(image.shape[0]): #rows
-        image[:, n] = np.roll(image[:, n], 3*n)
-    return image
 
 # GRB: if these values were all global there'd be no need to pass them explicitly to this function
 def update_log(key,new_value):
@@ -387,7 +348,9 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     # before doing anything check the current value of Tracker.isResting()
     if Tracker.isResting() == False and Tracker.isMotionDetected:
+        print '[deepdream] cooldown'
         return cap.read()[1]
+    print '[deepdream] new cycle'
     Frame.is_new_cycle = False
 
     # setup octaves
@@ -408,21 +371,19 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
         i=0 # iterate on current octave
         while i < iter_n and Tracker.isMotionDetected == False:
-
             # delegate gradient ascent to step function
             make_step(net, end=end, clip=clip, **step_params)
-            print '[make_step] {0:01d}:{0:03d}'.format(octave,i)
+            print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
 
             # output - deprocess net blob and write to frame buffer
             Frame.buffer1 = deprocess(net, src.data[0])
             Frame.buffer1 = Frame.buffer1 * (255.0 / np.percentile(Frame.buffer1, 99.98)) # normalize contrast
             Tracker.process()
             Viewer.show(Frame.buffer1)
-            
+
             # attenuate step size over rem cycle
             x = step_params['step_size']
-            x = x + (x*0.05)
-            step_params['step_size'] = x
+            step_params['step_size'] -= 0
 
             i += 1
 
@@ -437,18 +398,16 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
         detail = src.data[0] - octave_base # extract details produced on the current octave
         
-        # breakaway - this will be the last octave calculated in the series
-        if octave == 6:
-            # take the net blob, deprocess and upscale to cap_w,h
-            # we'll be recyling this back through next iteration
-            Frame.is_dirty = True # yes, we'll be recycling the framebuffer
+        # early return this will be the last octave calculated in the series
+        if octave == 3:
+            Frame.is_dirty = True
             early_exit = deprocess(net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
-            print '[deepdream] return net blob iter_n:{0:01d} i:{0:03d}'.format(iter_n,i)
+            print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
             return early_exit
 
+        # motion detected so we're ending this REM cycle
         if Tracker.isMotionDetected:
-            # motion was detected so we're ending this REM cycle
             early_exit = deprocess(net, src.data[0])  # pass deprocessed network blob to buffer2 for fx
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
             Frame.write_buffer2(early_exit)
@@ -456,11 +415,11 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             print '[deepdream] return camera'
             return cap.read()[1] 
 
-        # reduce iteration count for lover octaves
-        iter_n = iter_n - int(iter_n*0.2)
+        # reduce iteration count for the next octave
+        iter_n = iter_n - int(iter_n*0.5)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    print '[deepdream] return net blob'
+    print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iter_n)
     Frame.is_dirty = True # yes, we'll be recycling the framebuffer
     return deprocess(net, src.data[0])
 
@@ -481,15 +440,15 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     # parameters
     model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
     net_fn = model_path + 'deploy.prototxt'
-    model = 'bvlc_googlenet.caffemodel'
-    param_fn = model_path + model
-    jitter = int(cap_w/4)
-    if iterations is None: iterations = 16
-    if stepsize is None: stepsize = 0.1
-    if octaves is None: octaves = 8
+    caffemodel = 'bvlc_googlenet.caffemodel'
+    param_fn = model_path + caffemodel
+    jitter = int(cap_w/2)
+    if iterations is None: iterations = 20
+    if stepsize is None: stepsize = 1
+    if octaves is None: octaves = 5
     if octave_scale is None: octave_scale = 1.4
-    if end is None: end = 'inception_4d/pool_proj'
-    update_log('model',model)
+    if end is None: end = 'inception_5a/3x3_reduce'
+    update_log('model',caffemodel)
 
 
     # Patching model to be able to compute gradients.
