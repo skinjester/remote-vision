@@ -2,13 +2,9 @@
 __author__ = 'Gary Boodhoo'
 
 # TODO: not needing all of these imports. cleanup
-import argparse
 import os, os.path
-import re
-import errno
 import sys
 import time
-import subprocess
 from random import randint
 from cStringIO import StringIO
 import numpy as np
@@ -51,7 +47,35 @@ cap.set(3,cap_w)
 cap.set(4,cap_h)
 
 
+class Model(object):
+    def __init__(self):
+        self.net = None
+        self.net_fn = None
+        self.param_fn = None
+        self.caffemodel = None
+        self.hd = 'E:/Users/Gary/Documents/code/models'
+        self.models = {
+            'cars':['cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'],
+            'googlenet':['bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'],
+            'places':['bvlc_googlenet','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
+        }
+        self.choose_model()
 
+    def choose_model(self, key = 'googlenet'):
+        self.net_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][1])
+        self.param_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][2])
+        self.caffemodel = self.models[key][2]
+
+        # Patch model to be able to compute gradients.
+        model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
+        text_format.Merge(open(self.net_fn).read(), model)   # load the prototxt and place it in the empty model
+        model.force_backward = True                     # add the force backward: true value
+        open('tmp.prototxt', 'w').write(str(model))     # save it to a new file called tmp.prototxt
+
+        # the neural network model
+        self.net = caffe.Classifier('tmp.prototxt', self.param_fn,
+            mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
+            channel_swap = (2,1,0))      
 
 
 class MotionDetector(object):
@@ -369,8 +393,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     # setup octaves
     
-    src = net.blobs['data']
-    octaves = [preprocess(net, base_img)]
+    src = Dreamer.net.blobs['data']
+    octaves = [preprocess(Dreamer.net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
     detail = np.zeros_like(octaves[-1])
@@ -386,11 +410,11 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         i=0 # iterate on current octave
         while i < iter_n and Tracker.isMotionDetected == False:
             # delegate gradient ascent to step function
-            make_step(net, end=end, clip=clip, **step_params)
+            make_step(Dreamer.net, end=end, clip=clip, **step_params)
             print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
 
             # output - deprocess net blob and write to frame buffer
-            Frame.buffer1 = deprocess(net, src.data[0])
+            Frame.buffer1 = deprocess(Dreamer.net, src.data[0])
             Frame.buffer1 = Frame.buffer1 * (255.0 / np.percentile(Frame.buffer1, 99.98)) # normalize contrast
             Tracker.process()
             Viewer.show(Frame.buffer1)
@@ -398,8 +422,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             # attenuate step size over rem cycle
             x = step_params['step_size']
             #step_params['step_size'] -= step_params['step_size'] * 0.1
-            #step_params['step_size'] += 0.1
-            step_params['step_size'] += x * 0.05
+            step_params['step_size'] += 0.1
+            #step_params['step_size'] += x * 0.01
 
             i += 1
 
@@ -415,16 +439,16 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         detail = src.data[0] - octave_base # extract details produced on the current octave
         
         # early return this will be the last octave calculated in the series
-        if octave == 10:
+        if octave == 6:
             Frame.is_dirty = True
-            early_exit = deprocess(net, src.data[0])
+            early_exit = deprocess(Dreamer.net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
             return early_exit
 
         # motion detected so we're ending this REM cycle
         if Tracker.isMotionDetected:
-            early_exit = deprocess(net, src.data[0])  # pass deprocessed network blob to buffer2 for fx
+            early_exit = deprocess(Dreamer.net, src.data[0])  # pass deprocessed net blob to buffer2 for fx
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
             Frame.write_buffer2(early_exit)
             Frame.is_dirty = False # no, we'll be refreshing the frane buffer
@@ -432,19 +456,18 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             return cap.read()[1] 
 
         # reduce iteration count for the next octave
-        iter_n = iter_n - int(iter_n*0.5)
+        iter_n = iter_n - int(iter_n*0.75)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iter_n)
     Frame.is_dirty = True # yes, we'll be recycling the framebuffer
-    return deprocess(net, src.data[0])
+    return deprocess(Dreamer.net, src.data[0])
 
 
 # -------
 # MAIN
 # ------- 
-def main(iterations, stepsize, octaves, octave_scale, end):
-    global net
+def main():
 
     # start timer
     now = time.time()
@@ -453,6 +476,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
+    '''
     # path to model
     model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
     net_fn = model_path + 'deploy.prototxt'
@@ -469,23 +493,26 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     net = caffe.Classifier('tmp.prototxt', param_fn,
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
-    
+    '''
+
+    Dreamer.choose_model('googlenet')
+
     # parameters
     jitter = int(cap_w/2)
-    if iterations is None: iterations = 10
-    if stepsize is None: stepsize = 1.0
-    if octaves is None: octaves = 5
-    if octave_scale is None: octave_scale = 1.4
-    if end is None: end = 'inception_4c/5x5'
-    update_log('model',caffemodel)
+    iterations = 30
+    stepsize = 0.001
+    octaves = 5
+    octave_scale = 1.6
+    end = 'inception_4c/pool'
+    update_log('model',Dreamer.caffemodel)
 
     # guide image
-    guide = np.float32(PIL.Image.open('tiger.jpg'))
+    guide = np.float32(PIL.Image.open('clock1.jpg'))
     h, w = guide.shape[:2]
-    src, dst = net.blobs['data'], net.blobs[end]
+    src, dst = Dreamer.net.blobs['data'], Dreamer.net.blobs[end]
     src.reshape(1,3,h,w)
-    src.data[0] = preprocess(net, guide)
-    net.forward(end=end)
+    src.data[0] = preprocess(Dreamer.net, guide)
+    Dreamer.net.forward(end=end)
     Frame.guide_features = dst.data[0].copy()
 
 
@@ -516,32 +543,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
 Tracker = MotionDetector(60000) # motion detector object
 Viewer = Viewport() # viewport object
 Frame = Framebuffer()
+Dreamer = Model()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='REM')
-    parser.add_argument(
-        '-e','--end',
-        required=False,
-        help='End layer. Default: inception_4c/output')
-    parser.add_argument(
-        '-oct','--octaves',
-        type=int,
-        required=False,
-        help='Octaves. Default: 4')
-    parser.add_argument(
-        '-octs','--octavescale',
-        type=float,
-        required=False,
-        help='Octave Scale. Default: 1.4',)
-    parser.add_argument(
-        '-i','--iterations',
-        type=int,
-        required=False,
-        help='Iterations. Default: 10')
-    parser.add_argument(
-        '-s','--stepsize',
-        type=float,
-        required=False,
-        help='Step Size. Default: 1.5')
-    args = parser.parse_args()
-    main(args.iterations, args.stepsize, args.octaves,  args.octavescale, args.end)
+    main()
