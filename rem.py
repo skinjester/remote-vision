@@ -81,7 +81,7 @@ class Model(object):
 
     def guide_image(self, end):
         self.end = end
-        guide = np.float32(PIL.Image.open('clock1.jpg'))
+        guide = np.float32(PIL.Image.open('alex.jpg'))
         h, w = guide.shape[:2]
         src, dst = self.net.blobs['data'], self.net.blobs[end]
         src.reshape(1,3,h,w)
@@ -164,13 +164,6 @@ class MotionDetector(object):
         self.t_plus = cap.read()[1]
         self.t_plus = cv2.blur(self.t_plus,(8,8))
     
-    def monitor(self,isEnabled):
-        # I want to do two things:
-        # - if monitoring is enabled then initially create a window for the display
-        # - write self.delta_view to this window
-        # this method will be called from within the showarray() function
-        pass
-
 class Viewport(object):
 
     def __init__(self, window_name='new', viewport_w=1280, viewport_h=720):
@@ -433,7 +426,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             # attenuate step size over rem cycle
             x = step_params['step_size']
             #step_params['step_size'] -= step_params['step_size'] * 0.1
-            step_params['step_size'] += 0.1
+            step_params['step_size'] += 0.01
             #step_params['step_size'] += x * 0.01
 
             i += 1
@@ -487,34 +480,16 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    '''
-    # path to model
-    model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
-    net_fn = model_path + 'deploy.prototxt'
-    caffemodel = 'bvlc_googlenet.caffemodel'
-    param_fn = model_path + caffemodel
-
-    # Patching model to be able to compute gradients.
-    model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
-    text_format.Merge(open(net_fn).read(), model)   # load the prototxt and place it in the empty model
-    model.force_backward = True                     # add the force backward: true value
-    open('tmp.prototxt', 'w').write(str(model))     # save it to a new file called tmp.prototxt
-
-    # the neural network model
-    net = caffe.Classifier('tmp.prototxt', param_fn,
-        mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
-        channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
-    '''
 
     Dreamer.choose_model('googlenet')
-    Dreamer.guide_image('inception_4c/pool')
+    Dreamer.guide_image('inception_4d/output')
 
     # parameters
     jitter = int(cap_w/2)
-    iterations = 30
-    stepsize = 0.001
+    iterations = 50
+    stepsize = 1.0
     octaves = 5
-    octave_scale = 1.6
+    octave_scale = 1.4
     update_log('model',Dreamer.caffemodel)
 
 
