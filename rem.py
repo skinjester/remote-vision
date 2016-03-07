@@ -49,10 +49,12 @@ cap.set(4,cap_h)
 
 class Model(object):
     def __init__(self):
+        self.guide_features = None
         self.net = None
         self.net_fn = None
         self.param_fn = None
         self.caffemodel = None
+        self.end = None
         self.hd = 'E:/Users/Gary/Documents/code/models'
         self.models = {
             'cars':['cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'],
@@ -75,7 +77,17 @@ class Model(object):
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt', self.param_fn,
             mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
-            channel_swap = (2,1,0))      
+            channel_swap = (2,1,0))  
+
+    def guide_image(self, end):
+        self.end = end
+        guide = np.float32(PIL.Image.open('clock1.jpg'))
+        h, w = guide.shape[:2]
+        src, dst = self.net.blobs['data'], self.net.blobs[end]
+        src.reshape(1,3,h,w)
+        src.data[0] = preprocess(self.net, guide)
+        self.net.forward(end=end)
+        self.guide_features = dst.data[0].copy()    
 
 
 class MotionDetector(object):
@@ -244,7 +256,6 @@ class Framebuffer(object):
         self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.guide_features = None
 
     def update(self, image):
         s = 0.05
@@ -340,7 +351,7 @@ def objective_L2(dst):
 
 def objective_guide(dst):
     x = dst.data[0].copy()
-    y = Frame.guide_features
+    y = Dreamer.guide_features
     ch = x.shape[0]
     x = x.reshape(ch,-1)
     y = y.reshape(ch,-1)
@@ -496,6 +507,7 @@ def main():
     '''
 
     Dreamer.choose_model('googlenet')
+    Dreamer.guide_image('inception_4c/pool')
 
     # parameters
     jitter = int(cap_w/2)
@@ -503,18 +515,7 @@ def main():
     stepsize = 0.001
     octaves = 5
     octave_scale = 1.6
-    end = 'inception_4c/pool'
     update_log('model',Dreamer.caffemodel)
-
-    # guide image
-    guide = np.float32(PIL.Image.open('clock1.jpg'))
-    h, w = guide.shape[:2]
-    src, dst = Dreamer.net.blobs['data'], Dreamer.net.blobs[end]
-    src.reshape(1,3,h,w)
-    src.data[0] = preprocess(Dreamer.net, guide)
-    Dreamer.net.forward(end=end)
-    Frame.guide_features = dst.data[0].copy()
-
 
 
     # the madness begins 
@@ -525,7 +526,7 @@ def main():
         Tracker.process()
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
-        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end, objective = objective_guide )
+        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Dreamer.end, objective = objective_guide )
 
         # a bit later
         later = time.time()
