@@ -52,6 +52,8 @@ cap.set(4,cap_h)
 
 
 
+
+
 class MotionDetector(object):
     # cap: global capture object
     def __init__(self, delta_count_threshold=5000):
@@ -218,9 +220,10 @@ class Framebuffer(object):
         self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
+        self.guide_features = None
 
     def update(self, image):
-        s = 0.07
+        s = 0.05
         if self.is_dirty: 
             print '[framebuffer] recycle'
             if self.is_new_cycle:
@@ -311,12 +314,23 @@ def deprocess(net, img):
 def objective_L2(dst):
     dst.diff[:] = dst.data
 
+def objective_guide(dst):
+    x = dst.data[0].copy()
+    y = Frame.guide_features
+    ch = x.shape[0]
+    x = x.reshape(ch,-1)
+    y = y.reshape(ch,-1)
+    A = x.T.dot(y) # compute the matrix of dot produts with guide features
+    dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
+
+
+
 
 # -------
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
-def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True):
+def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2):
     src = net.blobs['data']     # input image is stored in Net's 'data' blob
     dst = net.blobs[end]        # destination is the end layer specified by argument
 
@@ -325,7 +339,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 
     # this bit is where the neural net runs the computation
     net.forward(end=end)    # make sure we stop on the chosen neural layer
-    dst.diff[:] = dst.data  # specify the optimization objective
+    objective(dst)          # specify the optimization objective
     net.backward(start=end) # backwards propagation
     g = src.diff[0]         # store the error 
 
@@ -383,7 +397,9 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
-            step_params['step_size'] -= 0
+            #step_params['step_size'] -= step_params['step_size'] * 0.1
+            #step_params['step_size'] += 0.1
+            step_params['step_size'] += x * 0.05
 
             i += 1
 
@@ -399,7 +415,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         detail = src.data[0] - octave_base # extract details produced on the current octave
         
         # early return this will be the last octave calculated in the series
-        if octave == 3:
+        if octave == 10:
             Frame.is_dirty = True
             early_exit = deprocess(net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
@@ -437,19 +453,11 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    # parameters
+    # path to model
     model_path = 'E:/Users/Gary/Documents/code/models/bvlc_googlenet/'
     net_fn = model_path + 'deploy.prototxt'
     caffemodel = 'bvlc_googlenet.caffemodel'
     param_fn = model_path + caffemodel
-    jitter = int(cap_w/2)
-    if iterations is None: iterations = 20
-    if stepsize is None: stepsize = 1
-    if octaves is None: octaves = 5
-    if octave_scale is None: octave_scale = 1.4
-    if end is None: end = 'inception_5a/3x3_reduce'
-    update_log('model',caffemodel)
-
 
     # Patching model to be able to compute gradients.
     model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
@@ -461,6 +469,26 @@ def main(iterations, stepsize, octaves, octave_scale, end):
     net = caffe.Classifier('tmp.prototxt', param_fn,
         mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
         channel_swap = (2,1,0))                     # the caffe reference model has chanels in BGR instead of RGB
+    
+    # parameters
+    jitter = int(cap_w/2)
+    if iterations is None: iterations = 10
+    if stepsize is None: stepsize = 1.0
+    if octaves is None: octaves = 5
+    if octave_scale is None: octave_scale = 1.4
+    if end is None: end = 'inception_4c/5x5'
+    update_log('model',caffemodel)
+
+    # guide image
+    guide = np.float32(PIL.Image.open('tiger.jpg'))
+    h, w = guide.shape[:2]
+    src, dst = net.blobs['data'], net.blobs[end]
+    src.reshape(1,3,h,w)
+    src.data[0] = preprocess(net, guide)
+    net.forward(end=end)
+    Frame.guide_features = dst.data[0].copy()
+
+
 
     # the madness begins 
     Frame.buffer1 = cap.read()[1] # initial camera image for init
@@ -470,7 +498,7 @@ def main(iterations, stepsize, octaves, octave_scale, end):
         Tracker.process()
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
-        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end)
+        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = end, objective = objective_guide )
 
         # a bit later
         later = time.time()
