@@ -34,6 +34,7 @@ log = {
     'height':'{}'.format(540),
     'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
     'layer':'inception_4c_pool',
+    'guide':'*',
     'iteration':'{}'.format(10),
     'detect':'*',
     'cyclelength':'0 sec',
@@ -61,6 +62,15 @@ class Model(object):
             'googlenet':['bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'],
             'places':['bvlc_googlenet','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
         }
+        self.guides = [
+            'eagle1.jpg',
+            'tiger.jpg',
+            'cat.jpg',
+            'eyeball2sm.jpg',
+            'stars.jpg',
+            'rabbit.jpg'
+        ]
+        self.current_guide = 0
         self.choose_model()
 
     def choose_model(self, key = 'googlenet'):
@@ -79,15 +89,31 @@ class Model(object):
             mean = np.float32([104.0, 116.0, 122.0]),   # ImageNet mean, training set dependent
             channel_swap = (2,1,0))  
 
-    def guide_image(self, end):
-        self.end = end
-        guide = np.float32(PIL.Image.open('alex.jpg'))
+    def guide_image(self):
+        guide = np.float32(PIL.Image.open(self.guides[self.current_guide]))
         h, w = guide.shape[:2]
-        src, dst = self.net.blobs['data'], self.net.blobs[end]
+        src, dst = self.net.blobs['data'], self.net.blobs[self.end]
         src.reshape(1,3,h,w)
         src.data[0] = preprocess(self.net, guide)
-        self.net.forward(end=end)
-        self.guide_features = dst.data[0].copy()    
+        self.net.forward(end=self.end)
+        self.guide_features = dst.data[0].copy() 
+
+    def next_guide(self):
+        self.current_guide += 1
+        if self.current_guide > len(self.guides)-1:
+            self.current_guide = 0
+        self.guide_image()
+
+    def prev_guide(self):
+        self.current_guide -= 1
+        if self.current_guide < 0:
+            self.current_guide = len(self.guides)-1
+        self.guide_image()
+
+    def set_endlayer(self,end):
+        self.end = end
+        self.guide_image()
+
 
 
 class MotionDetector(object):
@@ -321,11 +347,12 @@ def show_HUD(image):
     write_Text(y + y1 * 4, 'now')
     write_Text(y + y1 * 5, 'model')
     write_Text(y + y1 * 6, 'layer')
-    write_Text(y + y1 * 7, 'width')
-    write_Text(y + y1 * 8, 'height')
-    write_Text(y + y1 * 9, 'octave')
-    write_Text(y + y1 * 10, 'iteration')
-    write_Text(y + y1 * 11, 'step_size')
+    write_Text(y + y1 * 7, 'guide')
+    write_Text(y + y1 * 8, 'width')
+    write_Text(y + y1 * 9, 'height')
+    write_Text(y + y1 * 10, 'octave')
+    write_Text(y + y1 * 11, 'iteration')
+    write_Text(y + y1 * 12, 'step_size')
     cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
 
     # add overlay back to source
@@ -427,7 +454,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             x = step_params['step_size']
             #step_params['step_size'] -= step_params['step_size'] * 0.1
             step_params['step_size'] += 0.01
-            #step_params['step_size'] += x * 0.01
+            #step_params['step_size'] += x * 0.1
 
             i += 1
 
@@ -436,6 +463,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('width',w)
             update_log('height',h)
             update_log('pixels',w*h)
+            update_log('guide',Dreamer.guides[Dreamer.current_guide])
             update_log('layer',end)
             update_log('iteration',i)
             update_log('step_size',step_params['step_size'])
@@ -443,7 +471,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         detail = src.data[0] - octave_base # extract details produced on the current octave
         
         # early return this will be the last octave calculated in the series
-        if octave == 6:
+        if octave == 4:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
@@ -460,7 +488,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             return cap.read()[1] 
 
         # reduce iteration count for the next octave
-        iter_n = iter_n - int(iter_n*0.75)
+        iter_n = iter_n - int(iter_n*0.5)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iter_n)
@@ -480,14 +508,13 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-
     Dreamer.choose_model('googlenet')
-    Dreamer.guide_image('inception_4d/output')
+    Dreamer.set_endlayer('inception_4d/5x5_reduce')
 
     # parameters
     jitter = int(cap_w/2)
-    iterations = 50
-    stepsize = 1.0
+    iterations = 40
+    stepsize = 0.5
     octaves = 5
     octave_scale = 1.4
     update_log('model',Dreamer.caffemodel)
