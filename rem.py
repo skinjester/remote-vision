@@ -66,9 +66,11 @@ class Model(object):
             'eagle1.jpg',
             'tiger.jpg',
             'cat.jpg',
-            'eyeball2sm.jpg',
-            'stars.jpg',
-            'rabbit.jpg'
+            'eyeballs.jpg',
+            'manuscriptlg.jpg',
+            'manuscriptsm.jpg',
+            'rabbit2.jpg',
+            'spectra.jpg'
         ]
         self.current_guide = 0
         self.choose_model()
@@ -96,7 +98,8 @@ class Model(object):
         src.reshape(1,3,h,w)
         src.data[0] = preprocess(self.net, guide)
         self.net.forward(end=self.end)
-        self.guide_features = dst.data[0].copy() 
+        self.guide_features = dst.data[0].copy()
+        Tracker.isMotionDetected = True
 
     def next_guide(self):
         self.current_guide += 1
@@ -226,6 +229,7 @@ class Viewport(object):
     def listener(self):
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
+        print key
 
          # Escape key: Exit
         if key == 27:
@@ -247,6 +251,14 @@ class Viewport(object):
             if Tracker.delta_count_threshold < 1:
                 Tracker.delta_count_threshold = 0
             print '[keylistener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
+
+        # , key : previous guide image    
+        elif key == 44: 
+            Dreamer.prev_guide()
+
+        # . key : next guide image    
+        elif key == 46: 
+            Dreamer.next_guide()
 
         # 1 key : toggle motion detect window
         elif key == 49: 
@@ -453,8 +465,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             # attenuate step size over rem cycle
             x = step_params['step_size']
             #step_params['step_size'] -= step_params['step_size'] * 0.1
-            step_params['step_size'] += 0.01
-            #step_params['step_size'] += x * 0.1
+            #step_params['step_size'] += 0.01
+            step_params['step_size'] += x * 0.01
 
             i += 1
 
@@ -468,10 +480,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('iteration',i)
             update_log('step_size',step_params['step_size'])
 
-        detail = src.data[0] - octave_base # extract details produced on the current octave
-        
         # early return this will be the last octave calculated in the series
-        if octave == 4:
+        if octave == 8:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
@@ -488,6 +498,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             return cap.read()[1] 
 
         # reduce iteration count for the next octave
+        detail = src.data[0] - octave_base # extract details produced on the current octave
         iter_n = iter_n - int(iter_n*0.5)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
@@ -509,12 +520,12 @@ def main():
     caffe.set_mode_gpu()
 
     Dreamer.choose_model('googlenet')
-    Dreamer.set_endlayer('inception_4d/5x5_reduce')
+    Dreamer.set_endlayer('inception_5a/1x1')
 
     # parameters
     jitter = int(cap_w/2)
-    iterations = 40
-    stepsize = 0.5
+    iterations = 50
+    stepsize = 1.0
     octaves = 5
     octave_scale = 1.4
     update_log('model',Dreamer.caffemodel)
