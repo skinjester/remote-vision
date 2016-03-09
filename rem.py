@@ -47,6 +47,32 @@ cap_w, cap_h = 1280,720 # capture resolution
 cap.set(3,cap_w)
 cap.set(4,cap_h)
 
+# settings [iterations,step_size,octaves,octave_cutoff,octave_scale,iteration_mult,step_mult]
+settings = {
+    'default':[50,1.0,6,8,1.4,0.5,0.01],
+    'tight':[100,1.0,6,4,1.2,0.5,0.01]
+    }
+
+class Amplifier(object):
+    def __init__(self):
+        self.iterations = None
+        self.stepsize = None
+        self.octaves = None
+        self.octave_cutoff = None
+        self.octave_scale = None
+        self.iteration_mult = None
+        self.step_mult = None
+        self.jitter = 320
+        
+    def set_package(self,key):
+        self.iterations = settings[key][0]
+        self.stepsize = settings[key][1]
+        self.octaves = settings[key][2]
+        self.octave_cutoff = settings[key][3]
+        self.octave_scale = settings[key][4]
+        self.iteration_mult = settings[key][5]
+        self.step_mult = settings[key][6]
+
 
 class Model(object):
     def __init__(self):
@@ -466,7 +492,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             x = step_params['step_size']
             #step_params['step_size'] -= step_params['step_size'] * 0.1
             #step_params['step_size'] += 0.01
-            step_params['step_size'] += x * 0.01
+            step_params['step_size'] += x * Amplify.step_mult
 
             i += 1
 
@@ -481,7 +507,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('step_size',step_params['step_size'])
 
         # early return this will be the last octave calculated in the series
-        if octave == 8:
+        if octave == Amplify.octave_cutoff:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
             early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
@@ -499,7 +525,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
         # reduce iteration count for the next octave
         detail = src.data[0] - octave_base # extract details produced on the current octave
-        iter_n = iter_n - int(iter_n*0.5)
+        iter_n = iter_n - int(iter_n * Amplify.iteration_mult)
+        #iter_n = Amplify.next_iteration(iter_n)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iter_n)
@@ -523,13 +550,13 @@ def main():
     Dreamer.set_endlayer('inception_5a/1x1')
 
     # parameters
+    Amplify.set_package('tight') # we may want to pass parameter lists in directly
+    iterations = Amplify.iterations
+    stepsize = Amplify.stepsize
+    octaves = Amplify.octaves
+    octave_scale = Amplify.octave_scale
     jitter = int(cap_w/2)
-    iterations = 50
-    stepsize = 1.0
-    octaves = 5
-    octave_scale = 1.4
     update_log('model',Dreamer.caffemodel)
-
 
     # the madness begins 
     Frame.buffer1 = cap.read()[1] # initial camera image for init
@@ -550,14 +577,14 @@ def main():
         now = time.time()
 
 
-
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(60000) # motion detector object
-Viewer = Viewport() # viewport object
+Tracker = MotionDetector(60000)
+Viewer = Viewport()
 Frame = Framebuffer()
 Dreamer = Model()
+Amplify = Amplifier()
 
 if __name__ == "__main__":
     main()
