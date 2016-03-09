@@ -33,7 +33,7 @@ log = {
     'width':'{}'.format(960),
     'height':'{}'.format(540),
     'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
-    'layer':'inception_4c_pool',
+    'layer':'inception_4e_pool',
     'guide':'*',
     'iteration':'{}'.format(10),
     'detect':'*',
@@ -51,8 +51,12 @@ cap.set(4,cap_h)
 settings = {
     'default':[40,0.8,6,5,1.4,0.5,0.02],
     'tight':[100,1.0,6,4,1.2,0.5,0.01],
-    'fast':[10,2.0,5,6,1.4,0.75,0.01]
+    'fast':[50,1.0,6,5,1.4,0.5,0.01]
     }
+
+settings2 = {
+    ''
+}
 
 class Amplifier(object):
     def __init__(self):
@@ -548,10 +552,10 @@ def main():
     caffe.set_mode_gpu()
 
     Dreamer.choose_model('googlenet')
-    Dreamer.set_endlayer('inception_5a/1x1')
+    Dreamer.set_endlayer('inception_4d/output')
 
     # parameters
-    Amplify.set_package('default')
+    Amplify.set_package('fast')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
@@ -581,7 +585,7 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(60000)
+Tracker = MotionDetector(65000)
 Viewer = Viewport()
 Frame = Framebuffer()
 Dreamer = Model()
