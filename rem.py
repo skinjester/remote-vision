@@ -49,8 +49,9 @@ cap.set(4,cap_h)
 
 # settings [iterations,step_size,octaves,octave_cutoff,octave_scale,iteration_mult,step_mult]
 settings = {
-    'default':[50,1.0,6,8,1.4,0.5,0.01],
-    'tight':[100,1.0,6,4,1.2,0.5,0.01]
+    'default':[40,0.8,6,5,1.4,0.5,0.02],
+    'tight':[100,1.0,6,4,1.2,0.5,0.01],
+    'fast':[10,2.0,5,6,1.4,0.75,0.01]
     }
 
 class Amplifier(object):
@@ -550,7 +551,7 @@ def main():
     Dreamer.set_endlayer('inception_5a/1x1')
 
     # parameters
-    Amplify.set_package('tight') # we may want to pass parameter lists in directly
+    Amplify.set_package('default')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
