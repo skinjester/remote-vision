@@ -48,15 +48,13 @@ cap.set(3,cap_w)
 cap.set(4,cap_h)
 
 # settings [iterations,step_size,octaves,octave_cutoff,octave_scale,iteration_mult,step_mult]
-settings = {
-    'default':[40,0.8,6,5,1.4,0.5,0.02],
-    'tight':[100,1.0,6,4,1.2,0.5,0.01],
-    'fast':[50,1.0,6,5,1.4,0.5,0.01]
-    }
-
-settings2 = {
-    ''
-}
+settings = {}
+settings['default'] =       {'iterations':40,'step_size':0.8,'octaves':6,'octave_cutoff':5,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.02}
+settings['tight'] =         {'iterations':100,'step_size':1.0,'octaves':6,'octave_cutoff':4,'octave_scale':1.2,'iteration_mult':0.5,'step_mult':0.01}
+settings['fast'] =          {'iterations':50,'step_size':1.0,'octaves':6,'octave_cutoff':5,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
+settings['fast-tighter'] =  {'iterations':20,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
+settings['hifi'] =          {'iterations':30,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
+settings['hifi-tight'] =    {'iterations':30,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.2,'iteration_mult':0.4,'step_mult':0.01}
 
 class Amplifier(object):
     def __init__(self):
@@ -70,13 +68,13 @@ class Amplifier(object):
         self.jitter = 320
         
     def set_package(self,key):
-        self.iterations = settings[key][0]
-        self.stepsize = settings[key][1]
-        self.octaves = settings[key][2]
-        self.octave_cutoff = settings[key][3]
-        self.octave_scale = settings[key][4]
-        self.iteration_mult = settings[key][5]
-        self.step_mult = settings[key][6]
+        self.iterations = settings[key]['iterations']
+        self.stepsize = settings[key]['step_size']
+        self.octaves = settings[key]['octaves']
+        self.octave_cutoff = settings[key]['octave_cutoff']
+        self.octave_scale = settings[key]['octave_scale']
+        self.iteration_mult = settings[key]['iteration_mult']
+        self.step_mult = settings[key]['step_mult']
 
 
 class Model(object):
@@ -91,9 +89,13 @@ class Model(object):
         self.models = {
             'cars':['cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'],
             'googlenet':['bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'],
-            'places':['bvlc_googlenet','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
+            'places':['googlenet_places205','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
         }
         self.guides = [
+            'gaudi1.jpg',
+            'gaudi2.jpg',
+            'house1.jpg',
+            'house2.jpg',
             'eagle1.jpg',
             'tiger.jpg',
             'cat.jpg',
@@ -101,12 +103,12 @@ class Model(object):
             'manuscriptlg.jpg',
             'manuscriptsm.jpg',
             'rabbit2.jpg',
-            'spectra.jpg'
+            'spectra.jpg',
         ]
         self.current_guide = 0
         self.choose_model()
 
-    def choose_model(self, key = 'googlenet'):
+    def choose_model(self, key = 'places'):
         self.net_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][1])
         self.param_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][2])
         self.caffemodel = self.models[key][2]
@@ -555,7 +557,7 @@ def main():
     Dreamer.set_endlayer('inception_4d/output')
 
     # parameters
-    Amplify.set_package('fast')
+    Amplify.set_package('hifi-tight')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
