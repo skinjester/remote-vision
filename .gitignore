@@ -3,3 +3,4 @@ bin/scopetest.py
 bin/scopetest.pyc
 img/image3sm.jpg
 alex.jpg
+*.pyc
