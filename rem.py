@@ -12,6 +12,7 @@ import scipy.ndimage as nd
 import PIL.Image 
 from google.protobuf import text_format
 import cv2
+import data
 
 os.environ['GLOG_minloglevel'] = '2'    # suppress verbose caffe logging before caffe import
 import caffe
@@ -43,18 +44,10 @@ log = {
 
 # global camera object
 cap = cv2.VideoCapture(0)
-cap_w, cap_h = 1280,720 # capture resolution
+cap_w, cap_h = 640,360 # capture resolution
 cap.set(3,cap_w)
 cap.set(4,cap_h)
 
-# settings [iterations,step_size,octaves,octave_cutoff,octave_scale,iteration_mult,step_mult]
-settings = {}
-settings['default'] =       {'iterations':40,'step_size':0.8,'octaves':6,'octave_cutoff':5,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.02}
-settings['tight'] =         {'iterations':100,'step_size':1.0,'octaves':6,'octave_cutoff':4,'octave_scale':1.2,'iteration_mult':0.5,'step_mult':0.01}
-settings['fast'] =          {'iterations':50,'step_size':1.0,'octaves':6,'octave_cutoff':5,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
-settings['fast-tighter'] =  {'iterations':20,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
-settings['hifi'] =          {'iterations':30,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.4,'iteration_mult':0.5,'step_mult':0.01}
-settings['hifi-tight'] =    {'iterations':30,'step_size':2.0,'octaves':6,'octave_cutoff':6,'octave_scale':1.2,'iteration_mult':0.4,'step_mult':0.01}
 
 class Amplifier(object):
     def __init__(self):
@@ -68,13 +61,13 @@ class Amplifier(object):
         self.jitter = 320
         
     def set_package(self,key):
-        self.iterations = settings[key]['iterations']
-        self.stepsize = settings[key]['step_size']
-        self.octaves = settings[key]['octaves']
-        self.octave_cutoff = settings[key]['octave_cutoff']
-        self.octave_scale = settings[key]['octave_scale']
-        self.iteration_mult = settings[key]['iteration_mult']
-        self.step_mult = settings[key]['step_mult']
+        self.iterations = data.settings[key]['iterations']
+        self.stepsize = data.settings[key]['step_size']
+        self.octaves = data.settings[key]['octaves']
+        self.octave_cutoff = data.settings[key]['octave_cutoff']
+        self.octave_scale = data.settings[key]['octave_scale']
+        self.iteration_mult = data.settings[key]['iteration_mult']
+        self.step_mult = data.settings[key]['step_mult']
 
 
 class Model(object):
@@ -85,33 +78,15 @@ class Model(object):
         self.param_fn = None
         self.caffemodel = None
         self.end = None
-        self.hd = 'E:/Users/Gary/Documents/code/models'
-        self.models = {
-            'cars':['cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'],
-            'googlenet':['bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'],
-            'places':['googlenet_places205','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
-        }
-        self.guides = [
-            'gaudi1.jpg',
-            'gaudi2.jpg',
-            'house1.jpg',
-            'house2.jpg',
-            'eagle1.jpg',
-            'tiger.jpg',
-            'cat.jpg',
-            'eyeballs.jpg',
-            'manuscriptlg.jpg',
-            'manuscriptsm.jpg',
-            'rabbit2.jpg',
-            'spectra.jpg',
-        ]
+        self.models = data.models
+        self.guides = data.guides
         self.current_guide = 0
         self.choose_model()
 
-    def choose_model(self, key = 'places'):
-        self.net_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][1])
-        self.param_fn = '{}/{}/{}'.format(self.hd,self.models[key][0],self.models[key][2])
-        self.caffemodel = self.models[key][2]
+    def choose_model(self, key = 'googlenet'):
+        self.net_fn = '{}/{}/{}'.format(self.models['path'],self.models[key][0][0],self.models[key][0][1])
+        self.param_fn = '{}/{}/{}'.format(self.models['path'],self.models[key][0][0],self.models[key][0][2])
+        self.caffemodel = self.models[key][0][2]
 
         # Patch model to be able to compute gradients.
         model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
@@ -262,7 +237,6 @@ class Viewport(object):
     def listener(self):
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
-        print key
 
          # Escape key: Exit
         if key == 27:
@@ -317,7 +291,7 @@ class Framebuffer(object):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
         self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((720, 1280 ,3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
 
@@ -338,7 +312,7 @@ class Framebuffer(object):
                 print '[framebuffer] compositing enabled'
                 self.is_compositing_enabled = True
             if self.is_compositing_enabled:
-                print '[framebuffer] compositing'
+                print '[framebuffer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
                 self.opacity -= 0.05
                 if self.opacity <= 0.0:
@@ -351,8 +325,8 @@ class Framebuffer(object):
         # buffer 2 is locked when compositing is enabled
         if self.is_compositing_enabled == False:
             # convert and clip floating point matrix into RGB bounds
-            print '[write_buffer2] copy net blob to buffer2'
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
+            print '[write_buffer2] copy net blob to buffer2'
         return
 
 
@@ -424,13 +398,11 @@ def objective_guide(dst):
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
 
-
-
 # -------
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
-def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2):
+def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_guide):
     src = net.blobs['data']     # input image is stored in Net's 'data' blob
     dst = net.blobs[end]        # destination is the end layer specified by argument
 
@@ -468,7 +440,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
     Frame.is_new_cycle = False
 
     # setup octaves
-    
     src = Dreamer.net.blobs['data']
     octaves = [preprocess(Dreamer.net, base_img)]
     for i in xrange(octave_n - 1):
@@ -497,8 +468,6 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
-            #step_params['step_size'] -= step_params['step_size'] * 0.1
-            #step_params['step_size'] += 0.01
             step_params['step_size'] += x * Amplify.step_mult
 
             i += 1
@@ -524,7 +493,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         # motion detected so we're ending this REM cycle
         if Tracker.isMotionDetected:
             early_exit = deprocess(Dreamer.net, src.data[0])  # pass deprocessed net blob to buffer2 for fx
-            early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
+            early_exit = cv2.resize(early_exit, (Viewer.viewport_w, Viewer.viewport_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
             Frame.write_buffer2(early_exit)
             Frame.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'
@@ -553,8 +522,9 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
+
     Dreamer.choose_model('googlenet')
-    Dreamer.set_endlayer('inception_4d/output')
+    Dreamer.set_endlayer('inception_4c/output')
 
     # parameters
     Amplify.set_package('hifi-tight')
@@ -573,7 +543,7 @@ def main():
         Tracker.process()
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
-        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Dreamer.end, objective = objective_guide )
+        Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Dreamer.end )
 
         # a bit later
         later = time.time()
@@ -587,7 +557,7 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(65000)
+Tracker = MotionDetector(60000)
 Viewer = Viewport()
 Frame = Framebuffer()
 Dreamer = Model()
