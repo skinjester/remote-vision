@@ -1,4 +1,5 @@
-size = [1920,1080] # max resolution
+capture_size = [1920,1080]
+viewport_size = [1920,1080]
 now = 0 # timing reference updated each rem cycle
 
 guides = []

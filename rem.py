@@ -3,6 +3,7 @@ __author__ = 'Gary Boodhoo'
 
 # TODO: not needing all of these imports. cleanup
 import os, os.path
+import argparse
 import sys
 import errno
 import time
@@ -23,31 +24,17 @@ import caffe
 net = None # will become global reference to the network model once inside the loop
 
 # HUD
-# dictionary is for the values we'll be logging
+# dictionary contains the key/values we'll be logging
 font = cv2.FONT_HERSHEY_PLAIN
 white = (255,255,255)
-log = {
-    'threshold':'{:0>6}'.format(10000),
-    'last':'{:0>6}'.format(43),
-    'now':'{:0>6}'.format(9540),
-    'ratio':'{:0>1.4f}'.format(0.5646584),
-    'octave':'{}'.format(0.564),
-    'pixels':'{:0>6}'.format(960*540),
-    'width':'{}'.format(960),
-    'height':'{}'.format(540),
-    'model':'googlenet_finetune_web_car_iter_10000.caffemodel',
-    'layer':'inception_4e_pool',
-    'guide':'*',
-    'iteration':'{}'.format(10),
-    'detect':'*',
-    'cyclelength':'0 sec',
-    'step_size':'{}'.format(0.0)
-}
+
+log = {}
+
 
 # set global camera object to input dimensions
 cap = cv2.VideoCapture(0)
-cap.set(3,data.size[0])
-cap.set(4,data.size[1])
+cap.set(3,data.capture_size [0])
+cap.set(4,data.capture_size [1])
 
 
 class Amplifier(object):
@@ -221,7 +208,7 @@ class Viewport(object):
         image = np.uint8(np.clip(image, 0, 255))
 
         # GRB: check image size and skip resize if already at full size
-        image = cv2.resize(image, (self.viewport_w, self.viewport_h), interpolation = cv2.INTER_CUBIC)
+        image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_CUBIC)
         image = Frame.update(image)
         image = self.postfx(image) # HUD
         cv2.imshow(self.window_name, image)
@@ -246,7 +233,7 @@ class Viewport(object):
     def listener(self, image): # yeah... passing image as a convenience
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
-        print '[listener] key:{}'.format(key)
+        #print '[listener] key:{}'.format(key)
 
         # Escape key: Exit
         if key == 27:
@@ -306,8 +293,8 @@ class Framebuffer(object):
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((data.size[1], data.size[0], 3), np.uint8) # uses camera capture dimensions
+        self.buffer1 = np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((data.capture_size[1], data.capture_size[0], 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
 
@@ -318,7 +305,7 @@ class Framebuffer(object):
             if self.is_new_cycle:
                 # we only transform at beginning of rem cycle
                 print '[framebuffer] attract fx'
-                image = nd.affine_transform(image, [1-s,1,1], [data.size[1]*s/2,0,0], order=1)
+                image = nd.affine_transform(image, [1-s,1,1], [data.capture_size[1]*s/2,0,0], order=1)
                 self.buffer1 = image
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -342,6 +329,8 @@ class Framebuffer(object):
         if self.is_compositing_enabled == False:
             # convert and clip floating point matrix into RGB bounds
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
+            ### resize buffer 2 to match viewport dimensions
+            self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_CUBIC)
             print '[write_buffer2] copy net blob to buffer2'
         return
 
@@ -362,9 +351,8 @@ def tweet(path_to_image):
     api = tweepy.API(auth)
 
     fn = os.path.abspath('../eagle.jpg')
-    #myStatusText = '#GGG2016 #deepdreamvisionquest @username When we find aliens we will find they are artists too'
-    myStatusText = '#test export'
-    #api.update_status(status=myStatusText)
+    #myStatusText = '@username #deepdreamvisionquest #GDC2016'
+    myStatusText = '{} #deepdreamvisionquest #test bit.ly/1Rfj3gN'.format(Viewer.username)
     api.update_with_media(path_to_image, status=myStatusText )
 
 def update_log(key,new_value):
@@ -374,8 +362,6 @@ def update_log(key,new_value):
         log[key] = '{:0>6}'.format(new_value)
     elif key=='now':
         log[key] = '{:0>6}'.format(new_value)
-    elif key=='ratio':
-        log[key] = '{:0>1.4f}'.format(new_value)
     elif key=='pixels':
         log[key] = '{:0>6}'.format(new_value)
     else:
@@ -385,30 +371,33 @@ def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(Viewer.viewport_w,240),(0,0,0),-1)
+    cv2.rectangle(overlay,(0,0),(Viewer.viewport_w,360),(0,0,0),-1)
 
     # list setup
-    col1,y,col2,y1 = 5,50,100,15
+    y,y1 = 50,15
+    layout = [[5,100]]
 
-    def write_Text(row,subject):
-        cv2.putText(overlay, subject, (col1,row), font, 1.0, white)
-        cv2.putText(overlay, log[subject], (col2, row), font, 1.0, white)
+    def write_Text(col,row,key):
+        cv2.putText(overlay, key, (layout[col][0],row), font, 1.0, white)
+        cv2.putText(overlay, log[key], (layout[col][1], row), font, 1.0, white)
 
     # write text to overlay
-    write_Text(y, 'pixels')
-    write_Text(y + y1, 'threshold')
-    write_Text(y + y1 * 2, 'ratio')
-    write_Text(y + y1 * 3, 'last')
-    write_Text(y + y1 * 4, 'now')
-    write_Text(y + y1 * 5, 'model')
-    write_Text(y + y1 * 6, 'layer')
-    write_Text(y + y1 * 7, 'guide')
-    write_Text(y + y1 * 8, 'width')
-    write_Text(y + y1 * 9, 'height')
-    write_Text(y + y1 * 10, 'octave')
-    write_Text(y + y1 * 11, 'iteration')
-    write_Text(y + y1 * 12, 'step_size')
+    # col1
     cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
+    write_Text(0, y, 'pixels')
+    write_Text(0, y + y1, 'threshold')
+    write_Text(0, y + y1 * 2, 'last')
+    write_Text(0, y + y1 * 3, 'now')
+    write_Text(0, y + y1 * 4, 'model')
+    write_Text(0, y + y1 * 5, 'layer')
+    write_Text(0, y + y1 * 6, 'guide')
+    write_Text(0, y + y1 * 7, 'width')
+    write_Text(0, y + y1 * 8, 'height')
+    write_Text(0, y + y1 * 9, 'octave')
+    write_Text(0, y + y1 * 10, 'iteration')
+    write_Text(0, y + y1 * 11, 'step_size')
+
+    #col2
 
     # add overlay back to source
     return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
@@ -523,7 +512,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         if octave == Amplify.octave_cutoff:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
-            early_exit = cv2.resize(early_exit, (data.size[0], data.size[1]), interpolation = cv2.INTER_CUBIC)
+            early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_CUBIC)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
             return early_exit
 
@@ -559,18 +548,18 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-
     Dreamer.choose_model('googlenet')
     Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('default2')
+    Amplify.set_package('fast')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
     octave_scale = Amplify.octave_scale
-    jitter = int(data.size[0]/2)
+    jitter = 300
     update_log('model',Dreamer.caffemodel)
+    update_log('username',Viewer.username)
 
     # the madness begins 
     Frame.buffer1 = cap.read()[1] # initial camera image for init
@@ -587,7 +576,7 @@ def main():
         difference = int(later - data.now)
         print '[main] finish REM cycle:{}s'.format(difference)
         print '-'*20
-        
+
         data.now = time.time()
 
 
@@ -595,10 +584,15 @@ def main():
 # INIT
 # --------
 Tracker = MotionDetector(120000)
-Viewer = Viewport()
+Viewer = Viewport('deepdreamvisionquest',1920,1080,'@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
 Amplify = Amplifier()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--username',help='twitter userid for sharing')
+    args = parser.parse_args()
+    if args.username:
+        Viewer.username = '@{}'.format(args.username)
     main()
