@@ -1,6 +1,8 @@
 capture_size = [1920,1080]
 viewport_size = [1920,1080]
 now = 0 # timing reference updated each rem cycle
+counter = 0 # has to do with the hud laout. sort of a hack
+
 
 guides = []
 guides.append('gaudi1.jpg')
@@ -23,6 +25,7 @@ models['places'] = ['googlenet_places205','deploy.prototxt','googlelet_places205
 
 
 layers = [
+	'inception_3a/output',
 	'inception_4e/output',
 	'inception_3b/3x3',
 	'inception_4d/3x3',

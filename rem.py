@@ -25,7 +25,7 @@ net = None # will become global reference to the network model once inside the l
 
 # HUD
 # dictionary contains the key/values we'll be logging
-font = cv2.FONT_HERSHEY_PLAIN
+font = cv2.FONT_HERSHEY_SIMPLEX
 white = (255,255,255)
 
 log = {}
@@ -47,6 +47,7 @@ class Amplifier(object):
         self.iteration_mult = None
         self.step_mult = None
         self.jitter = 320
+        self.package_name = None
         
     def set_package(self,key):
         self.iterations = data.settings[key]['iterations']
@@ -56,6 +57,7 @@ class Amplifier(object):
         self.octave_scale = data.settings[key]['octave_scale']
         self.iteration_mult = data.settings[key]['iteration_mult']
         self.step_mult = data.settings[key]['step_mult']
+        self.package_name = key
 
 
 class Model(object):
@@ -173,15 +175,25 @@ class MotionDetector(object):
                 self.timer_enabled = False
         else:
             self.isMotionDetected = False
-    
-        update_log('threshold',Tracker.delta_count_threshold)
-        update_log('last',Tracker.delta_count_last)
-        update_log('now',Tracker.delta_count)
+
+        # logging
+        lastmsg = '{:0>6}'.format(self.delta_count_last)
+        if self.delta_count_last > self.delta_count_threshold:
+            ratio = 1.0 * self.delta_count_last/self.delta_count_threshold
+            lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_last,ratio)
+        
+        nowmsg = '{:0>6}'.format(self.delta_count)
+        if self.delta_count > self.delta_count_threshold:
+            ratio = 1.0 * self.delta_count/self.delta_count_threshold
+            nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
+        
+        update_log('last',lastmsg)
+        update_log('now',nowmsg)
         self.refresh_queue()
-    
+
     def isResting(self):
         return self.isMotionDetected == self.isMotionDetected_last
-    
+
     def refresh_queue(self):
         self.delta_count_last = self.delta_count    
         self.t_minus = self.t_now
@@ -215,11 +227,14 @@ class Viewport(object):
         self.listener(image) # refresh display
 
     def export(self, image):
+        self.save_next_frame = True
+        '''
         make_sure_path_exists(self.username)
         export_path = '{}/{}.jpg'.format(self.username,time.time())
         savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
         tweet(export_path)
+        '''
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -228,7 +243,7 @@ class Viewport(object):
     
     def monitor(self):
         if self.motiondetect_log_enabled:
-            cv2.imshow('deltaview', Tracker.delta_view)
+            cv2.imshow('delta', Tracker.delta_view)
     
     def listener(self, image): # yeah... passing image as a convenience
         self.monitor()
@@ -274,9 +289,9 @@ class Viewport(object):
         elif key == 49: 
             self.motiondetect_log_enabled = not self.motiondetect_log_enabled
             if self.motiondetect_log_enabled:
-                cv2.namedWindow('deltaview',cv2.WINDOW_AUTOSIZE)
+                cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
             else:
-                cv2.destroyWindow('delta_view')   
+                cv2.destroyWindow('delta')   
             print '[keylistener] motion detect monitor: {}'.format(self.motiondetect_log_enabled)
 
     #self.monitor() # update the monitor windows
@@ -356,46 +371,43 @@ def tweet(path_to_image):
     api.update_with_media(path_to_image, status=myStatusText )
 
 def update_log(key,new_value):
-    if key=='threshold':
-        log[key] = '{:0>6}'.format(new_value)
-    elif key=='last':
-        log[key] = '{:0>6}'.format(new_value)
-    elif key=='now':
-        log[key] = '{:0>6}'.format(new_value)
-    elif key=='pixels':
-        log[key] = '{:0>6}'.format(new_value)
-    else:
-        log[key] = '{}'.format(new_value)
+    log[key] = '{}'.format(new_value)
 
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(Viewer.viewport_w,360),(0,0,0),-1)
+    cv2.rectangle(overlay,(0,0),(840,data.viewport_size[1]),(0,0,0),-1)
 
     # list setup
-    y,y1 = 50,15
-    layout = [[5,100]]
+    x,xoff = 40,240
+    y,yoff = 150,35
 
-    def write_Text(col,row,key):
-        cv2.putText(overlay, key, (layout[col][0],row), font, 1.0, white)
-        cv2.putText(overlay, log[key], (layout[col][1], row), font, 1.0, white)
+    data.counter = 0
+    def write_Text(key):
+    	row = y + yoff * data.counter
+        cv2.putText(overlay, key, (x, row), font, 1.0, white)
+        cv2.putText(overlay, log[key], (xoff, row), font, 1.0, white)
+        data.counter += 1
 
     # write text to overlay
     # col1
-    cv2.putText(overlay, log['detect'], (5, 35), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0))
-    write_Text(0, y, 'pixels')
-    write_Text(0, y + y1, 'threshold')
-    write_Text(0, y + y1 * 2, 'last')
-    write_Text(0, y + y1 * 3, 'now')
-    write_Text(0, y + y1 * 4, 'model')
-    write_Text(0, y + y1 * 5, 'layer')
-    write_Text(0, y + y1 * 6, 'guide')
-    write_Text(0, y + y1 * 7, 'width')
-    write_Text(0, y + y1 * 8, 'height')
-    write_Text(0, y + y1 * 9, 'octave')
-    write_Text(0, y + y1 * 10, 'iteration')
-    write_Text(0, y + y1 * 11, 'step_size')
+    cv2.putText(overlay, log['detect'], (5, 35), font, 2.0, (0,255,0))
+    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 2.0, white)
+    write_Text('username')
+    write_Text('settings')
+    write_Text('threshold')
+    write_Text('last')
+    write_Text('now')
+    write_Text('model')
+    write_Text('layer')
+    write_Text('guide')
+    write_Text('width')
+    write_Text('height')
+    write_Text('octave')
+    write_Text('iteration')
+    write_Text('step_size')
+
 
     #col2
 
@@ -499,14 +511,21 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             i += 1
 
             # logging
-            update_log('octave',len(octaves) - octave - 1)
+            octavemsg = '{}/{}({})'.format(len(octaves) - octave - 1,octave_n,Amplify.octave_cutoff)
+            guidemsg = '({}/{}){}'.format(99,99,Dreamer.guides[Dreamer.current_guide])
+            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iter_n,Amplify.iteration_mult)
+            stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplify.step_mult)
+            thresholdmsg = '{:0>6}'.format(Tracker.delta_count_threshold)
+            update_log('octave',octavemsg)
             update_log('width',w)
             update_log('height',h)
-            update_log('pixels',w*h)
-            update_log('guide',Dreamer.guides[Dreamer.current_guide])
+            update_log('guide',guidemsg)
             update_log('layer',end)
-            update_log('iteration',i)
-            update_log('step_size',step_params['step_size'])
+            update_log('iteration',iterationmsg)
+            update_log('step_size',stepsizemsg)
+            update_log('settings',Amplify.package_name)
+            update_log('threshold',thresholdmsg)
+
 
         # early return this will be the last octave calculated in the series
         if octave == Amplify.octave_cutoff:
@@ -552,7 +571,7 @@ def main():
     Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('fast')
+    Amplify.set_package('hifi')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
@@ -570,6 +589,15 @@ def main():
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
         Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Dreamer.end )
+
+        if Viewer.save_next_frame:
+            print '[main] save rendered frame'
+            Viewer.save_next_frame = False
+            make_sure_path_exists(Viewer.username)
+            export_path = '{}/{}.jpg'.format(Viewer.username,time.time())
+            savefile = cv2.cvtColor(Frame.buffer1, cv2.COLOR_BGR2RGB)
+            PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+            tweet(export_path)
 
         # a bit later
         later = time.time()
