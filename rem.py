@@ -210,11 +210,9 @@ class Viewport(object):
         self.viewport_h = viewport_h
         self.b_show_HUD = False
         self.motiondetect_log_enabled = False
-        self.image = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
         self.blend_ratio = 0.0
         self.save_next_frame = False
         self.username = username
-        self.last_viewed = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
     
     def show(self, image):
@@ -227,14 +225,14 @@ class Viewport(object):
         image = Frame.update(image)
         image = self.postfx(image) # HUD
         cv2.imshow(self.window_name, image)
-        #self.last_viewed = image.copy()
-        self.image = image
-        self.listener() # refresh display
+        self.listener(image) # refresh display
 
-    def export(self):
+    def export(self, image):
         make_sure_path_exists(self.username)
-        saveframe = '{}/{}.jpg'.format(self.username,time.time())
-        PIL.Image.fromarray(np.uint8(self.image)).save(saveframe)
+        export_path = '{}/{}.jpg'.format(self.username,time.time())
+        savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+        tweet(export_path)
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -245,7 +243,7 @@ class Viewport(object):
         if self.motiondetect_log_enabled:
             cv2.imshow('deltaview', Tracker.delta_view)
     
-    def listener(self):
+    def listener(self, image): # yeah... passing image as a convenience
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
         print '[listener] key:{}'.format(key)
@@ -258,7 +256,7 @@ class Viewport(object):
         # ENTER key: save picture
         elif key==13:
             print '[listener] save'
-            self.export()
+            self.export(image)
 
         # `(tilde) key: toggle HUD
         elif key == 96:
@@ -354,7 +352,7 @@ def make_sure_path_exists(directoryname):
         if exception.errno != errno.EEXIST:
             raise
 
-def tweet():
+def tweet(path_to_image):
     consumer_key='3iSUitN4D5Fi52fgmF5zMQodc'
     consumer_secret='Kj9biRwpjCBGQOmYJXd9xV4ni68IO99gZT2HfdHv86HuPhx5Mq'
     access_key='15870561-2SH025poSRlXyzAGc1YyrL8EDgD5O24docOjlyW5O'
@@ -364,9 +362,10 @@ def tweet():
     api = tweepy.API(auth)
 
     fn = os.path.abspath('../eagle.jpg')
-    myStatusText = '#GGG2016 #deepdreamvisionquest @username When we find aliens we will find they are artists too'
+    #myStatusText = '#GGG2016 #deepdreamvisionquest @username When we find aliens we will find they are artists too'
+    myStatusText = '#test export'
     #api.update_status(status=myStatusText)
-    api.update_with_media(fn, status=myStatusText )
+    api.update_with_media(path_to_image, status=myStatusText )
 
 def update_log(key,new_value):
     if key=='threshold':
@@ -588,7 +587,7 @@ def main():
         difference = int(later - data.now)
         print '[main] finish REM cycle:{}s'.format(difference)
         print '-'*20
-
+        
         data.now = time.time()
 
 
