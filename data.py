@@ -25,7 +25,10 @@ models['places'] = ['googlenet_places205','deploy.prototxt','googlelet_places205
 
 
 layers = [
+	'inception_4d/output',
+	'conv2/norm2',
 	'inception_3a/output',
+	'inception_4b/5x5',
 	'inception_4e/output',
 	'inception_3b/3x3',
 	'inception_4d/3x3',
@@ -34,8 +37,6 @@ layers = [
 	'inception_3b/5x5',
 	'inception_3b/5x5_reduce',
 	'inception_4b/3x3',
-	'inception_4b/5x5',
-	'inception_4d/output'
 ]
 
 

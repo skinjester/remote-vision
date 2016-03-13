@@ -274,7 +274,7 @@ class Viewport(object):
         elif key == 45: 
             Tracker.delta_count_threshold -= 1000
             if Tracker.delta_count_threshold < 1:
-                Tracker.delta_count_threshold = 0
+                Tracker.delta_count_threshold = 1
             print '[listener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
 
         # , key : previous guide image    
@@ -309,7 +309,7 @@ class Framebuffer(object):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
         self.buffer1 = np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((data.capture_size[1], data.capture_size[0], 3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((data.viewport_size[1], data.viewport_size[0], 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
 
@@ -512,7 +512,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
             # logging
             octavemsg = '{}/{}({})'.format(len(octaves) - octave - 1,octave_n,Amplify.octave_cutoff)
-            guidemsg = '({}/{}){}'.format(99,99,Dreamer.guides[Dreamer.current_guide])
+            guidemsg = '({}/{}) {}'.format(Dreamer.current_guide,len(Dreamer.guides),Dreamer.guides[Dreamer.current_guide])
             iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iter_n,Amplify.iteration_mult)
             stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplify.step_mult)
             thresholdmsg = '{:0>6}'.format(Tracker.delta_count_threshold)
@@ -611,7 +611,7 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(120000)
+Tracker = MotionDetector(10000)
 Viewer = Viewport('deepdreamvisionquest',1920,1080,'@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
