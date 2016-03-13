@@ -1,3 +1,6 @@
+size = [1920,1080] # max resolution
+now = 0 # timing reference updated each rem cycle
+
 guides = []
 guides.append('gaudi1.jpg')
 guides.append('gaudi2.jpg')
@@ -18,6 +21,20 @@ models['googlenet'] = ['bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffem
 models['places'] = ['googlenet_places205','deploy.prototxt','googlelet_places205_train_iter_2400000.caffemodel']
 
 
+layers = [
+	'inception_4e/output',
+	'inception_3b/3x3',
+	'inception_4d/3x3',
+	'inception_4a/3x3',
+	'inception_3b/3x3_reduce',
+	'inception_3b/5x5',
+	'inception_3b/5x5_reduce',
+	'inception_4b/3x3',
+	'inception_4b/5x5',
+	'inception_4d/output'
+]
+
+
 settings = {}
 settings['default'] = {
 	'iterations':40,
@@ -28,6 +45,16 @@ settings['default'] = {
 	'iteration_mult':0.5,
 	'step_mult':0.02,
 	'duration':11,
+}
+settings['default2'] = {
+	'iterations':10,
+	'step_size':2,
+	'octaves':6,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.5,
+	'step_mult':0.03,
+	'duration':7,
 }
 settings['tight'] = {
 	'iterations':100,
@@ -95,6 +122,16 @@ settings['hifi-tight'] = {
 	'octaves':6,
 	'octave_cutoff':6,
 	'octave_scale':1.2,
+	'iteration_mult':0.4,
+	'step_mult':0.01,
+	'duration':19,
+}
+settings['hifi-tight2'] = {
+	'iterations':30,
+	'step_size':2.0,
+	'octaves':6,
+	'octave_cutoff':6,
+	'octave_scale':1.1,
 	'iteration_mult':0.4,
 	'step_mult':0.01,
 	'duration':19,

@@ -4,6 +4,7 @@ __author__ = 'Gary Boodhoo'
 # TODO: not needing all of these imports. cleanup
 import os, os.path
 import sys
+import errno
 import time
 from random import randint
 from cStringIO import StringIO
@@ -13,6 +14,7 @@ import PIL.Image
 from google.protobuf import text_format
 import cv2
 import data
+import tweepy
 
 os.environ['GLOG_minloglevel'] = '2'    # suppress verbose caffe logging before caffe import
 import caffe
@@ -42,11 +44,10 @@ log = {
     'step_size':'{}'.format(0.0)
 }
 
-# global camera object
+# set global camera object to input dimensions
 cap = cv2.VideoCapture(0)
-cap_w, cap_h = 640,360 # capture resolution
-cap.set(3,cap_w)
-cap.set(4,cap_h)
+cap.set(3,data.size[0])
+cap.set(4,data.size[1])
 
 
 class Amplifier(object):
@@ -203,14 +204,17 @@ class MotionDetector(object):
     
 class Viewport(object):
 
-    def __init__(self, window_name='new', viewport_w=1280, viewport_h=720):
+    def __init__(self, window_name='new', viewport_w=1920, viewport_h=1080, username='@skinjester'):
         self.window_name = window_name
         self.viewport_w = viewport_w
         self.viewport_h = viewport_h
         self.b_show_HUD = False
         self.motiondetect_log_enabled = False
-        self.image_buffer = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
+        self.image = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
         self.blend_ratio = 0.0
+        self.save_next_frame = False
+        self.username = username
+        self.last_viewed = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture size
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
     
     def show(self, image):
@@ -223,7 +227,14 @@ class Viewport(object):
         image = Frame.update(image)
         image = self.postfx(image) # HUD
         cv2.imshow(self.window_name, image)
+        #self.last_viewed = image.copy()
+        self.image = image
         self.listener() # refresh display
+
+    def export(self):
+        make_sure_path_exists(self.username)
+        saveframe = '{}/{}.jpg'.format(self.username,time.time())
+        PIL.Image.fromarray(np.uint8(self.image)).save(saveframe)
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -237,27 +248,34 @@ class Viewport(object):
     def listener(self):
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
+        print '[listener] key:{}'.format(key)
 
-         # Escape key: Exit
+        # Escape key: Exit
         if key == 27:
             self.shutdown()
-            print '[keylistener] shutdown'
+            print '[listener] shutdown'
+
+        # ENTER key: save picture
+        elif key==13:
+            print '[listener] save'
+            self.export()
+
         # `(tilde) key: toggle HUD
         elif key == 96:
             self.b_show_HUD = not self.b_show_HUD
-            print '[keylistener] HUD: {}'.format(Tracker.delta_count_threshold)
+            print '[listener] HUD: {}'.format(Tracker.delta_count_threshold)
 
         # + key : increase motion threshold
         elif key == 43:
             Tracker.delta_count_threshold += 1000
-            print '[keylistener] delta_count_threshold ++ {}'.format(Tracker.delta_count_threshold)
+            print '[listener] delta_count_threshold ++ {}'.format(Tracker.delta_count_threshold)
 
         # - key : decrease motion threshold    
         elif key == 45: 
             Tracker.delta_count_threshold -= 1000
             if Tracker.delta_count_threshold < 1:
                 Tracker.delta_count_threshold = 0
-            print '[keylistener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
+            print '[listener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
 
         # , key : previous guide image    
         elif key == 44: 
@@ -291,7 +309,7 @@ class Framebuffer(object):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
         self.buffer1 = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((720, 1280 ,3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((data.size[1], data.size[0], 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
 
@@ -302,7 +320,7 @@ class Framebuffer(object):
             if self.is_new_cycle:
                 # we only transform at beginning of rem cycle
                 print '[framebuffer] attract fx'
-                image = nd.affine_transform(image, [1-s,1,1], [cap_h*s/2,0,0], order=1)
+                image = nd.affine_transform(image, [1-s,1,1], [data.size[1]*s/2,0,0], order=1)
                 self.buffer1 = image
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -314,7 +332,7 @@ class Framebuffer(object):
             if self.is_compositing_enabled:
                 print '[framebuffer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity -= 0.05
+                self.opacity -= 0.051
                 if self.opacity <= 0.0:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -329,8 +347,27 @@ class Framebuffer(object):
             print '[write_buffer2] copy net blob to buffer2'
         return
 
+def make_sure_path_exists(directoryname):
+    try:
+        os.makedirs(directoryname)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
-# GRB: if these values were all global there'd be no need to pass them explicitly to this function
+def tweet():
+    consumer_key='3iSUitN4D5Fi52fgmF5zMQodc'
+    consumer_secret='Kj9biRwpjCBGQOmYJXd9xV4ni68IO99gZT2HfdHv86HuPhx5Mq'
+    access_key='15870561-2SH025poSRlXyzAGc1YyrL8EDgD5O24docOjlyW5O'
+    access_secret='qwuc8aa6cpRRKXxMObpaNhtpXAiDm6g2LFfzWhSjv6r8H'
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_key, access_secret)
+    api = tweepy.API(auth)
+
+    fn = os.path.abspath('../eagle.jpg')
+    myStatusText = '#GGG2016 #deepdreamvisionquest @username When we find aliens we will find they are artists too'
+    #api.update_status(status=myStatusText)
+    api.update_with_media(fn, status=myStatusText )
+
 def update_log(key,new_value):
     if key=='threshold':
         log[key] = '{:0>6}'.format(new_value)
@@ -389,6 +426,7 @@ def objective_L2(dst):
     dst.diff[:] = dst.data
 
 def objective_guide(dst):
+    print '[objective_guide] update dream features'
     x = dst.data[0].copy()
     y = Dreamer.guide_features
     ch = x.shape[0]
@@ -402,7 +440,7 @@ def objective_guide(dst):
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
-def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_guide):
+def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2):
     src = net.blobs['data']     # input image is stored in Net's 'data' blob
     dst = net.blobs[end]        # destination is the end layer specified by argument
 
@@ -486,7 +524,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         if octave == Amplify.octave_cutoff:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
-            early_exit = cv2.resize(early_exit, (cap_w, cap_h), interpolation = cv2.INTER_CUBIC)
+            early_exit = cv2.resize(early_exit, (data.size[0], data.size[1]), interpolation = cv2.INTER_CUBIC)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
             return early_exit
 
@@ -516,7 +554,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 def main():
 
     # start timer
-    now = time.time()
+    data.now = time.time()
 
     # set GPU mode
     caffe.set_device(0)
@@ -524,15 +562,15 @@ def main():
 
 
     Dreamer.choose_model('googlenet')
-    Dreamer.set_endlayer('inception_4c/output')
+    Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('hifi-tight')
+    Amplify.set_package('default2')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
     octave_scale = Amplify.octave_scale
-    jitter = int(cap_w/2)
+    jitter = int(data.size[0]/2)
     update_log('model',Dreamer.caffemodel)
 
     # the madness begins 
@@ -547,17 +585,17 @@ def main():
 
         # a bit later
         later = time.time()
-        difference = int(later - now)
+        difference = int(later - data.now)
         print '[main] finish REM cycle:{}s'.format(difference)
         print '-'*20
 
-        now = time.time()
+        data.now = time.time()
 
 
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(60000)
+Tracker = MotionDetector(120000)
 Viewer = Viewport()
 Frame = Framebuffer()
 Dreamer = Model()
