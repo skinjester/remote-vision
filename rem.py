@@ -29,6 +29,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 white = (255,255,255)
 
 log = {}
+log['detect'] = ''
 
 
 # set global camera object to input dimensions
@@ -71,12 +72,19 @@ class Model(object):
         self.models = data.models
         self.guides = data.guides
         self.current_guide = 0
-        self.choose_model()
+        #self.choose_model()
 
-    def choose_model(self, key = 'googlenet'):
-        self.net_fn = '{}/{}/{}'.format(self.models['path'],self.models[key][0][0],self.models[key][0][1])
-        self.param_fn = '{}/{}/{}'.format(self.models['path'],self.models[key][0][0],self.models[key][0][2])
-        self.caffemodel = self.models[key][0][2]
+    def choose_model(self, key):
+        print key,'****'
+        self.net_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][1])
+        self.param_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][2])
+        self.caffemodel = self.models[key][2]
+        print self.models
+        print self.models[key][0]
+        print self.models[key][1]
+        print self.models[key][2]
+
+
 
         # Patch model to be able to compute gradients.
         model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
@@ -228,13 +236,6 @@ class Viewport(object):
 
     def export(self, image):
         self.save_next_frame = True
-        '''
-        make_sure_path_exists(self.username)
-        export_path = '{}/{}.jpg'.format(self.username,time.time())
-        savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
-        tweet(export_path)
-        '''
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -367,7 +368,7 @@ def tweet(path_to_image):
 
     fn = os.path.abspath('../eagle.jpg')
     #myStatusText = '@username #deepdreamvisionquest #GDC2016'
-    myStatusText = '{} #deepdreamvisionquest #test bit.ly/1Rfj3gN'.format(Viewer.username)
+    myStatusText = '{} #deepdreamvisionquest #gdc2016 test'.format(Viewer.username)
     api.update_with_media(path_to_image, status=myStatusText )
 
 def update_log(key,new_value):
@@ -376,8 +377,8 @@ def update_log(key,new_value):
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
-    opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(840,data.viewport_size[1]),(0,0,0),-1)
+    opacity = 0.9
+    cv2.rectangle(overlay,(0,0),(int(data.viewport_size[0]/2),data.viewport_size[1]),(0,0,0),-1)
 
     # list setup
     x,xoff = 40,240
@@ -407,6 +408,7 @@ def show_HUD(image):
     write_Text('octave')
     write_Text('iteration')
     write_Text('step_size')
+    write_Text('rem_cycle')
 
 
     #col2
@@ -426,7 +428,7 @@ def objective_L2(dst):
     dst.diff[:] = dst.data
 
 def objective_guide(dst):
-    print '[objective_guide] update dream features'
+    print '******************** [objective_guide] update dream features'
     x = dst.data[0].copy()
     y = Dreamer.guide_features
     ch = x.shape[0]
@@ -468,7 +470,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # iterates thru the neural network 
 # REM sleep, in other words
 # ------- 
-def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
+def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
 
     # before doing anything check the current value of Tracker.isResting()
     if Tracker.isResting() == False and Tracker.isMotionDetected:
@@ -495,7 +497,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         i=0 # iterate on current octave
         while i < iter_n and Tracker.isMotionDetected == False:
             # delegate gradient ascent to step function
-            make_step(Dreamer.net, end=end, clip=clip, **step_params)
+            make_step(Dreamer.net, end=end, objective=objective_guide, **step_params)
             print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
 
             # output - deprocess net blob and write to frame buffer
@@ -506,12 +508,12 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
-            step_params['step_size'] += x * Amplify.step_mult
+            step_params['step_size'] += x * Amplify.step_mult * 1.0
 
             i += 1
 
             # logging
-            octavemsg = '{}/{}({})'.format(len(octaves) - octave - 1,octave_n,Amplify.octave_cutoff)
+            octavemsg = '{}/{}({})'.format(octave,octave_n,Amplify.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Dreamer.current_guide,len(Dreamer.guides),Dreamer.guides[Dreamer.current_guide])
             iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iter_n,Amplify.iteration_mult)
             stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplify.step_mult)
@@ -567,11 +569,11 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    Dreamer.choose_model('googlenet')
+    Dreamer.choose_model('places')
     Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('hifi')
+    Amplify.set_package('fast')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize
     octaves = Amplify.octaves
@@ -604,14 +606,15 @@ def main():
         difference = int(later - data.now)
         print '[main] finish REM cycle:{}s'.format(difference)
         print '-'*20
-
+        duration_msg = '{}s'.format(difference)
+        update_log('rem_cycle',duration_msg)
         data.now = time.time()
 
 
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(10000)
+Tracker = MotionDetector(60000)
 Viewer = Viewport('deepdreamvisionquest',1920,1080,'@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
