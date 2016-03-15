@@ -220,6 +220,7 @@ class Viewport(object):
         self.blend_ratio = 0.0
         self.save_next_frame = False
         self.username = username
+        self.keypress_mult = 0 # accelerate value changes when key held
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
     
     def show(self, image):
@@ -268,12 +269,14 @@ class Viewport(object):
 
         # + key : increase motion threshold
         elif key == 43:
-            Tracker.delta_count_threshold += 1000
+            self.keypress_mult +=1
+            Tracker.delta_count_threshold += (1000 + (200 * self.keypress_mult))
             print '[listener] delta_count_threshold ++ {}'.format(Tracker.delta_count_threshold)
 
         # - key : decrease motion threshold    
         elif key == 45: 
-            Tracker.delta_count_threshold -= 1000
+            self.keypress_mult +=1
+            Tracker.delta_count_threshold -= (1000 + (100 * self.keypress_mult))
             if Tracker.delta_count_threshold < 1:
                 Tracker.delta_count_threshold = 1
             print '[listener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
@@ -294,6 +297,14 @@ class Viewport(object):
             else:
                 cv2.destroyWindow('delta')   
             print '[keylistener] motion detect monitor: {}'.format(self.motiondetect_log_enabled)
+
+        # p key : pause/unpause motion detection    
+        elif key == 112: 
+            print '[listener] pause/unpause motion detection'
+
+        else:
+            # clear keypress multiplier
+            self.keypress_mult = 0
 
     #self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
@@ -428,7 +439,7 @@ def objective_L2(dst):
     dst.diff[:] = dst.data
 
 def objective_guide(dst):
-    print '******************** [objective_guide] update dream features'
+    print '[objective_guide] update dream features'
     x = dst.data[0].copy()
     y = Dreamer.guide_features
     ch = x.shape[0]
