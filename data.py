@@ -5,15 +5,15 @@ counter = 0 # has to do with the hud laout. sort of a hack
 
 
 guides = []
-guides.append('gaudi1.jpg')
-guides.append('gaudi2.jpg')
-guides.append('house1.jpg')
-guides.append('eagle1.jpg')
-guides.append('tiger.jpg')
-guides.append('cat.jpg')
-guides.append('rabbit2.jpg')
-guides.append('eyeballs.jpg')
-guides.append('spectra.jpg')
+guides.append('./img/gaudi1.jpg')
+guides.append('./img/gaudi2.jpg')
+guides.append('./img/house1.jpg')
+guides.append('./img/eagle1.jpg')
+guides.append('./img/tiger.jpg')
+guides.append('./img/cat.jpg')
+guides.append('./img/rabbit2.jpg')
+guides.append('./img/eyeballs.jpg')
+guides.append('./img/spectra.jpg')
 
 models = {}
 models['path'] = 'E:/Users/Gary/Documents/code/models'
