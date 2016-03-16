@@ -1,0 +1,34 @@
+;--- Xpadder Profile File ---
+DataType=Profile
+Version=2014.01.01
+
+[Profile Settings]
+
+[Set Settings]
+Set1StickDeadZones=130,129
+Set1StickDiagonalSizes=1,1
+
+[Assignments]
+Set1Button1Slots=P
+Set1Button2Slots=B
+Set1Button3Slots=X
+Set1Button4Slots=Y
+Set1Button5Slots=Left Square Bracket
+Set1Button6Slots=Right Square Bracket
+Set1Button8Slots=Back-Tick
+Set1Button9Slots=Comma
+Set1Button10Slots=Dot
+Set1DPadUpSlots=NumPad +
+Set1DPadRightSlots=R
+Set1DPadDownSlots=NumPad -
+Set1DPadLeftSlots=L
+Set1Stick1UpSlots=NumPad +
+Set1Stick1RightSlots=R
+Set1Stick1DownSlots=NumPad -
+Set1Stick1LeftSlots=L
+Set1Stick2UpSlots=I
+Set1Stick2RightSlots=Dot
+Set1Stick2DownSlots=M
+Set1Stick2LeftSlots=Comma
+Set1TriggerLeftSlots=Back-Slash[US]/Hash[UK]
+Set1TriggerRightSlots=Forward-Slash
