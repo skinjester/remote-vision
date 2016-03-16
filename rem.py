@@ -165,7 +165,7 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view) - self.noise_level
         if (self.delta_count >= self.delta_count_threshold and self.delta_count_last >= self.delta_count_threshold):
-            print "!!!! [motiondetector] overload"
+            print "!!!! [motiondetector] overload now:{} last:{}".format(self.delta_count,self.delta_count_last)
             self.delta_count = 0
         self.delta_view = cv2.flip(self.delta_view, 1)
         self.isMotionDetected_last = self.isMotionDetected  
@@ -293,6 +293,7 @@ class Viewport(object):
             Tracker.is_paused = False
             Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
             Tracker.isMotionDetected = True
+            Frame.is_compositing_enabled = False
             Dreamer.prev_guide()
 
         # . key : next guide image    
@@ -300,6 +301,7 @@ class Viewport(object):
             Tracker.is_paused = False
             Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
             Tracker.isMotionDetected = True
+            Frame.is_compositing_enabled = False
             Dreamer.next_guide()
 
         # 1 key : toggle motion detect window
