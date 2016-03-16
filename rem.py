@@ -28,9 +28,19 @@ net = None # will become global reference to the network model once inside the l
 font = cv2.FONT_HERSHEY_SIMPLEX
 white = (255,255,255)
 
-log = {}
-log['detect'] = ''
-
+log = {
+    'octave':None,
+    'width':None,
+    'height':None,
+    'guide':None,
+    'layer':None,
+    'iteration':None,
+    'step_size':None,
+    'settings':None,
+    'threshold':None,
+    'detect':None,
+    'rem_cycle':None
+}
 
 # set global camera object to input dimensions
 cap = cv2.VideoCapture(0)
@@ -42,6 +52,7 @@ class Amplifier(object):
     def __init__(self):
         self.iterations = None
         self.stepsize = None
+        self.stepsize_base = None
         self.octaves = None
         self.octave_cutoff = None
         self.octave_scale = None
@@ -52,7 +63,7 @@ class Amplifier(object):
         
     def set_package(self,key):
         self.iterations = data.settings[key]['iterations']
-        self.stepsize = data.settings[key]['step_size']
+        self.stepsize_base = data.settings[key]['step_size']
         self.octaves = data.settings[key]['octaves']
         self.octave_cutoff = data.settings[key]['octave_cutoff']
         self.octave_scale = data.settings[key]['octave_scale']
@@ -75,16 +86,9 @@ class Model(object):
         #self.choose_model()
 
     def choose_model(self, key):
-        print key,'****'
         self.net_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][1])
         self.param_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][2])
         self.caffemodel = self.models[key][2]
-        print self.models
-        print self.models[key][0]
-        print self.models[key][1]
-        print self.models[key][2]
-
-
 
         # Patch model to be able to compute gradients.
         model = caffe.io.caffe_pb2.NetParameter()       # load the empty protobuf model
@@ -112,25 +116,27 @@ class Model(object):
         if self.current_guide > len(self.guides)-1:
             self.current_guide = 0
         self.guide_image()
+        
 
     def prev_guide(self):
         self.current_guide -= 1
         if self.current_guide < 0:
             self.current_guide = len(self.guides)-1
         self.guide_image()
+        Tracker.is_paused = False
 
     def set_endlayer(self,end):
         self.end = end
         self.guide_image()
 
 
-
 class MotionDetector(object):
     # cap: global capture object
     def __init__(self, delta_count_threshold=5000):
         self.delta_count_threshold = delta_count_threshold
+        self.old_delta_count_threshold = delta_count_threshold
         self.delta_count = 0
-        self.delta_count_last = 0
+        self.delta_count_last = delta_count_threshold
         self.t_minus = cap.read()[1] 
         self.t_now = cap.read()[1]
         self.t_plus = cap.read()[1]
@@ -139,7 +145,8 @@ class MotionDetector(object):
         self.delta_view = np.zeros((cap.get(4), cap.get(3) ,3), np.uint8) # empty img
         self.isMotionDetected = False
         self.isMotionDetected_last = False
-        self.timer_enabled = False
+        self.is_paused = False
+        self.noise_level = 0
     
     def delta_images(self,t0, t1, t2):
         d1 = cv2.absdiff(t2, t0)
@@ -156,31 +163,21 @@ class MotionDetector(object):
         retval, self.delta_view = cv2.threshold(self.delta_view, 16, 255, 3)
         cv2.normalize(self.delta_view, self.delta_view, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.delta_view, cv2.COLOR_RGB2GRAY)
-        self.delta_count = cv2.countNonZero(img_count_view)
+        self.delta_count = cv2.countNonZero(img_count_view) - self.noise_level
+        if (self.delta_count >= self.delta_count_threshold and self.delta_count_last >= self.delta_count_threshold):
+            print "!!!! [motiondetector] overload"
+            self.delta_count = 0
         self.delta_view = cv2.flip(self.delta_view, 1)
         self.isMotionDetected_last = self.isMotionDetected  
         if (self.delta_count_last < self.delta_count_threshold and self.delta_count >= self.delta_count_threshold):
             update_log('detect','*')
             print "---- [motiondetector] movement started"
             self.isMotionDetected = True
-            self.timer_start = time.time()
-            self.timer_enabled = True
-            # start timer/start counting    
+
         elif (self.delta_count_last >= self.delta_count_threshold and self.delta_count < self.delta_count_threshold):
-            update_log('detect',' ')
+            update_log('detect','-')
             print "---- [motiondetector] movement ended"
             self.isMotionDetected = False
-            self.timer_enabled = False
-            # stop timer/stop counting    
-        elif self.timer_enabled:
-            now = time.time()
-            # sooo... we shouldn't end up here at all if the timer was properly reset
-            # if timer value > n fire stop timer event
-            if int(now - self.timer_start) > 8:
-                update_log('detect',' ')
-                print "---- [motiondetector] force movement end"
-                self.isMotionDetected = False
-                self.timer_enabled = False
         else:
             self.isMotionDetected = False
 
@@ -211,17 +208,19 @@ class MotionDetector(object):
     
 class Viewport(object):
 
-    def __init__(self, window_name='new', viewport_w=1920, viewport_h=1080, username='@skinjester'):
+    def __init__(self, window_name='new', username='@skinjester'):
         self.window_name = window_name
-        self.viewport_w = viewport_w
-        self.viewport_h = viewport_h
+        self.viewport_w = data.viewport_size[0]
+        self.viewport_h = data.viewport_size[1]
         self.b_show_HUD = False
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
         self.save_next_frame = False
         self.username = username
         self.keypress_mult = 0 # accelerate value changes when key held
+        self.stats_visible = False
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
+
     
     def show(self, image):
         # image is expected to be int/float array with shape (row,col,RGB)
@@ -229,9 +228,11 @@ class Viewport(object):
         image = np.uint8(np.clip(image, 0, 255))
 
         # GRB: check image size and skip resize if already at full size
-        image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_CUBIC)
+        image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
         image = Frame.update(image)
         image = self.postfx(image) # HUD
+        if self.stats_visible:
+            image = self.postfx2(image) # stats
         cv2.imshow(self.window_name, image)
         self.listener(image) # refresh display
 
@@ -241,6 +242,10 @@ class Viewport(object):
     def postfx(self, image):
         if self.b_show_HUD:
             image = show_HUD(image)
+        return image
+
+    def postfx2(self, image):
+        image = show_stats(image)
         return image
     
     def monitor(self):
@@ -271,6 +276,7 @@ class Viewport(object):
         elif key == 43:
             self.keypress_mult +=1
             Tracker.delta_count_threshold += (1000 + (200 * self.keypress_mult))
+            self.stats_visible = True
             print '[listener] delta_count_threshold ++ {}'.format(Tracker.delta_count_threshold)
 
         # - key : decrease motion threshold    
@@ -279,14 +285,21 @@ class Viewport(object):
             Tracker.delta_count_threshold -= (1000 + (100 * self.keypress_mult))
             if Tracker.delta_count_threshold < 1:
                 Tracker.delta_count_threshold = 1
+            self.stats_visible = True
             print '[listener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)
 
         # , key : previous guide image    
-        elif key == 44: 
+        elif key == 44:
+            Tracker.is_paused = False
+            Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
+            Tracker.isMotionDetected = True
             Dreamer.prev_guide()
 
         # . key : next guide image    
-        elif key == 46: 
+        elif key == 46:
+            Tracker.is_paused = False
+            Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
+            Tracker.isMotionDetected = True
             Dreamer.next_guide()
 
         # 1 key : toggle motion detect window
@@ -299,12 +312,25 @@ class Viewport(object):
             print '[keylistener] motion detect monitor: {}'.format(self.motiondetect_log_enabled)
 
         # p key : pause/unpause motion detection    
-        elif key == 112: 
-            print '[listener] pause/unpause motion detection'
+        elif key == 112:
+            Tracker.is_paused = not Tracker.is_paused
+            print '[listener] pause motion detection {}'.format(Tracker.is_paused)
+            if Tracker.is_paused:
+                Tracker.old_delta_count_threshold = Tracker.delta_count_threshold
+                Tracker.delta_count_threshold = data.viewport_size[0] * data.viewport_size[1]
+                Tracker.isMotionDetected = False
+                Tracker.isMotionDetected_last = False
+                Tracker.timer_enabled = False
+                self.delta_count = 0
+                self.delta_count_last = 0
+            else:
+                Tracker.delta_count_threshold = Tracker.old_delta_count_threshold 
+
 
         else:
             # clear keypress multiplier
             self.keypress_mult = 0
+            self.stats_visible = False
 
     #self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
@@ -357,7 +383,7 @@ class Framebuffer(object):
             # convert and clip floating point matrix into RGB bounds
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
             ### resize buffer 2 to match viewport dimensions
-            self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_CUBIC)
+            self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[write_buffer2] copy net blob to buffer2'
         return
 
@@ -378,17 +404,24 @@ def tweet(path_to_image):
     api = tweepy.API(auth)
 
     fn = os.path.abspath('../eagle.jpg')
-    #myStatusText = '@username #deepdreamvisionquest #GDC2016'
-    myStatusText = '{} #deepdreamvisionquest #gdc2016 test'.format(Viewer.username)
+
+    #myStatusText = '{} #deepdreamvisionquest #gdc2016'.format(Viewer.username)
+    myStatusText = '#deepdreamvisionquest #gdc2016 test'
     api.update_with_media(path_to_image, status=myStatusText )
 
 def update_log(key,new_value):
     log[key] = '{}'.format(new_value)
 
+def show_stats(image):
+    stats_overlay = image.copy()
+    opacity = 0.9
+    cv2.putText(stats_overlay, 'AAAAA', (30, 40), font, 1.0, white)
+    return cv2.addWeighted(stats_overlay, opacity, image, 1-opacity, 0, image)
+
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
-    opacity = 0.9
+    opacity = 0.64
     cv2.rectangle(overlay,(0,0),(int(data.viewport_size[0]/2),data.viewport_size[1]),(0,0,0),-1)
 
     # list setup
@@ -504,6 +537,8 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
         src.reshape(1,3,h,w)
         src.data[0] = octave_base + detail
+        Amplify.stepsize = Amplify.stepsize_base # reset step size to default each octave
+        step_params['step_size'] = Amplify.stepsize 
 
         i=0 # iterate on current octave
         while i < iter_n and Tracker.isMotionDetected == False:
@@ -544,14 +579,14 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         if octave == Amplify.octave_cutoff:
             Frame.is_dirty = True
             early_exit = deprocess(Dreamer.net, src.data[0])
-            early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_CUBIC)
+            early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
             return early_exit
 
         # motion detected so we're ending this REM cycle
         if Tracker.isMotionDetected:
             early_exit = deprocess(Dreamer.net, src.data[0])  # pass deprocessed net blob to buffer2 for fx
-            early_exit = cv2.resize(early_exit, (Viewer.viewport_w, Viewer.viewport_h), interpolation = cv2.INTER_CUBIC) # normalize size to match camera input
+            early_exit = cv2.resize(early_exit, (Viewer.viewport_w, Viewer.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport
             Frame.write_buffer2(early_exit)
             Frame.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'
@@ -580,18 +615,20 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    Dreamer.choose_model('places')
+    Dreamer.choose_model('googlenet')
     Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('fast')
+    Amplify.set_package('hifi')
     iterations = Amplify.iterations
-    stepsize = Amplify.stepsize
+    stepsize = Amplify.stepsize_base
     octaves = Amplify.octaves
     octave_scale = Amplify.octave_scale
     jitter = 300
     update_log('model',Dreamer.caffemodel)
     update_log('username',Viewer.username)
+    update_log('settings',Amplify.package_name)
+
 
     # the madness begins 
     Frame.buffer1 = cap.read()[1] # initial camera image for init
@@ -625,8 +662,8 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(60000)
-Viewer = Viewport('deepdreamvisionquest',1920,1080,'@skinjester')
+Tracker = MotionDetector(15000)
+Viewer = Viewport('deepdreamvisionquest','@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
 Amplify = Amplifier()
