@@ -7,19 +7,19 @@ My system setup is:
 - Windows 10
 - i7-4770K CPU @ 3.5Ghz
 - 32GB RAM
-- nVidia Titan X GPU
+- GeForce GTX TITAN X 
 
 
 ## Design
 1. Capture a video frame and dream about that frame indefinitely
--- Use output of the last cycle as input of the next cycle
--- Zoom in on the feedback slightly with each iteration (affine transform)
+  - Use output of the last cycle as input of the next cycle
+  - Zoom in on the feedback slightly with each iteration (affine transform)
 2. Detail supplied by the neural network is amplified and focused by repeated passes of the source image through the network.
 3. With each iteration, grab another frame from the webcam
--- Detect motion by comparing a rolling queue of the last 3 captured frames.
+  - Detect motion by comparing differences in a rolling queue of the last 3 captured frames.
 5. When motion is detected, stop dreaming and grab another camera image to begin the "REM cycle" again.
 6. Keyboard input allows adjustments to amplification and neural activation while the software dreams.
-7. An Xbox game controller mapped to the keyboard makes controls easily discoverable and increases user mobility
+7. An Xbox game controller mapped to the keyboard makes controls discoverable and increases user mobility
 
 ## Observations
 Yes
