@@ -11,16 +11,11 @@ guides.append('./img/house1.jpg')
 guides.append('./img/eagle1.jpg')
 guides.append('./img/tiger.jpg')
 guides.append('./img/cat.jpg')
+guides.append('./img/sax2.jpg')
+guides.append('./img/bono.jpg')
 guides.append('./img/rabbit2.jpg')
 guides.append('./img/eyeballs.jpg')
-guides.append('./img/spectra.jpg')
-guides.append('./img/rose1.jpg')
-guides.append('./img/bono.jpg')
-guides.append('./img/kitteh.jpg')
-guides.append('./img/kitteh2.jpg')
-guides.append('./img/dune.jpg')
-guides.append('./img/sax2.jpg')
-guides.append('./img/ghost.jpg')
+
 
 models = {}
 models['path'] = 'E:/Users/Gary/Documents/code/models'
@@ -30,6 +25,10 @@ models['places'] = ('googlenet_places205','deploy.prototxt','places205_train_ite
 
 
 layers = [
+	'inception_4d/output',
+	'inception_4b/5x5',
+	'inception_4e/3x3',
+	'inception_4d/5x5',
 	'inception_4b/pool_proj',
 	'inception_4c/pool_proj',
 	'inception_4e_pool_proj',
@@ -38,8 +37,6 @@ layers = [
 	'inception_3a/1x1',
 	'inception_4a/pool',
 	'inception_5a/output',
-	'inception_4c/5x5',
-	'inception_4e/output',
 	'inception_4a/3x3',
 	'inception_3b/5x5',
 	'conv2/norm2',
@@ -122,7 +119,53 @@ settings['niceplaces-good'] = {
 	'threshold':50000
 }
 
-settings['hirez(slow)'] = {
+settings['hirez-fast'] = {
+	'iterations':10,
+	'step_size':3,
+	'octaves':6,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0,
+	'step_mult':-0.00,
+	'duration':58,
+	'comments':'amazing. works great with places model too',
+	'viewport_size':[1920,1080],
+	'capture_size':[1280,720],
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['hirez'] = {
+	'iterations':30,
+	'step_size':3,
+	'octaves':6,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0,
+	'step_mult':-0.01,
+	'duration':58,
+	'comments':'amazing. works great with places model too',
+	'viewport_size':[1920,1080],
+	'capture_size':[1280,720],
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['hirez(places)'] = {
 	'iterations':100,
 	'step_size':2,
 	'octaves':7,
@@ -158,28 +201,7 @@ settings['doingitwrong'] = {
 }
 
 
-settings['faster'] = {
-	'iterations':10,
-	'step_size':4.0,
-	'octaves':5,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
-	'iteration_mult':0.75,
-	'step_mult':0.05,
-	'duration':12,
-	'comments':'?',
-	'viewport_size':[1920,1080],
-	'capture_size':[1280,720],
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
+
 
 settings['hifi'] = {
 	'iterations':15,
@@ -189,7 +211,7 @@ settings['hifi'] = {
 	'octave_scale':1.4,
 	'iteration_mult':0.5,
 	'step_mult':0.01,
-	'duration':11,
+	'duration':13,
 	'comments':'?',
 	'viewport_size':[1920,1080],
 	'capture_size':[1920,1080],
@@ -204,33 +226,6 @@ settings['hifi'] = {
 	],
 	'threshold':50000
 }
-
-settings['quickdirty'] = {
-	'iterations':10,
-	'step_size':4,
-	'octaves':5,
-	'octave_cutoff':6,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0.01,
-	'duration':5,
-	'comments':'?',
-	'viewport_size':[1920,1080],
-	'capture_size':[1280,720],
-	'model':'googlenet',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
-
-
-
 
 settings['hifi-best'] = {
 	'iterations':20,
