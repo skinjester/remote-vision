@@ -432,7 +432,7 @@ def show_HUD(image):
 
     data.counter = 0
     def write_Text(key):
-    	row = y + yoff * data.counter
+        row = y + yoff * data.counter
         cv2.putText(overlay, key, (x, row), font, 1.0, white)
         cv2.putText(overlay, log[key], (xoff, row), font, 1.0, white)
         data.counter += 1
@@ -621,7 +621,7 @@ def main():
     Dreamer.set_endlayer(data.layers[0])
 
     # parameters
-    Amplify.set_package('hifi')
+    Amplify.set_package('hirez-fast')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize_base
     octaves = Amplify.octaves
@@ -664,7 +664,7 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(15000)
+Tracker = MotionDetector(100000)
 Viewer = Viewport('deepdreamvisionquest','@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
