@@ -73,7 +73,7 @@ class Amplifier(object):
 
 
 class Model(object):
-    def __init__(self):
+    def __init__(self,modelkey='googlenet'):
         self.guide_features = None
         self.net = None
         self.net_fn = None
@@ -83,7 +83,10 @@ class Model(object):
         self.models = data.models
         self.guides = data.guides
         self.current_guide = 0
-        #self.choose_model()
+        self.current_layer = 0
+        self.layers = data.layers
+        self.choose_model(modelkey)
+        self.set_endlayer(self.layers[self.current_layer])
 
     def choose_model(self, key):
         self.net_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][1])
@@ -128,6 +131,18 @@ class Model(object):
     def set_endlayer(self,end):
         self.end = end
         self.guide_image()
+
+    def prev_layer(self):
+        self.current_layer -= 1
+        if self.current_layer < 0:
+            self.current_layer = len(self.layers)-1
+        self.set_endlayer(self.layers[self.current_layer])
+
+    def next_layer(self):
+        self.current_layer += 1
+        if self.current_layer > len(self.layers)-1:
+            self.current_layer = 0
+        self.set_endlayer(self.layers[self.current_layer])
 
 
 class MotionDetector(object):
@@ -326,8 +341,15 @@ class Viewport(object):
                 self.delta_count = 0
                 self.delta_count_last = 0
             else:
-                Tracker.delta_count_threshold = Tracker.old_delta_count_threshold 
+                Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
 
+        # z key: previous network layer
+        elif key == 120:
+            Dreamer.prev_layer()
+
+        # x key: next network layer
+        elif key == 122:
+            Dreamer.next_layer()
 
         else:
             # clear keypress multiplier
@@ -617,11 +639,8 @@ def main():
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
-    Dreamer.choose_model('googlenet')
-    Dreamer.set_endlayer(data.layers[0])
-
     # parameters
-    Amplify.set_package('hirez-fast')
+    Amplify.set_package('hifi')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize_base
     octaves = Amplify.octaves
@@ -664,10 +683,12 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(100000)
+Tracker = MotionDetector(300000)
 Viewer = Viewport('deepdreamvisionquest','@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()
+#Dreamer.choose_model('googlenet')
+#Dreamer.set_endlayer(data.layers[0])
 Amplify = Amplifier()
 
 if __name__ == "__main__":
