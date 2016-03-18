@@ -73,7 +73,7 @@ class Amplifier(object):
 
 
 class Model(object):
-    def __init__(self,modelkey='googlenet'):
+    def __init__(self,modelkey='googlenet',current_layer=1):
         self.guide_features = None
         self.net = None
         self.net_fn = None
@@ -83,8 +83,9 @@ class Model(object):
         self.models = data.models
         self.guides = data.guides
         self.current_guide = 0
-        self.current_layer = 0
+        self.current_layer = current_layer
         self.layers = data.layers
+        self.first_time_through = True
         self.choose_model(modelkey)
         self.set_endlayer(self.layers[self.current_layer])
 
@@ -112,7 +113,7 @@ class Model(object):
         src.data[0] = preprocess(self.net, guide)
         self.net.forward(end=self.end)
         self.guide_features = dst.data[0].copy()
-        Tracker.isMotionDetected = True
+        Tracker.isMotionDetected = True # force refresh
 
     def next_guide(self):
         self.current_guide += 1
@@ -130,7 +131,11 @@ class Model(object):
 
     def set_endlayer(self,end):
         self.end = end
-        self.guide_image()
+        # jeez really?
+        #self.guide_image()
+        Tracker.isMotionDetected = True # force refresh
+
+        update_log('layer',end)
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -270,7 +275,7 @@ class Viewport(object):
     def listener(self, image): # yeah... passing image as a convenience
         self.monitor()
         key = cv2.waitKey(1) & 0xFF
-        #print '[listener] key:{}'.format(key)
+        print '[listener] key:{}'.format(key)
 
         # Escape key: Exit
         if key == 27:
@@ -343,13 +348,13 @@ class Viewport(object):
             else:
                 Tracker.delta_count_threshold = Tracker.old_delta_count_threshold
 
-        # z key: previous network layer
+        # x key: previous network layer
         elif key == 120:
-            Dreamer.prev_layer()
-
-        # x key: next network layer
-        elif key == 122:
             Dreamer.next_layer()
+
+        # z key: next network layer
+        elif key == 122:
+            Dreamer.prev_layer()
 
         else:
             # clear keypress multiplier
@@ -567,7 +572,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         i=0 # iterate on current octave
         while i < iter_n and Tracker.isMotionDetected == False:
             # delegate gradient ascent to step function
-            make_step(Dreamer.net, end=end, objective=objective_guide, **step_params)
+            make_step(Dreamer.net, end=end, objective=objective_L2, **step_params)
             print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
 
             # output - deprocess net blob and write to frame buffer
@@ -592,7 +597,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             update_log('width',w)
             update_log('height',h)
             update_log('guide',guidemsg)
-            update_log('layer',end)
+            #update_log('layer',end)
             update_log('iteration',iterationmsg)
             update_log('step_size',stepsizemsg)
             update_log('settings',Amplify.package_name)
@@ -640,7 +645,7 @@ def main():
     caffe.set_mode_gpu()
 
     # parameters
-    Amplify.set_package('hifi')
+    Amplify.set_package('hirez-fast')
     iterations = Amplify.iterations
     stepsize = Amplify.stepsize_base
     octaves = Amplify.octaves
