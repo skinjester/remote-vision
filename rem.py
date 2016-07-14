@@ -257,7 +257,14 @@ class Viewport(object):
         self.listener(image) # refresh display
 
     def export(self, image):
-        self.save_next_frame = True
+        #self.save_next_frame = True
+        print '[main] save rendered frame'
+        Viewer.save_next_frame = False
+        make_sure_path_exists(Viewer.username)
+        export_path = '{}/{}.jpg'.format(Viewer.username,time.time())
+        savefile = cv2.cvtColor(Frame.buffer1, cv2.COLOR_BGR2RGB)
+        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+        #tweet(export_path)
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -510,6 +517,10 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
+def blur(img, sigma):
+    if sigma > 0:
+        img = nd.filters.gaussian_filter(img, sigma, order=0)
+    return img
 
 # -------
 # implements forward and backward passes thru the network
@@ -537,6 +548,8 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     # subtract image mean and clip our matrix to the values
     bias = net.transformer.mean['data']
     src.data[:] = np.clip(src.data, -bias, 255-bias)
+
+    src.data[0] = blur(src.data[0], 0.1)
 
 # -------
 # sets up image buffers and octave structure for iterating thru and amplifying neural output
@@ -666,15 +679,6 @@ def main():
         # kicks off rem sleep - will begin continual iteration of the image through the model
         Frame.buffer1 = deepdream(net, Frame.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Dreamer.end )
 
-        if Viewer.save_next_frame:
-            print '[main] save rendered frame'
-            Viewer.save_next_frame = False
-            make_sure_path_exists(Viewer.username)
-            export_path = '{}/{}.jpg'.format(Viewer.username,time.time())
-            savefile = cv2.cvtColor(Frame.buffer1, cv2.COLOR_BGR2RGB)
-            PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
-            tweet(export_path)
-
         # a bit later
         later = time.time()
         difference = int(later - data.now)
@@ -688,7 +692,7 @@ def main():
 # -------- 
 # INIT
 # --------
-Tracker = MotionDetector(300000)
+Tracker = MotionDetector(100000)
 Viewer = Viewport('deepdreamvisionquest','@skinjester')
 Frame = Framebuffer()
 Dreamer = Model()

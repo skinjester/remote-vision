@@ -9,6 +9,8 @@ Version=2014.01.01
 [Assignments]
 Set1Button1Slots=P
 Set1Button3Slots=Enter
+Set1Button5Slots=Comma
+Set1Button6Slots=Dot
 Set1Button8Slots=Back-Tick
 Set1DPadUpSlots=NumPad +
 Set1DPadDownSlots=NumPad -
