@@ -387,3 +387,9 @@ SomeModule
 2016-10-09 17:54:23
 I've looked into structural optimization as far as I can for the moment
 Its clear that there's a real issue (opportunity?) with these various bundles of state/behavior referencing one another globally
+
+2016-10-09 23:19:56
+pushed and committed recent work to git
+
+2016-10-10 01:28:28
+I've externalized the class definition of MotionDetector

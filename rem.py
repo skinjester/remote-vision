@@ -12,15 +12,9 @@ from google.protobuf import text_format
 import cv2
 import data
 import tweepy
-
-# suppress verbose caffe logging before caffe import
-os.environ['GLOG_minloglevel'] = '2'
+os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
-
-
-
-
-
+from camerautils import MotionDetector
 
 class Amplifier(object):
     def __init__(self):
@@ -44,7 +38,6 @@ class Amplifier(object):
         self.iteration_mult = data.settings[key]['iteration_mult']
         self.step_mult = data.settings[key]['step_mult']
         self.package_name = key
-
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=1):
@@ -132,85 +125,7 @@ class Model(object):
         if self.current_layer > len(self.layers)-1:
             self.current_layer = 0
         self.set_endlayer(self.layers[self.current_layer])
-
-
-class MotionDetector(object):
-
-    def __init__(self, delta_trigger, which_camera):
-        self.delta_trigger = delta_trigger
-        self.delta_trigger_old = delta_trigger
-        self.delta_count = 0
-        self.delta_count_old = 0
-        self.camera = which_camera
-        self.t_minus = self.camera.read()[1] 
-        self.t_now = self.camera.read()[1]
-        self.t_plus = self.camera.read()[1]
-        self.t_delta = np.zeros((self.camera.get(4), self.camera.get(3) ,3), np.uint8) # empty img
-        self.width = self.camera.get(3)
-        self.height = self.camera.get(4)
-        self.isMotionDetected = False
-        self.isMotionDetected_old = False
-        self.is_paused = False
-        self.noise_level = 0
-    
-    def delta_images(self,t0, t1, t2):
-        return cv2.absdiff(t2, t0)
-    
-    def repopulate_queue(self):
-        print '[motiondetector] repopulate queue'
-        self.t_minus = self.camera.read()[1] 
-        self.t_now = self.camera.read()[1]
-        self.t_plus = self.camera.read()[1]
-    
-    def process(self):
-        self.t_delta = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
-        self.t_delta = cv2.flip(self.t_delta, 1)
-        retval, self.t_delta = cv2.threshold(self.t_delta, 16, 255, 3)
-        cv2.normalize(self.t_delta, self.t_delta, 0, 255, cv2.NORM_MINMAX)
-        img_count_view = cv2.cvtColor(self.t_delta, cv2.COLOR_RGB2GRAY)
-        self.delta_count = cv2.countNonZero(img_count_view) - self.noise_level
-        
-        if (self.delta_count >= self.delta_trigger and self.delta_count_old >= self.delta_trigger):
-            print "!!!! [motiondetector] reset now:{} last:{}".format(self.delta_count,self.delta_count_old)
-            self.delta_count = 0
-
-
-        elif (self.delta_count >= self.delta_trigger and self.delta_count_old < self.delta_trigger):
-            update_log('detect','*')
-            print "---- [motiondetector] movement"
-            self.isMotionDetected = True
-
-        else:
-            update_log('detect','-')
-            print "---- [motiondetector] none"
-            self.isMotionDetected = False
-
-        # logging
-        lastmsg = '{:0>6}'.format(self.delta_count_old)
-        if self.delta_count_old > self.delta_trigger:
-            ratio = 1.0 * self.delta_count_old/self.delta_trigger
-            lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_old,ratio)
-        
-        nowmsg = '{:0>6}'.format(self.delta_count)
-        if self.delta_count > self.delta_trigger:
-            ratio = 1.0 * self.delta_count/self.delta_trigger
-            nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
-        
-        update_log('last',lastmsg)
-        update_log('now',nowmsg)
-        self.refresh_queue()
-
-    def isResting(self):
-        return self.isMotionDetected == self.isMotionDetected_old
-
-    def refresh_queue(self):
-        self.isMotionDetected_old = self.isMotionDetected  #??
-        self.delta_count_old = self.delta_count   
-        self.t_minus = self.t_now
-        self.t_now = self.t_plus
-        self.t_plus = self.camera.read()[1]
-        self.t_plus = cv2.blur(self.t_plus,(16,16))
-    
+ 
 class Viewport(object):
 
     def __init__(self, window_name='new', username='@skinjester'):
@@ -708,6 +623,8 @@ log = {
     'height': None,
     'guide': None,
     'layer': None,
+    'last': None,
+    'now': None,
     'iteration': None,
     'step_size': None,
     'settings': None,
@@ -721,7 +638,7 @@ which_camera = cv2.VideoCapture(0)
 which_camera.set(3, data.capture_size[0])
 which_camera.set(4, data.capture_size[1])
 
-MotionDetector = MotionDetector(50000, which_camera)
+MotionDetector = MotionDetector(50000, which_camera, update_log)
 Viewport = Viewport('deepdreamvisionquest','@deepdreamvisionquest')
 Framebuffer = Framebuffer()
 Model = Model()
