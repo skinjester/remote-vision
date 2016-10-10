@@ -1,5 +1,5 @@
-capture_size = [1920,1080]
-viewport_size = [1920,1080]
+capture_size = [960,540]
+viewport_size = [960,540]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -18,7 +18,7 @@ guides.append('./img/eyeballs.jpg')
 
 
 models = {}
-models['path'] = 'E:/Users/Gary/Documents/code/models'
+models['path'] = '../models'
 models['cars'] = ('cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel')
 models['googlenet'] = ('bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel')
 models['places'] = ('googlenet_places205','deploy.prototxt','places205_train_iter_2400000.caffemodel')
@@ -33,13 +33,21 @@ layers = [
 	'inception_3b/5x5',
 	'inception_3b/output',
 	'inception_3b/pool',
+	'inception_4a/1x1',
 	'inception_4a/3x3',
+	'inception_4b/3x3_reduce',
+	'inception_4b/5x5',
 	'inception_4b/5x5_reduce',
+	'inception_4b/output',
+	'inception_4b/pool',
+	'inception_4b/pool_proj',
 	'inception_4c/1x1',
+	'inception_4c/3x3',
+	'inception_4c/3x3_reduce',
 	'inception_4c/5x5',
 	'inception_4c/5x5_reduce',
 	'inception_4c/output',
-	'inception_4c/pool_proj',
+	'inception_4c/pool',
 	'inception_4d/3x3',
 	'inception_4d/5x5',
 	'inception_4d/5x5_reduce',
@@ -73,29 +81,6 @@ layers = [
 settings = {}
 
 
-settings['default2'] = {
-	'iterations':20,
-	'step_size':2,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0,
-	'duration':10,
-	'viewport_size':[1920,1080],
-	'capture_size':[1920,1080],
-	'model':'googlenet',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
-
 settings['niceplaces'] = {
 	'iterations':30,
 	'step_size':2,
@@ -121,10 +106,10 @@ settings['niceplaces'] = {
 
 
 settings['niceplaces-good'] = {
-	'iterations':20,
-	'step_size':3,
-	'octaves':7,
-	'octave_cutoff':5,
+	'iterations':10,
+	'step_size':1.6,
+	'octaves':4,
+	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0,
 	'step_mult':0.0,
@@ -144,13 +129,13 @@ settings['niceplaces-good'] = {
 }
 
 settings['hirez-fast'] = {
-	'iterations':10,
-	'step_size':3,
+	'iterations':6,
+	'step_size':2,
 	'octaves':6,
-	'octave_cutoff':4,
+	'octave_cutoff':6,
 	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':-0.00,
+	'iteration_mult':2.0,
+	'step_mult':-0.0,
 	'duration':20,
 	'comments':'amazing. works great with places model too',
 	'viewport_size':[1920,1080],
@@ -166,18 +151,41 @@ settings['hirez-fast'] = {
 	'threshold':50000
 }
 
-settings['hirez'] = {
-	'iterations':30,
+settings['quick'] = {
+	'iterations':5,
 	'step_size':3,
-	'octaves':6,
+	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0,
-	'step_mult':-0.01,
+	'octave_scale':1.5,
+	'iteration_mult':0.5,
+	'step_mult':0,
 	'duration':58,
 	'comments':'amazing. works great with places model too',
 	'viewport_size':[1920,1080],
-	'capture_size':[1280,720],
+	'capture_size':[1920,1080],
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['quick2'] = {
+	'iterations':10,
+	'step_size':1.5,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':2,
+	'step_mult':0.0,
+	'duration':58,
+	'comments':'amazing. works great with places model too',
+	'viewport_size':[960,540],
+	'capture_size':[960,540],
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
@@ -190,17 +198,17 @@ settings['hirez'] = {
 }
 
 settings['hirez(places)'] = {
-	'iterations':100,
+	'iterations':20,
 	'step_size':2,
 	'octaves':7,
-	'octave_cutoff':6,
+	'octave_cutoff':7,
 	'octave_scale':1.6,
-	'iteration_mult':0,
+	'iteration_mult':2,
 	'step_mult':-0.001,
 	'duration':276,
 	'comments':'amazing. works great with places model too',
-	'viewport_size':[1920,1080],
-	'capture_size':[1280,720],
+	'viewport_size':[960,540],
+	'capture_size':[960,540],
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
@@ -253,10 +261,10 @@ settings['hifi'] = {
 
 settings['hifi-best'] = {
 	'iterations':20,
-	'step_size':3.0,
+	'step_size':4.0,
 	'octaves':6,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
+	'octave_cutoff':4,
+	'octave_scale':1.3,
 	'iteration_mult':0.25,
 	'step_mult':0.0,
 	'duration':31,

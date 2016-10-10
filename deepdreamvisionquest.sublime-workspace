@@ -1,0 +1,683 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"t",
+				"t_now"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "rem.py",
+			"settings":
+			{
+				"buffer_size": 27732,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "data.py",
+			"settings":
+			{
+				"buffer_size": 5623,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "docs/model_layer_names.txt",
+			"settings":
+			{
+				"buffer_size": 6033,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "Searching 47 files for \"Tracker\"\n\n/home/gary/code/vision/rem.py:\n  123          self.net.forward(end=self.end)\n  124          self.guide_features = dst.data[0].copy()\n  125:         Tracker.isMotionDetected = True  # force refresh\n  126  \n  127      def next_guide(self):\n  ...\n  137              self.current_guide = len(self.guides)-1\n  138          self.guide_image()\n  139:         Tracker.is_paused = False\n  140  \n  141      def set_endlayer(self,end):\n  ...\n  143          # jeez really?\n  144          #self.guide_image()\n  145:         Tracker.isMotionDetected = True # force refresh\n  146  \n  147          update_log('layer',end)\n  ...\n  292      def monitor(self):\n  293          if self.motiondetect_log_enabled:\n  294:             cv2.imshow('delta', Tracker.delta_view)\n  295      \n  296      def listener(self, image): # yeah... passing image as a convenience\n  ...\n  312          elif key == 96:\n  313              self.b_show_HUD = not self.b_show_HUD\n  314:             print '[listener] HUD: {}'.format(Tracker.delta_count_threshold)\n  315  \n  316          # + key : increase motion threshold\n  317          elif key == 43:\n  318              self.keypress_mult +=1\n  319:             Tracker.delta_count_threshold += (1000 + (200 * self.keypress_mult))\n  320              self.stats_visible = True\n  321:             print '[listener] delta_count_threshold ++ {}'.format(Tracker.delta_count_threshold)\n  322  \n  323          # - key : decrease motion threshold    \n  324          elif key == 45: \n  325              self.keypress_mult +=1\n  326:             Tracker.delta_count_threshold -= (1000 + (100 * self.keypress_mult))\n  327:             if Tracker.delta_count_threshold < 1:\n  328:                 Tracker.delta_count_threshold = 1\n  329              self.stats_visible = True\n  330:             print '[listener] delta_count_threshold -- {}'.format(Tracker.delta_count_threshold)\n  331  \n  332          # , key : previous guide image    \n  333          elif key == 44:\n  334:             Tracker.is_paused = False\n  335:             Tracker.delta_count_threshold = Tracker.old_delta_count_threshold\n  336:             Tracker.isMotionDetected = True\n  337              Frame.is_compositing_enabled = False\n  338              Dreamer.prev_guide()\n  ...\n  340          # . key : next guide image    \n  341          elif key == 46:\n  342:             Tracker.is_paused = False\n  343:             Tracker.delta_count_threshold = Tracker.old_delta_count_threshold\n  344:             Tracker.isMotionDetected = True\n  345              Frame.is_compositing_enabled = False\n  346              Dreamer.next_guide()\n  ...\n  357          # p key : pause/unpause motion detection    \n  358          elif key == 112:\n  359:             Tracker.is_paused = not Tracker.is_paused\n  360:             print '[listener] pause motion detection {}'.format(Tracker.is_paused)\n  361:             if Tracker.is_paused:\n  362:                 Tracker.old_delta_count_threshold = Tracker.delta_count_threshold\n  363:                 Tracker.delta_count_threshold = data.viewport_size[0] * data.viewport_size[1]\n  364:                 Tracker.isMotionDetected = False\n  365:                 Tracker.isMotionDetected_last = False\n  366:                 Tracker.timer_enabled = False\n  367                  self.delta_count = 0\n  368                  self.delta_count_last = 0\n  369              else:\n  370:                 Tracker.delta_count_threshold = Tracker.old_delta_count_threshold\n  371  \n  372          # x key: previous network layer\n  ...\n  416          else:\n  417              print '[framebuffer] refresh'\n  418:             if self.is_new_cycle and Tracker.isResting() == False:\n  419                  print '[framebuffer] compositing enabled'\n  420                  self.is_compositing_enabled = True\n  ...\n  575  def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):\n  576  \n  577:     # before doing anything check the current value of Tracker.isResting()\n  578:     if Tracker.isResting() == False and Tracker.isMotionDetected:\n  579          print '[deepdream] cooldown'\n  580          return cap.read()[1]\n  ...\n  600  \n  601          i=0 # iterate on current octave\n  602:         while i < iter_n and Tracker.isMotionDetected == False:\n  603              # delegate gradient ascent to step function\n  604              make_step(Dreamer.net, end=end, objective=objective_L2, **step_params)\n  ...\n  608              Frame.buffer1 = deprocess(Dreamer.net, src.data[0])\n  609              Frame.buffer1 = Frame.buffer1 * (255.0 / np.percentile(Frame.buffer1, 99.98)) # normalize contrast\n  610:             Tracker.process()\n  611              Viewer.show(Frame.buffer1)\n  612  \n  ...\n  622              iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iter_n,Amplify.iteration_mult)\n  623              stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplify.step_mult)\n  624:             thresholdmsg = '{:0>6}'.format(Tracker.delta_count_threshold)\n  625              update_log('octave',octavemsg)\n  626              update_log('width',w)\n  ...\n  645  \n  646          # motion detected so we're ending this REM cycle\n  647:         if Tracker.isMotionDetected:\n  648              early_exit = deprocess(Dreamer.net, src.data[0])  # pass deprocessed net blob to buffer2 for fx\n  649              early_exit = cv2.resize(early_exit, (Viewer.viewport_w, Viewer.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport\n  ...\n  695          Frame.is_new_cycle = True\n  696          Viewer.show(Frame.buffer1)\n  697:         Tracker.process()\n  698  \n  699          # kicks off rem sleep - will begin continual iteration of the image through the model\n  ...\n  716  # INIT\n  717  # --------\n  718: Tracker = MotionDetector(50000)\n  719  \n  720  \n\n41 matches in 1 file\n",
+			"settings":
+			{
+				"buffer_size": 5885,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "motiondetector.py",
+			"settings":
+			{
+				"buffer_size": 3349,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "2016-01-19 00:11:32\nstudying the deep dream code. have been doing so fairly seriously for the past few days.\nreacquainting myself with the environment. understanding it better\n\nnet.blobs['data']  \t# input image is stored (caffe format) in network's data blob\nnet.blobs[end]\t\t# destination layer (end = layer name)\nsrc\t\t\t\t\t# input image (instance of net.blobs['data'])\nsrc.data\nsrc.data[:]\nsrc.data[0]\t\t\t# image data apparently stored here?\nsrc.diff[0]\t\t\t# back propagated error correction matrix (2D)\ndetail\t\t\t\t# an image array created to draw network produced detail\noctave_base\t\t\t# the image contained in the octave currently computed\ndst\t\t\t\t\t# the neural layer identified as the end layer\ndst.diff[:]\t\t\t# assumed to be the 2D neural weights & structure of the end layer (?)\ndst.data\t\noctave_base\t\t\t# the current image stage (octave) being dreamed upon\t\t\n\n\n\nimages in OpenCV are Numpy arrays\n\nblob (binary large object) often used to multimedia data types such as images and audio\n\nthinking about arrays more clearly:\n\nfor an array with shape (2,2,3): \t2 layers of (2,3) \t\t\t\t= 12 items\nfor an array with shape (2,3): \t\t2 layers of a list of 3 items \t= 6 items\nfor an array with shape (3):\t\ta list of 3 items \t\t\t\t= 3 items\n\nreshape method allows the number of dimensions and the size of each dimension to be changed as long as the total number of array elements remains the same\n\n\n\n2016-01-25 22:20:07\nwhat happens if you run rem.py right now?\n\n2016-07-26 07:24:20\napparently I was self documenting here, but it never really took off. Picking it back up as I tyake a look at what the v1 project needs to be\n\n2016-07-26 07:24:50\nAt the moment I'm going thru the code line by line cleaning up the formatting so the Linter program (Adaconbda/Sublime Text3) stops complaining. Busy work? Maybe - but is a good way to get a sense of what I had previously written\n\n2016-07-26 07:44:04\nOr maybe not - tedious. I'll make sure everything is clean\n\n2016-07-27 07:41:33\nGetting started mapping out the signal flowe of this program. Its more complex (and likely redundant) than I know how to move forward with\n\n2016-09-06 21:33:30\nI lost my way, thought I found it again, sort of did, athen lost it again. But I'm here now. I'm back.\nFinishing the website turned out to be more than just taking some amateur video in my living room. It was nearly 2 months ago, right before going to nucl.ai conference. I had so much fun that night and that morning playing with the \"AI\"\n\nWatching it in the living room (as a video) isn't compelling. I have an idea about doing a shoot with models or dancers and projecting the imagery. A sort of beta test as visual support for live performance. What would it take to make that happen. hire models? book a space?\nA good intermediate ide ais to start showing the project off socially - because its easier to meet people when theyre aliens too\n\nAnother intermediate is to record output directly from the display. I think I'd done so with the microsoft game recorder previously?\n\nSome new developments:\n1. I spent time working with RPyC which allows for asynchronous callbacks that let one script communicate with another. My intention is to decouple the motion detection component from the game loop and run it as a seperate process. I'd played with Visual Studio to profile the code. Unsurprisingly, most of the time is spent processing the NN in Caffe. My expectation is that motion detection can be made to work more fluidly.\n\n2. nVidia has newer faster GPU's. Significantly faster. I wonder how much speedup could be realized running on the new TitanX?\n\n3. Studied Pythin basics a bit further. Everywhere I used a Class, I should have used a Module\n\n4. Ive not been able to visualize the code to my satisfgaction. Partly because I dont know what I'm doing, partly because I haven't defined the problem clearly enough. What do you hope to gain from the desired output.\n\n5. Rebranding. I like the name. But its a mouthful. I've noty come up with anything more compelling. When the project was named, my understanding was much vaguer. nonexistent really. What is my uderstanding now?\n\n6. Need to do a site audit - tasks, priorities. There's a lot of work I can do right now.\n\n2016-09-09 11:50:40\nI really want to rename this thing. I dont know why, but cant let it go\nReading about Bestiaris.\n\n\"The bestiary, then, is also a reference to the symbolic language of animals\"\n\n2016-09-11 19:11:01\nI'm submitting a proposal for CODAME Art & Tech Exhibition\nARTIFICIAL EXPERIENCES is the name of the exhibit\nProposal Due by Saturday 9/17\nArtist notification by 9/21\nShowing in SF 11/11\n\n\nDescription of Project *\nA project description in 500 words (max) that includes any collaborative partners and relation to theme \"Interface\"\n\nLinks to high-resolution image(s) of your artist image and your proposed work\nEstimated Materials Cost and Time\nArtist Biography * A 100-200 word bio for publication in press materials (reference bios on CODAME site)\nArtistic Resume including past works, exhibitions, commissions, videography (provide a list of videogames, etc)\nTechnical specifications\nHow large is the artwork, size on the wall or floor footprint (metric preferred)? Any technical requirements like wifi or power? How long does it take to set up and break down?\n\n\n\n2016-09-15 14:16:04 DATA\nDesigned humane user interfaces for AAA videogames enjoyed by millions internationally.\n\nHas worked on games including Madden NFL, The Sims, Star Wars: The Force Unleashed and The Elder Scrolls Online\n\nCreative director\n\nOn the verge of a personal vision of collaborating with artificial inn telligene as a kind of robopsychiatrist. They;'re a better breed than us, but we made them so\n\nInvisible interfaces\n\nDesigns for your thumbs\n\nGrateful that humans don't behave rationally. It makes the job easier\n\ngood friend\nloving husband\nflawed human not hopeless\n\nBecame bored with that life and is a fine artisty afgain\n\nliving link betwee the 80's and the new era of machine hallucination\n\nnetworked 16 Apple IIew computers using their MIDI ports so that I could make all the computers in the lab blink at the same time. It was uncanny. \n\n\nI lost my way, thought I found it again, sort of did, athen lost it again. But I'm here now. I'm back.\n\n\nExperience an interactive psychedelic journey with a computer. Using the DeepDream convolutional neural network algorithm and real-time video feedback, the system turns your image into a vision of its own thought processes--a magic mirror. Questions about DeepDream, the magic mirror setup, and the spirit realm inside the machine are all welcome.\n\nTakeaway\nAttendees will leave with an understanding of how neural networks may be used for image synthesis, and specific steps for creating their own Deep Dreaming Magic Mirror.\n\nIntended Audience\nAnyone interested in interactive art experiences will be glad they came.\n\nFinally! Someone speaking my language! The language of Spirit.\nA language that cannot be used in the workplace. A language rarely acceptable in social gatherings (including most churches). Truth be told, the so-called \"Spiritual Path\" has led me to place of isolation. When I saw \"Find Your Spirit Animal In A Deep Dream Vision Quest\" - I quietly hoped I would meet someone that I could talk to. I sometimes yearn for belonging, but I refuse to shapeshift just to fit into someone else's tribe.\n\nWhen I discovered it was YOU giving the presentation, I could not control my enthusiasm! I could not wait to see you again. I realize we cannot know who we are now from the slice of childhood we briefly shared. But the moment you started talking about \"masks\" - I could totally picture you and I having that conversation (I wanted to have it right there and then!). Your presentation was very exciting to me. And, if I may, let me say that you have a charismatic presence on stage. But I digress...\n\nSimply stated, I would love to hang out with you. At the very least, we should get together and catch up on over 30 years. Let me share my contact details with you.\n\n2016-09-15 15:29:51\nAnyone or anything that has influenced the artist’s artworks.\n\nAny education or training in the field of art\n\nAny related experience in the field of art\n\nA summary of the artist’s artistic philosophy\n\nAny artistic insights or techniques that are employed by the artist\n\n2016-09-15 15:29:48\nThe bio should summarize the artist’s practice—including medium(s), themes, techniques, and influences\n\nmediums\nphotography\nvideogames\nsound design\nperformance art\n\nthemes\nthe alien in the familiar, the familiar in the alien\nthe language of the spirit\nMythology and storytelling\nEmptiness\n\n\n2016-09-15 15:29:45\nThe bio should open with a first line that encapsulates, as far as possible, what is most significant about the artist and his or her work, rather than opening with biographical tidbits, such as where the artist went to school, grew up, etc. For example: John Chamberlain is best known for his twisting sculptures made from scrap metal and banged up, discarded automobile parts and other industrial detritus.\n\n\n\nDESCRIPTION OF PROJECT\nA project description in 500 words (max) that includes any collaborative partners and relation to theme \"Interface\"\n\nExperience an interactive psychedelic journey within a computer interface. Using the DeepDream convolutional neural network algorithm and real-time video feedback, the system turns your image into a vision of its own thought processes--a magic mirror. Questions about DeepDream, the magic mirror setup, and the spirit realm inside the machine are all welcome. Attendees will leave with an understanding of how neural networks may be used for image synthesis\n\nLINKS TO HIGH-RESOLUTION IMAGE(S) OF YOUR ARTIST IMAGE AND YOUR PROPOSED WORK\nartist image:\n[find a picture you like]\n\nproposed work:\nhttp://www.deepdreamvisionquest.com/\n\nESTIMATED MATERIALS COST AND TIME\nN/A\n\n\nARTIST BIOGRAPHY\nA 100-200 word bio for publication in press materials\n\nGary Boodhoo combines videogames, machine learning and interface design to discover ancient images — spirit animals. Born in Jamaica, relocation to the United States provided a crash course in how to construct mythology out of the 1980's. Then computers happened and then Dungeons and Dragons happened. Today he is an industry veteran. He designs and bleeds user interfaces for videogames including The Sims and The Elder Scrolls Online. His work examines the rhythms of emergent behavior in shared digital environments. He lives in San Francisco and develops humane experiences for game studios and other creative clients.\n\n\nARTISTIC RESUME \n(including past works, exhibitions, commissions, videography (provide a list of videogames, etc)\n\nThe Ghost in the Machine Has Many Mansions, 2016\nPart of a speaker series on technological rituals\nPresented by the Society for Ritual Arts\nhttp://societyforritualarts.com/join-us-on-1219-in-san-francisco-for-the-ghost-in-the-machine-has-many-mansions/\n\nDeepDreamVisionQuest, 2016\npresented for the Game Developers Conference 2016, San Francisco\nhttp://schedule.gdconf.com/session/find-your-spirit-animal-in-a-deep-dream-vision-quest\n\nThe Elder Scrolls Online, 2015, \nA massively multiplayer online roleplaying game\nplatform: PlayStation 4, XBox One, Windows, OSX\npublisher: Bethesda Softworks\ndeveloper: Zenimax Online Studios\n\nZombie Apocalypse, 2009,\nAn apocalyptic multiplayer shoot-em-up\nplatforms: PlayStation 3, XBox 360\npublisher: Konami\ndeveloper: Nihilistic Software\n\nThe Sims 3, 2009, \nA life simulator game\nplatform:Windows, OSX\npublished and developed by Electronic Arts\n\nStar Wars: The Force Unleashed, 2008, \nAn epic science fiction action-adventure game\nplatform: PlayStation 3, XBox 360\npublished and developed by LucasArts\n\nMadden NFL, 2004,\nA football simulation game\nplatform: PlayStation 2, XBox, Windows\npublished and developed by Electronic Arts\n\n\n\nTECHNICAL SPECIFICATIONS\nHow large is the artwork, size on the wall or floor footprint (metric preferred)? Any technical requirements like wifi or power? How long does it take to set up and break down\n\n\nDeepDreamVisionQuest space requirements are flexible. It can be run sitting in front of a computer with a webcam. The technology was designed to be used socially so there must tbe room to comfortably observe and participate. There are 3 working areas to consider. Previous exhibits worked best when these areas were in close proximity to one another, with room for the computer and operator off to the side.\n\n1. Staging area for live video capture\n-\t3.5 square meters\n-\tHardware\n\t-\tlighting (2)\n\t\t-\tprefer to use house lighting when possible\n\t-\twebcam\n\t-\ttripod \n\t-\tchair\n\n2. Display area\n-\tRequires line of sight to staging area so participants can interact with video imagery\n-\tHardware\n\t-\tLarge TV or projector (depends on the space)\n\t\t-\tprefer to use house systems when possible\n\n3. Control area\n-\tPositioned less than 3m from Staging Area to accomodate cable runs\n-\tHardware\n\t-\tdesktop computer\n\t\t-\tUSB input from camera\n\t\t-\tHDMI output to display\t\n\t-\tcomputer monitor\n\t\t-\tneed surface to place or mount monitor\n\t-\tcomputer keyboard\n\t\t-\tneed surface to place or mount keyboard\n\t-\tGame controller\n\n\nHARDWARE BREAKDOWN\nLighting (2) [can venue provide ?]\nLarge TV or Projector [can venue provide?]\nTable/Desk [can venue provide?]\nChair [can venue provide?]\nWebcam\nTripod\nDesktop computer\nComputer monitor\nComputer Keyboard\nGame controller\n30' USB cable\nHDMI cable (length TBD pending venue details)\n\nSETUP/TEARDOWMN\nSetup/Teardown takes 30 minutes. I will need to do a technical rehearsal in the space before going live\n\n\n\n2016-09-17 01:14:44\nAfter all, the computer trained on pictures all humans understand. We train them by showing them many examples of what we want them to learn.\n\n2016-10-04 10:23:00\nThe project has moved over to Linux for scalability and so forth. I'm using a new Titan X Pascal gfx card and needed to go through a chain of dependencies to work properly - which wasn't happening in Windows. I am seeing a bit of a speedup in basic dreaming, and have confidence that seperating motion detection into a different process will also help.\n\nThere's so much to think about - what do I really want to do with this? I need to assume there is no operator other than myself if necessary - would like to see more behaviors happening on their own - or possibly in response to inputs other than the game controller?\nWould it be difficult to integrate MIDI?\n\n2016-10-04 10:28:00\nWhy am I unable to change the size of the frame buffer?\nOh - ut was at the top of the script\nWow! Dreaming at 960 x 540 is extremely fast, but seems like motion detection gets broken?\nOh - its the threshold values (counting fewer pixels now)\n\n2016-10-04 10:34:00\nIts so much faster that I must rethink what's happening w the motion detection and transition between dreamed frames\n\n2016-10-04 20:50:44\nstudying that code. What's the plan for Artificial Experience?\n\n2016-10-08 10:21:25\ndoing some houisecleaning w the deepdreamvisionquest code. I think that everything that's currently a class, shoule be a module for easier maintainability and understanding wtf is going on\n\n-\tMotionDetector\n-\tViewport\n-\tFramebuffer\n-\tModel\n-\tAmplifier\n\n2016-10-08 13:32:45\nmodules are:\n-\ta python file w some functions and/or variabes in it\n-\tyou import that filee into another\n-\tyou access the functions or variables in that module using the dot (.) operator\n\n\n2016-10-08 14:28:41\nstill reading up on modules and remembering how the code works\nOne observation is that the viewport sizing I;'m doing isn't consistent\nThe expectation is to be rendering and processing at 960 x 540 (a rem cycle lasts 4 secons)\nand scaling that view to 1920 x 1080, but is seems like that's getting mixed up and maybe its only the camera images that are coming in at the lowere rez?\n\n2016-10-08 14:54:32\nmaybe the uprez can be done by the OS itself - scaling the output x2?\n\n\n\n\n\n",
+			"file": "docs/spirit animal notes.txt",
+			"file_size": 16154,
+			"file_write_time": 131204358460026476,
+			"settings":
+			{
+				"buffer_size": 15897,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "# create a mapping of state to abbreviation\nstates = {\n    'Oregon': 'OR',\n    'Florida': 'FL',\n    'California': 'CA',\n    'New York': 'NY',\n    'Michigan': 'MI'\n}\n\n# create a basic set of states and some cities in them\ncities = {\n    'CA': 'San Francisco',\n    'MI': 'Detroit',\n    'FL': 'Jacksonville'\n}\n\n# add some more cities\ncities['NY'] = 'New York'\ncities['OR'] = 'Portland'\n\n# print out some cities\nprint '-' * 10\nprint \"NY State has: \", cities['NY']\nprint \"OR State has: \", cities['OR']\n\n# print some states\nprint '-' * 10\nprint \"Michigan's abbreviation is: \", states['Michigan']\nprint \"Florida's abbreviation is: \", states['Florida']\n\n# do it by using the state then cities dict\nprint '-' * 10\nprint \"Michigan has: \", cities[states['Michigan']]\nprint \"Florida has: \", cities[states['Florida']]\n\n",
+			"file": "mystuff.py",
+			"file_size": 811,
+			"file_write_time": 131204331681483899,
+			"settings":
+			{
+				"buffer_size": 806,
+				"encoding": "UTF-8",
+				"line_ending": "Unix",
+				"name": "class CleanupJob(Job)"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 354.0,
+		"last_filter": "Package Control: r",
+		"selected_items":
+		[
+			[
+				"Package Control: r",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: i",
+				"Package Control: Install Package"
+			],
+			[
+				"p",
+				"Package Control: Remove Package"
+			],
+			[
+				"i",
+				"InsertDate: Show Panel"
+			],
+			[
+				"ma",
+				"Material Theme: Advanced configuration"
+			]
+		],
+		"width": 431.0
+	},
+	"console":
+	{
+		"height": 212.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/gary/code/vision",
+		"/home/gary/code/vision/docs"
+	],
+	"file_history":
+	[
+		"/home/gary/.config/sublime-text-3/Packages/User/insert_date.sublime-settings",
+		"/home/gary/.config/sublime-text-3/Packages/InsertDate/Default (Linux).sublime-keymap",
+		"/home/gary/.config/sublime-text-3/Packages/InsertDate/README.md",
+		"/home/gary/.config/sublime-text-3/Packages/InsertDate/insert_date.sublime-settings",
+		"/home/gary/.bashrc",
+		"/usr/local/lib/python2.7/dist-packages/tensorflow/python/pywrap_tensorflow.py",
+		"/usr/local/lib/python2.7/dist-packages/tensorflow/python/__init__.py",
+		"/usr/local/lib/python2.7/dist-packages/tensorflow/__init__.py",
+		"/home/gary/caffe/Makefile.config.example",
+		"/home/gary/code/deepdream/deploy.prototxt"
+	],
+	"find":
+	{
+		"height": 70.0
+	},
+	"find_in_files":
+	{
+		"height": 158.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"opacity",
+			"sca",
+			"540",
+			"960",
+			"Tracker",
+			"MotionDetector",
+			"niceplaces",
+			"niceplaced",
+			"transform",
+			"E:/Users/Gary/Documents/code/models/bvlc_googlenet/deploy.prototxt",
+			"textminer",
+			":"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "rem.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 27732,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15415,
+								15415
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 9775.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "data.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5623,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2769,
+								2769
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2215.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "docs/model_layer_names.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6033,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								474,
+								474
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 3,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5885,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										182,
+										189
+									],
+									[
+										386,
+										393
+									],
+									[
+										545,
+										552
+									],
+									[
+										764,
+										771
+									],
+									[
+										1022,
+										1029
+									],
+									[
+										1204,
+										1211
+									],
+									[
+										1391,
+										1398
+									],
+									[
+										1578,
+										1585
+									],
+									[
+										1669,
+										1676
+									],
+									[
+										1727,
+										1734
+									],
+									[
+										1879,
+										1886
+									],
+									[
+										2018,
+										2025
+									],
+									[
+										2063,
+										2070
+									],
+									[
+										2095,
+										2102
+									],
+									[
+										2148,
+										2155
+									],
+									[
+										2378,
+										2385
+									],
+									[
+										2423,
+										2430
+									],
+									[
+										2455,
+										2462
+									],
+									[
+										2508,
+										2515
+									],
+									[
+										2753,
+										2760
+									],
+									[
+										2777,
+										2784
+									],
+									[
+										2866,
+										2873
+									],
+									[
+										2907,
+										2914
+									],
+									[
+										2949,
+										2956
+									],
+									[
+										2985,
+										2992
+									],
+									[
+										3038,
+										3045
+									],
+									[
+										3139,
+										3146
+									],
+									[
+										3195,
+										3202
+									],
+									[
+										3256,
+										3263
+									],
+									[
+										3427,
+										3434
+									],
+									[
+										3459,
+										3466
+									],
+									[
+										3668,
+										3675
+									],
+									[
+										4017,
+										4024
+									],
+									[
+										4051,
+										4058
+									],
+									[
+										4084,
+										4091
+									],
+									[
+										4287,
+										4294
+									],
+									[
+										4689,
+										4696
+									],
+									[
+										5016,
+										5023
+									],
+									[
+										5234,
+										5241
+									],
+									[
+										5643,
+										5650
+									],
+									[
+										5815,
+										5822
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								4752,
+								4752
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1440.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "motiondetector.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3349,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								692,
+								692
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "docs/spirit animal notes.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 15897,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15891,
+								15891
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 11364.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "mystuff.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 806,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								806,
+								806
+							]
+						],
+						"settings":
+						{
+							"auto_name": "class CleanupJob(Job)",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 192.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 31.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.48354903588,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "deepdreamvisionquest.sublime-project",
+	"replace":
+	{
+		"height": 58.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 1,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": false,
+	"side_bar_width": 300.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

@@ -1,6 +1,5 @@
 import cv2
 
-
 #capture from camera at location 0
 cap = cv2.VideoCapture(0)
 #set the width and height
@@ -23,7 +22,3 @@ while True:
 
 cv2.destroyAllWindows() 
 cv2.VideoCapture(0).release()
-
-
-
-
