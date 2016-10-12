@@ -260,7 +260,7 @@ settings['hifi'] = {
 }
 
 settings['hifi-best'] = {
-	'iterations':20,
+	'iterations':10,
 	'step_size':4.0,
 	'octaves':6,
 	'octave_cutoff':4,
@@ -268,10 +268,10 @@ settings['hifi-best'] = {
 	'iteration_mult':0.25,
 	'step_mult':0.0,
 	'duration':31,
-	'comments':'delivered beautiful output in low light at 1080p',
+	'comments':'default',
 	'viewport_size':[1280,1080],
 	'capture_size':[1280,720],
-	'model':'googlenet',
+	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
