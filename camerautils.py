@@ -42,14 +42,20 @@ class MotionDetector(object):
             print "!!!! [motiondetector] reset now:{} last:{}".format(self.delta_count,self.delta_count_old)
             self.delta_count = 0
 
-
-        elif (self.delta_count >= self.delta_trigger and self.delta_count_old < self.delta_trigger):
-            self.update_log('detect','*')
-            print "---- [motiondetector] movement"
+        self.isMotionDetected_old = self.isMotionDetected  #??
+        
+        if (self.delta_count >= self.delta_trigger and self.delta_count_old < self.delta_trigger):
+            #self.update_log('detect','*')
+            print "---- [motiondetector] movement started"
             self.isMotionDetected = True
 
+        elif (self.delta_count < self.delta_trigger and self.delta_count_old >= self.delta_trigger):
+            #update_log('detect','-')
+            print "---- [motiondetector] movement ended"
+            self.isMotionDetected = False
+ 
         else:
-            self.update_log('detect','-')
+            #self.update_log('detect','-')
             print "---- [motiondetector] none"
             self.isMotionDetected = False
 
@@ -64,15 +70,15 @@ class MotionDetector(object):
             ratio = 1.0 * self.delta_count/self.delta_trigger
             nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
         
-        self.update_log('last',lastmsg)
-        self.update_log('now',nowmsg)
+        #self.update_log('last',lastmsg)
+        #self.update_log('now',nowmsg)
         self.refresh_queue()
 
     def isResting(self):
         return self.isMotionDetected == self.isMotionDetected_old
 
     def refresh_queue(self):
-        self.isMotionDetected_old = self.isMotionDetected  #??
+        
         self.delta_count_old = self.delta_count   
         self.t_minus = self.t_now
         self.t_now = self.t_plus

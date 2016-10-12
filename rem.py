@@ -457,7 +457,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     bias = net.transformer.mean['data']
     src.data[:] = np.clip(src.data, -bias, 255-bias)
 
-    src.data[0] = blur(src.data[0], 0.1)
+    src.data[0] = blur(src.data[0], 0.5)
 
 # -------
 # sets up image buffers and octave structure for iterating thru and Amplifiering neural output
