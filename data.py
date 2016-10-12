@@ -1,5 +1,5 @@
-capture_size = [960,540]
-viewport_size = [960,540]
+capture_size = [1280,720]
+viewport_size = [1280,720]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -269,7 +269,7 @@ settings['hifi-best'] = {
 	'step_mult':0.0,
 	'duration':31,
 	'comments':'delivered beautiful output in low light at 1080p',
-	'viewport_size':[1920,1080],
+	'viewport_size':[1280,1080],
 	'capture_size':[1280,720],
 	'model':'googlenet',
 	'layers':[

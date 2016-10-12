@@ -651,7 +651,7 @@ Model.choose_model('places')
 
 #Amplifier.set_package('hirez-fast')
 #Amplifier.set_package('quick2')
-Amplifier.set_package('niceplaces-good')
+Amplifier.set_package('hifi-best')
 
 
 if __name__ == "__main__":
