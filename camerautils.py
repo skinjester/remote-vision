@@ -5,18 +5,18 @@ class MotionDetector(object):
 
     def __init__(self, delta_trigger, which_camera, log):
         self.delta_trigger = delta_trigger
-        self.delta_trigger_old = delta_trigger
+        self.delta_trigger_history = delta_trigger
         self.delta_count = 0
-        self.delta_count_old = 0
+        self.delta_count_history = 0
         self.camera = which_camera
         self.t_minus = self.camera.read()[1] 
         self.t_now = self.camera.read()[1]
         self.t_plus = self.camera.read()[1]
-        self.t_delta = np.zeros((self.camera.get(4), self.camera.get(3) ,3), np.uint8) # empty img
+        self.t_delta_framebuffer = np.zeros((self.camera.get(4), self.camera.get(3) ,3), np.uint8) # empty img
         self.width = self.camera.get(3)
         self.height = self.camera.get(4)
-        self.isMotionDetected = False
-        self.isMotionDetected_old = False
+        self.wasMotionDetected = False
+        self.wasMotionDetected_history = False
         self.is_paused = False
         self.noise_level = 0
         self.update_log = log
@@ -31,55 +31,58 @@ class MotionDetector(object):
         self.t_plus = self.camera.read()[1]
     
     def process(self):
-        self.t_delta = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
-        self.t_delta = cv2.flip(self.t_delta, 1)
-        retval, self.t_delta = cv2.threshold(self.t_delta, 16, 255, 3)
-        cv2.normalize(self.t_delta, self.t_delta, 0, 255, cv2.NORM_MINMAX)
-        img_count_view = cv2.cvtColor(self.t_delta, cv2.COLOR_RGB2GRAY)
+        # history 
+        self.wasMotionDetected_history = self.wasMotionDetected  #??
+        self.delta_count_history = self.delta_count   
+
+        self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
+        self.t_delta_framebuffer = cv2.flip(self.t_delta_framebuffer, 1)
+        retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
+        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
+        img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view) - self.noise_level
         
-        if (self.delta_count >= self.delta_trigger and self.delta_count_old >= self.delta_trigger):
-            print "!!!! [motiondetector] reset now:{} last:{}".format(self.delta_count,self.delta_count_old)
+        if (self.delta_count >= self.delta_trigger and 
+            self.delta_count_history >= self.delta_trigger):
+            print "!!!! [motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.delta_count = 0
 
-        self.isMotionDetected_old = self.isMotionDetected  #??
-        
-        if (self.delta_count >= self.delta_trigger and self.delta_count_old < self.delta_trigger):
-            #self.update_log('detect','*')
-            print "---- [motiondetector] movement started"
-            self.isMotionDetected = True
 
-        elif (self.delta_count < self.delta_trigger and self.delta_count_old >= self.delta_trigger):
-            #update_log('detect','-')
+        if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
+            self.update_log('detect','*')
+            print "---- [motiondetector] movement started"
+            self.wasMotionDetected = True
+
+        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
+            self.update_log('detect','-')
             print "---- [motiondetector] movement ended"
-            self.isMotionDetected = False
+            self.wasMotionDetected = False
  
         else:
-            #self.update_log('detect','-')
+            self.update_log('detect','-')
             print "---- [motiondetector] none"
-            self.isMotionDetected = False
+            self.wasMotionDetected = False
 
         # logging
-        lastmsg = '{:0>6}'.format(self.delta_count_old)
-        if self.delta_count_old > self.delta_trigger:
-            ratio = 1.0 * self.delta_count_old/self.delta_trigger
-            lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_old,ratio)
+        lastmsg = '{:0>6}'.format(self.delta_count_history)
+        if self.delta_count_history > self.delta_trigger:
+            ratio = 1.0 * self.delta_count_history/self.delta_trigger
+            lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_history,ratio)
         
         nowmsg = '{:0>6}'.format(self.delta_count)
         if self.delta_count > self.delta_trigger:
             ratio = 1.0 * self.delta_count/self.delta_trigger
             nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
         
-        #self.update_log('last',lastmsg)
-        #self.update_log('now',nowmsg)
+        self.update_log('last',lastmsg)
+        self.update_log('now',nowmsg)
         self.refresh_queue()
 
     def isResting(self):
-        return self.isMotionDetected == self.isMotionDetected_old
+        return self.wasMotionDetected == self.wasMotionDetected_history
 
     def refresh_queue(self):
-        
-        self.delta_count_old = self.delta_count   
+        print "---- [motiondetector] refresh queue"
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()[1]

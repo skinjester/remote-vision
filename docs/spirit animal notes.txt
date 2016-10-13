@@ -393,3 +393,43 @@ pushed and committed recent work to git
 
 2016-10-10 01:28:28
 I've externalized the class definition of MotionDetector
+
+2016-10-12 09:01:57
+Trying to understand what this code is doing so I can modify it
+Taking Cory's advice in following what the data is doing. Very difficult to think of these little machines as small bits of functionality.
+
+cameras ARE STORED in motion detector
+camera IS STORED in framebuffer1
+GAME LOOP
+	SEND framebuffer1 to viewport
+	PROCESS the cameras STORED in the motion detector
+		current value of self.wasMotionDetected and self.delta_count are STORED in history vars
+		the difference between cameras IS STORED as self.t_delta_framebuffer
+		the count of non-zero pixels in t_delta IS STORED as self.delta_count
+
+		# outcomes
+		self.delta_count == 0 is the result of an overflow
+			-	all delta_count(s) were above detection threshold
+			-	reseting the count will force wasMotionDetected == FALSE upon later comparison
+		self.delta_count_history STORES the history of self.delta_count (so we can compare current outcome with previous)
+		self.wasMotionDetected == TRUE means stop dreaming
+		self.wasMotionDetected == FALSE means continue dreaming
+		self.wasMotionDetected_history STORES the history of self.wasMotionDetected (so we can compare current outcome with previous)
+
+		#epilogue
+		new camera IS STORED to queue
+		oldest camera IS REMOVED from queue
+
+
+
+		REFRESH the images STORED in the motion detector
+	SEND framebuffer1 to DEEPDREAM OCTAVE LOOP
+DEEPDREAM OCTAVE LOOP
+
+COOLING DOWN?
+	exit the loop and STORE camera as return value
+
+deepdream return value IS STORED in framebuffer1
+EXPORT the viewport image to filesystem
+
+
