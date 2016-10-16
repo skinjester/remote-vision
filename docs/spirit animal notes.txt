@@ -424,10 +424,38 @@ GAME LOOP
 
 		REFRESH the images STORED in the motion detector
 	SEND framebuffer1 to DEEPDREAM OCTAVE LOOP
-DEEPDREAM OCTAVE LOOP
+DEEPDREAM LOOP
+	NEW CYCLE?
+		STORE camera as return value
+		EXIT loop
 
-COOLING DOWN?
-	exit the loop and STORE camera as return value
+	SETUP OCTAVES
+		# COPY the original img from the Model.net.blob
+		# CREATE a framebuffer for network produced DETAIL
+			#shaped the same as original img
+		# CREATE the OCTAVEARRAY
+		-	can affect network model, octave_scale, iteration count here
+
+	OCTAVE LOOP
+		# ADD DETAIL to OCTAVE
+		-	last (smalles) octave first
+
+		NEURALITERATIONS
+			while:
+				(iteration < max_iteration is True
+				MotionDetecton.WasMotionDetected is False)
+				# MAKESTEP (model, objective, step parameters)
+					-	step parameters are passed thru here from initial deepdream function call
+					-	makestep operates upon the neural net's data blob
+					-	di
+
+
+
+
+
+		
+
+
 
 deepdream return value IS STORED in framebuffer1
 EXPORT the viewport image to filesystem

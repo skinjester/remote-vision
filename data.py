@@ -1,5 +1,5 @@
-capture_size = [960,540]
-viewport_size = [960,540]
+capture_size = [1280,720]
+viewport_size = [1280,720]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -154,13 +154,13 @@ settings['hifi-best'] = {
 }
 
 settings['jabba'] = {
-	'iterations':8,
+	'iterations':16,
 	'step_size':5.0,
 	'octaves':6,
 	'octave_cutoff':6,
 	'octave_scale':1.4,
 	'iteration_mult':0.5,
-	'step_mult':0.0,
+	'step_mult':0.02,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],

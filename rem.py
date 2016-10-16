@@ -307,7 +307,7 @@ class Framebuffer(object):
             print '[framebuffer] refresh'
             if self.is_new_cycle and MotionDetector.isResting() == False:
                 print '[framebuffer] compositing enabled'
-                self.is_compositing_enabled = True
+                #self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
                 print '[framebuffer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
@@ -333,6 +333,21 @@ class Framebuffer(object):
 def inceptionxform(image,scale,capture_size):
     # nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
     return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+
+def iterationPostProcess(net_data_blob):
+    return blur(net_data_blob, 0.5)
+
+def blur(img, sigma):
+    if sigma > 0:
+        img = nd.filters.gaussian_filter(img, sigma, order=0)
+    return img
+
+def sobel(img):
+    xgrad = nd.filters.sobel(img, 0)
+    ygrad = nd.filters.sobel(img, 1)
+    combined = np.hypot(xgrad, ygrad)
+    sob = 255 * combined / np.max(combined) # normalize
+    return sob
 
 def make_sure_path_exists(directoryname):
     try:
@@ -412,8 +427,7 @@ def img2caffe(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
 
 def caffe2img(net, img):
-    a = np.dstack((img + net.transformer.mean['data'])[::-1])
-    return a
+    return sobel(np.dstack((img + net.transformer.mean['data'])[::-1]))
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
@@ -427,10 +441,7 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
-def blur(img, sigma):
-    if sigma > 0:
-        img = nd.filters.gaussian_filter(img, sigma, order=0)
-    return img
+
 
 # -------
 # implements forward and backward passes thru the network
@@ -459,7 +470,10 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     bias = net.transformer.mean['data']
     src.data[:] = np.clip(src.data, -bias, 255-bias)
 
-    src.data[0] = blur(src.data[0], 0.5)
+    # postprocess (blur) this iteration
+    src.data[0] = iterationPostProcess(src.data[0])
+
+
 
 # -------
 # sets up image buffers and octave structure for iterating thru and Amplifiering neural output
@@ -497,15 +511,19 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         step_params['step_size'] = Amplifier.stepsize 
 
         i=0 # iterate on current octave
-        while i < iter_n and MotionDetector.wasMotionDetected == False:
+        while i < iter_n:
+            MotionDetector.process()
+            if MotionDetector.wasMotionDetected:
+                print '!!!!!'
+                break
+
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, objective=objective_L2, **step_params)
             print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
 
             # output - caffe2img net blob and write to frame buffer
             Framebuffer.buffer1 = caffe2img(Model.net, src.data[0])
-            Framebuffer.buffer1 = Framebuffer.buffer1 * (255.0 / np.percentile(Framebuffer.buffer1, 100.00)) # normalize contrast
-            MotionDetector.process()
+            #Framebuffer.buffer1 = Framebuffer.buffer1 * (255.0 / np.percentile(Framebuffer.buffer1, 100.00)) # normalize contrast
             Viewport.show(Framebuffer.buffer1)
 
             # attenuate step size over rem cycle
@@ -606,8 +624,8 @@ def main():
         update_log('rem_cycle',duration_msg)
         now = time.time()
 
-        # export each finished img
-        Viewport.export(Framebuffer.buffer1)
+        # export each finished img to filesystem
+        #Viewport.export(Framebuffer.buffer1)
 
 
 # -------- 
