@@ -301,7 +301,7 @@ class Framebuffer(object):
                 print '[framebuffer] inception'
                 self.buffer1 = inceptionxform(image, 0.05, data.capture_size)
             self.is_dirty = False
-            self.is_compositing_enabled = False
+            #self.is_compositing_enabled = False
 
         else:
             print '[framebuffer] refresh'
@@ -427,7 +427,7 @@ def img2caffe(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
 
 def caffe2img(net, img):
-    return sobel(np.dstack((img + net.transformer.mean['data'])[::-1]))
+    return np.dstack((img + net.transformer.mean['data'])[::-1])
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
@@ -454,13 +454,13 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     ox, oy = np.random.randint(-jitter, jitter + 1, 2)          # calculate jitter
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
 
-    # this bit is where the neural net runs the computation
+    # this bit is where the neural net runs the hallucination
     net.forward(end=end)    # make sure we stop on the chosen neural layer
     objective(dst)          # specify the optimization objective
     net.backward(start=end) # backwards propagation
     g = src.diff[0]         # store the error 
 
-    # apply normalized ascent step to the input image and get closer to our target state
+    # apply normalized ascent step to the image array 
     src.data[:] += step_size / np.abs(g).mean() * g
 
     # unshift image jitter              
@@ -473,14 +473,12 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
 
-
-
 # -------
 # sets up image buffers and octave structure for iterating thru and Amplifiering neural output
 # iterates thru the neural network 
 # REM sleep, in other words
 # ------- 
-def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
+def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
     # cooldown
     # returns the camera on the first update of a new cycle 
     # after previously being kicked out of deepdream
@@ -493,37 +491,43 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
 
     Framebuffer.is_new_cycle = False # c
 
-    # setup octaves
+    # SETUPOCTAVES
     src = Model.net.blobs['data']
     octaves = [img2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
     detail = np.zeros_like(octaves[-1])
 
-    # OCTAVE LOOP, last (smallest) octave first
-    for octave, octave_base in enumerate(octaves[::-1]):
-        h, w = octave_base.shape[-2:]
+    # OCTAVEARRAY CYCLE, last (smallest) octave first
+    for octave, octave_current in enumerate(octaves[::-1]):
+        h, w = octave_current.shape[-2:]
+        print 'octave_current w:{}  octave_current h:{}'.format(w,h)
         h1, w1 = detail.shape[-2:]
         detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
-        src.reshape(1,3,h,w)
-        src.data[0] = octave_base + detail
-        Amplifier.stepsize = Amplifier.stepsize_base # reset step size to default each octave
-        step_params['step_size'] = Amplifier.stepsize 
 
-        i=0 # iterate on current octave
-        while i < iter_n:
+        # reshape the network's input image data to match octave_current shape
+        src.reshape(1,3,h,w)
+
+        # add the changed details to the network's input image
+        src.data[0] = octave_current + detail
+
+        Amplifier.stepsize = Amplifier.stepsize_base # reset step size to default each octave
+        step_params['step_size'] = Amplifier.stepsize # modifying the **step_params list for makestep
+
+        # OCTAVECYCLE
+        i=0
+        while i < iteration_max:
             MotionDetector.process()
             if MotionDetector.wasMotionDetected:
-                print '!!!!!'
                 break
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, objective=objective_L2, **step_params)
-            print '{:02d}:{:03d}:{:03d}'.format(octave,i,iter_n)
+            print '{:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
 
-            # output - caffe2img net blob and write to frame buffer
+            # write netblob to framebuffer
             Framebuffer.buffer1 = caffe2img(Model.net, src.data[0])
-            #Framebuffer.buffer1 = Framebuffer.buffer1 * (255.0 / np.percentile(Framebuffer.buffer1, 100.00)) # normalize contrast
+            #Framebuffer.buffer1 = Framebuffer.buffer1 * (255.0 / np.percentile(Framebuffer.buffer1, 99.98)) # normalize contrast
             Viewport.show(Framebuffer.buffer1)
 
             # attenuate step size over rem cycle
@@ -535,7 +539,7 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
             # logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Amplifier.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
-            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iter_n,Amplifier.iteration_mult)
+            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iteration_max,Amplifier.iteration_mult)
             stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplifier.step_mult)
             thresholdmsg = '{:0>6}'.format(MotionDetector.delta_trigger)
             update_log('octave',octavemsg)
@@ -551,35 +555,44 @@ def deepdream(net, base_img, iter_n=10, octave_n=4, octave_scale=1.4, end='incep
         # probably temp? export each completed iteration
         # Viewport.export(Framebuffer.buffer1)
 
-        # early return this will be the last octave calculated in the series
+        # early return because this turns out to be the last octave calculated in the series
         if octave == Amplifier.octave_cutoff:
             Framebuffer.is_dirty = True
             early_exit = caffe2img(Model.net, src.data[0])
-            early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_LINEAR)
-            print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iter_n)
+
+            print '!!!'
+            print early_exit.shape
+            print '!!!'
+
+            # GRB: did we ever really need to resize the early exit array?
+            #early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_LINEAR)
+            print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iteration_max)
             return early_exit
 
         # motion detected so we're ending this REM cycle
         if MotionDetector.wasMotionDetected:
             early_exit = caffe2img(Model.net, src.data[0])  # pass caffe2imged net blob to buffer2 for fx
+
+            # GRB: do we actually need to resize the early exit array?
             early_exit = cv2.resize(early_exit, (Viewport.viewport_w, Viewport.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport
             Framebuffer.write_buffer2(early_exit)
             Framebuffer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'
             return which_camera.read()[1] 
 
+        # extract details produced on the current octave
+        detail = src.data[0] - octave_current
+
         # reduce iteration count for the next octave
-        detail = src.data[0] - octave_base # extract details produced on the current octave
-        iter_n = iter_n - int(iter_n * Amplifier.iteration_mult)
-        #iter_n = Amplifier.next_iteration(iter_n)
+        iteration_max = iteration_max - int(iteration_max * Amplifier.iteration_mult)
+        #iteration_max = Amplifier.next_iteration(iteration_max)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iter_n)
+    print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iteration_max)
     Framebuffer.is_dirty = True # yes, we'll be recycling the framebuffer
 
     # export finished img
     return caffe2img(Model.net, src.data[0])
-
 
 # -------
 # MAIN
@@ -588,6 +601,7 @@ def main():
 
     # start timer
     now = time.time()
+    cycle = 2
 
     # set GPU mode
     caffe.set_device(0)
@@ -611,14 +625,18 @@ def main():
         Framebuffer.is_new_cycle = True
         Viewport.show(Framebuffer.buffer1)
         MotionDetector.process()
+        # octave_scale += 0.2 * cycle
+        # if octave_scale > 1.8 or octave_scale < 1.2:
+        #     cycle = -1 * cycle
+        # print '[main] octave_scale {0:5.2f}'.format(octave_scale)
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
-        Framebuffer.buffer1 = deepdream(net, Framebuffer.buffer1, iter_n = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end )
+        Framebuffer.buffer1 = deepdream(net, Framebuffer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end )
 
         # a bit later
         later = time.time()
-        difference = int(later - now)
-        print '[main] finish REM cycle:{}s'.format(difference)
+        difference = later - now
+        print '[main] finish REM cycle:{0:5.2f}s'.format(difference)
         print '-'*20
         duration_msg = '{}s'.format(difference)
         update_log('rem_cycle',duration_msg)
@@ -626,7 +644,6 @@ def main():
 
         # export each finished img to filesystem
         #Viewport.export(Framebuffer.buffer1)
-
 
 # -------- 
 # INIT
@@ -669,7 +686,7 @@ Model = Model()
 Amplifier = Amplifier()
 
 # model is googlenet unless specified otherwise
-Model.choose_model('places')
+#Model.choose_model('places')
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
