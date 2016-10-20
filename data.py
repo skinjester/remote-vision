@@ -1,4 +1,4 @@
-capture_size = [960,540]
+capture_size = [1280,720]
 viewport_size = [1280,720]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
@@ -157,8 +157,8 @@ settings['jabba'] = {
 	'iterations':10,
 	'step_size':5.0,
 	'octaves':5,
-	'octave_cutoff':4,
-	'octave_scale':1.6,
+	'octave_cutoff':3,
+	'octave_scale':1.5,
 	'iteration_mult':0.5,
 	'step_mult':0.02,
 	'duration':31,

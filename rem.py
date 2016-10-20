@@ -184,7 +184,7 @@ class Viewport(object):
     
     def monitor(self):
         if self.motiondetect_log_enabled:
-            cv2.imshow('delta', MotionDetector.t_delta)
+            cv2.imshow('delta', MotionDetector.t_delta_framebuffer)
     
     def listener(self, image): # yeah... passing image as a convenience
         self.monitor()
@@ -300,19 +300,20 @@ class Framebuffer(object):
             if self.is_new_cycle:
                 print '[framebuffer] inception'
                 self.buffer1 = inceptionxform(image, 0.05, data.capture_size)
+
             self.is_dirty = False
-            #self.is_compositing_enabled = False
+            self.is_compositing_enabled = False
 
         else:
             print '[framebuffer] refresh'
             if self.is_new_cycle and MotionDetector.isResting() == False:
                 print '[framebuffer] compositing enabled'
-                #self.is_compositing_enabled = True
+                self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
                 print '[framebuffer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.8
+                self.opacity = self.opacity * 0.95
                 if self.opacity <= 0.1:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -560,10 +561,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Framebuffer.is_dirty = True
             early_exit = caffe2img(Model.net, src.data[0])
 
-            print '!!!'
-            print early_exit.shape
-            print '!!!'
-
             # GRB: did we ever really need to resize the early exit array?
             #early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iteration_max)
@@ -574,7 +571,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             early_exit = caffe2img(Model.net, src.data[0])  # pass caffe2imged net blob to buffer2 for fx
 
             # GRB: do we actually need to resize the early exit array?
-            early_exit = cv2.resize(early_exit, (Viewport.viewport_w, Viewport.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport
+            #early_exit = cv2.resize(early_exit, (Viewport.viewport_w, Viewport.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport
             Framebuffer.write_buffer2(early_exit)
             Framebuffer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'

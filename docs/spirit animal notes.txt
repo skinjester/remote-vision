@@ -465,9 +465,10 @@ DEEPDREAM LOOP
 					SEND framebuffer1 to Viewport
 					OCTAVE_CURRENT ++
 
-			# EARLY RETURN
-				-	OCTAVE == Amplifier.OCTAVE_CUTOFF
-					-	set Framebuffer.is_dirty flag (why?)
+			#	EARLYRETURN
+				#	LASTOCTAVE
+					-	OCTAVE_CURRENT == Amplifier.OCTAVE_CUTOFF
+						???	set Framebuffer.is_dirty flag (why?)
 					-	CONVERT NETBLOB to RGB and store as EARLY_EXIT
 					-	RESIZE EARLY_EXIT to match CAPTURESIZE
 				-	Kicked from OCTAVECYCLE because MotionDetection.WasMotionDetected

@@ -36,7 +36,7 @@ class MotionDetector(object):
         self.delta_count_history = self.delta_count   
 
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
-        self.t_delta_framebuffer = cv2.flip(self.t_delta_framebuffer, 1)
+        #self.t_delta_framebuffer = cv2.flip(self.t_delta_framebuffer, 1)
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
         cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
@@ -46,7 +46,6 @@ class MotionDetector(object):
             self.delta_count_history >= self.delta_trigger):
             print "!!!! [motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.delta_count = 0
-
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.update_log('detect','*')
