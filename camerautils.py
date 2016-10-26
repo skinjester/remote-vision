@@ -44,7 +44,7 @@ class MotionDetector(object):
         
         if (self.delta_count >= self.delta_trigger and 
             self.delta_count_history >= self.delta_trigger):
-            print "!!!! [motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
+            print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.delta_count = 0
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
@@ -59,7 +59,7 @@ class MotionDetector(object):
  
         else:
             self.update_log('detect','-')
-            print "---- [motiondetector] none"
+            print "---- [motiondetector] beneath threshold"
             self.wasMotionDetected = False
 
         # logging

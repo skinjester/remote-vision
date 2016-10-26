@@ -398,88 +398,157 @@ I've externalized the class definition of MotionDetector
 Trying to understand what this code is doing so I can modify it
 Taking Cory's advice in following what the data is doing. Very difficult to think of these little machines as small bits of functionality.
 
-cameras ARE STORED in motion detector
-camera IS STORED in framebuffer1
-GAME LOOP
-	SEND framebuffer1 to viewport
-	PROCESS the cameras STORED in the motion detector
-		current value of self.wasMotionDetected and self.delta_count are STORED in history vars
-		the difference between cameras IS STORED as self.t_delta_framebuffer
-		the count of non-zero pixels in t_delta IS STORED as self.delta_count
+------------------------------------------
+How it works, a romance in simple language
+------------------------------------------
 
-		# outcomes
-		self.delta_count == 0 is the result of an overflow
-			-	all delta_count(s) were above detection threshold
-			-	reseting the count will force wasMotionDetected == FALSE upon later comparison
-		self.delta_count_history STORES the history of self.delta_count (so we can compare current outcome with previous)
-		self.wasMotionDetected == TRUE means stop dreaming
-		self.wasMotionDetected == FALSE means continue dreaming
-		self.wasMotionDetected_history STORES the history of self.wasMotionDetected (so we can compare current outcome with previous)
+#	CAMERAS are STORED in MOTIONDETECTOR
+#	CAMERA is STORED in FRAMEBUFFER1
 
-		#epilogue
-		new camera IS STORED to queue
-		oldest camera IS REMOVED from queue
+#	GAME LOOP
+		Framebuffer.is_new_cycle = True
+	#	SEND FRAMEBUFFER1 to VIEWPORT
+	#	PROCESS the CAMERAS STORED in the MOTIONDETECTOR
+		-	STORE HISTORY to prepare for new input
+			-	self.wasMotionDetected is stored as HISTORY
+			-	self.delta_count is stored as HISTORY
+		-	the difference between CAMERAS IS STORED as self.t_delta_framebuffer
+		-	the COUNT of non-zero pixels in self.t_delta_framebuffer IS STORED as self.delta_count
+
+		#	OUTCOMES
+			-	OVERFLOW: all delta_count(s) were above detection threshold
+				-	self.delta_count == 0
+			-	MOTION DETECTED
+				-	delta_count > delta_trigger AND HISTORY < delta_trigger
+					-	SET self.wasMotionDetected = TRUE
+			-	MOTION ENDED
+				-	delta_count < delta_trigger and HISTORY > delta_trigger
+				-	SET self.wasMotionDetected = FALSE
+			-	BENEATH THRESHOLD
+				-	SET self.wasMotionDetected = FALSE
+
+		#	REFRESH the images STORED in the MOTIONDETECTOR
+			-	ADD new CAMERA to QUEUE
+			-	REMOVE oldest CAMERA from QUEUE
+	#	FRAMEBUFFER1 = DEEPDREAM(FRAMEBUFFER,etc.)
+		-	NET
+		-	ITERATION_MAX
+		-	OCTAVES
+		-	OCTAVE_SCALE
+		-	STEP_SIZE
+		-	MODEL.end
+
+	#	DEEPDREAM
+		#	SETUPOCTAVES
+			#	Framebuffer.is_new_cycle = FALSE
+			#	INITIALIZE the OCTAVEARRAY with NETBLOB
+			#	INITIALIZE the DETAIL BUFFER to STORE network output
+			-	we can provide new values for OCTAVE_SCALE, ITERATION_MAX during SETUPOCTAVES
+
+		#	OCTAVEARRAY CYCLE
+			#	ITERATE from small to large
+				-	OCTAVE is index for OCTAVEARRAY
+				-	OCTAVE_CURRENT is framebuffer for each OCTAVE
+				-	RESAMPLE DETAIL to match shape of OCTAVE_CURRENT
+					-	DETAIL comes from SETUPOCTAVES or previous OCTAVEARRAY CYCLE
+				-	RESIZE the NETBLOB
+				-	ADD DETAILS + OCTAVE_CURRENT to NETBLOB
+
+				#	OCTAVECYCLE
+					-	WHILE STEPCOUNT < ITERATION_MAX
+						-	PROCESS the CAMERAS STORED in the MOTIONDETECTOR
+						-	WasMotionDetected ?
+							-	BREAK out of OCTAVECYCLE 
+
+						#	MAKESTEP (model, OBJECTIVE, step parameters)
+							-	parameters arrive here from initial deepdream function call
+							-	makestep operates upon the neural net's data blob
+							-	we can affect guide image and step size here (per iteration)
+							-	NETFORWARD to OBJECTIVE
+							-	NETBACKWARD
+							-	APPLY gradient ascent step to NETBLOB
+							#	POSTPROCESS NETBLOB
+								-	dat gaussian blur
+								-	
+
+						-	CONVERT NETBLOB to RGB and WRITE to FRAMEBUFFER1
+						-	SEND FRAMEBUFFER1 to Viewport
+						-	OCTAVE_CURRENT ++
+
+				#	EARLYEXIT
+					#	LASTOCTAVE
+						-	OCTAVEARRAY CYCLE reached OCTAVE_CUTOFF
+						-	SET Framebuffer.is_dreamy = TRUE
+						-	CONVERT NETBLOB to RGB and STORE as EARLY_EXIT
+						-	Return EARLY_EXIT
+
+					#	MOTION WAS DETECTED
+						-	SET Framebuffer.is_dreamy = FALSE
+						-	CONVERT NETBLOB to RGB and WRITE to framebuffer2
+						-	Return CAMERA
+
+				#	WRAPUP OCTAVECYCLE
+					-	STORE the DETAILS produced during OCTAVECYCLE
+					-
+
+			#	WRAPUP OCTAVEARRAYCYCLE
+				-	SET Framebuffer.is_dreamy = TRUE
+				-	CONVERT NETBLOB to RGB and STORE as FINISHED
+				-	Return FINISHED
 
 
 
-		REFRESH the images STORED in the motion detector
-	SEND framebuffer1 to DEEPDREAM OCTAVE LOOP
-DEEPDREAM LOOP
-	START NEW CYCLE?
-		if MotionDetection.WasMotionDetected
-		STORE camera as return value
-		DEEPDREAM LOOP return
+#	FRAMEBUFFER
+	is_dirty:	the type of frame in BUFFER1, dirty when recycling, clean when refreshing
+	is_new_cycle
+	BUFFER1
+	BUFFER2
+	is_compositing_enabled
 
-	#	SETUPOCTAVES
-		#	INITIALIZE the OCTAVEARRAY with NETBLOB
-		#	INITIALIZE the DETAIL framebuffer to STORE network output
-			-	we can affect NET, OCTAVE_SCALE, ITERATION_MAX during SETUPOCTAVES
+	FRAMEBUFFER REFRESH means BUFFER1 contains CAMERA
+	FRAMEBUFFER RECYCLE means BUFFER1 contains 
 
-	#	OCTAVEARRAY CYCLE
-		-	ITERATE from small to large
-			-	OCTAVE is index for OCTAVEARRAY
-			-	OCTAVE_CURRENT is framebuffer for each OCTAVE
-			-	RESAMPLE DETAIL to shape of OCTAVE_CURRENT
-				-	(DETAIL comes from init or previous ITERATION)
-			-	RESIZE the NETBLOB
-			-	ADD DETAILS + OCTAVE_CURRENT to NETBLOB
+What is the difference between FRAMEBUFFER and VIEWPORT
+FRAMEBUFFER is projected onscreen through VIEWPORT
 
-			#	OCTAVECYCLE
-				WHILE STEPCOUNT < Amplifier.ITERATION_MAX
-					PROCESS the cameras STORED in the motion detector
-					WasMotionDetected ?
-						BREAK out of OCTAVECYCLE 
 
-					# MAKESTEP (model, OBJECTIVE, step parameters)
-						-	parameters arrive here from initial deepdream function call
-						-	makestep operates upon the neural net's data blob
-						-	we can affect guide image and step size here (per iteration)
+currently,
+we almost always write directly to buffer1
+-	camera image
+	-	fetch camera before entering game loop
+	-	return value from deepdream when motion detected during OCTAVECYCLE
 
-						NETFORWARD to OBJECTIVE
-						NETBACKWARD
-						APPLY gradient ascent step to NETBLOB
-						POSTPROCESS NETBLOB
-							-	dat gaussian blur
+-	computed image
+	-	initialized with zeros at startup
+	-	REM cycle
+		-	deepdream return value after non-interrupted REM CYCLE
+		-	running inceptionxform (on self) after non-interrupted REM CYCLE
+	-	Interrupted REM cycle
+			-	composited with buffer2 at beginning of new REM CYCLE if previous cycle was interrupted
+	-	OCTAVE CYCLE
+		-	neural output from each non-interrupted iteration of OCTAVECYCLE
+		-	composited with buffer2 after interrupted OCTAVE CYCLE (is it?)
 
-					CONVERT NETBLOB to RGB and store in framebuffer1
-					SEND framebuffer1 to Viewport
-					OCTAVE_CURRENT ++
 
-			#	EARLYRETURN
-				#	LASTOCTAVE
-					-	OCTAVE_CURRENT == Amplifier.OCTAVE_CUTOFF
-						???	set Framebuffer.is_dirty flag (why?)
-					-	CONVERT NETBLOB to RGB and store as EARLY_EXIT
-					-	RESIZE EARLY_EXIT to match CAPTURESIZE
-				-	Kicked from OCTAVECYCLE because MotionDetection.WasMotionDetected
+we sometimes write directly to buffer2
+-	initialized with zeros at startup
+-	motion was detected during the OCTAVECYCLE
+	-	buffer2 stores the last hallucinated frame
+	-	deepdream exits and returns camera
+	-	buffer1 stores deepdream return value (camera)
 
 
 
-		
+What is FRAMEBUFFER?
+	NumPy array with shape (height,width,RGB)		
+	Always contains RGB image data
+	Stores Game Loop output prior to display
+
+
+What is VIEWPORT
+	An OpenCV window we created to draw on the screen
 
 
 
-deepdream return value IS STORED in framebuffer1
-EXPORT the viewport image to filesystem
-
+		resamples FRAMEBUFFER for specified width x height
 

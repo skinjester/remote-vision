@@ -87,7 +87,7 @@ class Model(object):
         h, w = guide.shape[:2]
         src, dst = self.net.blobs['data'], self.net.blobs[self.end]
         src.reshape(1, 3, h, w)
-        src.data[0] = img2caffe(self.net, guide)
+        src.data[0] = rgb2caffe(self.net, guide)
         self.net.forward(end=self.end)
         self.guide_features = dst.data[0].copy()
         MotionDetector.wasMotionDetected = True  # force refresh
@@ -143,13 +143,20 @@ class Viewport(object):
 
     
     def show(self, image):
-        # image is expected to be int/float array with shape (row,col,RGB)
-        # convert and clip floating point matrix into RGB bounds
+        # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 255))
 
         # GRB: check image size and skip resize if already at full size
-        image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
+        image = cv2.resize(image,
+            (data.viewport_size[0], data.viewport_size[1]),
+            interpolation = cv2.INTER_LINEAR)
+
         image = Framebuffer.update(image)
+
+
+
+
+
         image = self.postfx(image) # HUD
         if self.stats_visible:
             image = self.postfx2(image) # stats
@@ -277,7 +284,7 @@ class Viewport(object):
 
     #self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
-        image = caffe2img(net, caffe_array)
+        image = caffe2rgb(net, caffe_array)
         image = image * (255.0 / np.percentile(image, 100.0))
         self.show(image)
 
@@ -313,7 +320,7 @@ class Framebuffer(object):
             if self.is_compositing_enabled:
                 print '[framebuffer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.95
+                self.opacity = self.opacity * 0.9
                 if self.opacity <= 0.1:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -330,6 +337,9 @@ class Framebuffer(object):
             self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[write_buffer2] copy net blob to buffer2'
         return
+
+    def write(self, buffer=1, rgbimage):
+        if
 
 def inceptionxform(image,scale,capture_size):
     # nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
@@ -424,10 +434,10 @@ def show_HUD(image):
     return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
 
 # a couple of utility functions for converting to and from Caffe's input image layout
-def img2caffe(net, img):
+def rgb2caffe(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
 
-def caffe2img(net, img):
+def caffe2rgb(net, img):
     return np.dstack((img + net.transformer.mean['data'])[::-1])
 
 def objective_L2(dst):
@@ -475,26 +485,25 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     src.data[0] = iterationPostProcess(src.data[0])
 
 # -------
-# sets up image buffers and octave structure for iterating thru and Amplifiering neural output
-# iterates thru the neural network 
-# REM sleep, in other words
+# REM CYCLE
 # ------- 
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
-    # cooldown
+    # COOLDOWN
     # returns the camera on the first update of a new cycle 
     # after previously being kicked out of deepdream
     # effectively keeps the framebuffer in sync
         # disabling this prevents the previous camera capture from being flushed
         # (we end up seeing it as a ghost image before hallucination begins on the new camera)
-    if MotionDetector.wasMotionDetected:
-        print '[deepdream] new cycle'
-        return which_camera.read()[1]
 
-    Framebuffer.is_new_cycle = False # c
+    # GRB: Not seeing this condition get hit after several minutes of observation    
+    # if MotionDetector.wasMotionDetected:
+    #     #return which_camera.read()[1]
+    #     return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
 
     # SETUPOCTAVES
+    Framebuffer.is_new_cycle = False
     src = Model.net.blobs['data']
-    octaves = [img2caffe(Model.net, base_img)]
+    octaves = [rgb2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
     detail = np.zeros_like(octaves[-1])
@@ -527,7 +536,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             print '{:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
 
             # write netblob to framebuffer
-            Framebuffer.buffer1 = caffe2img(Model.net, src.data[0])
+            Framebuffer.buffer1 = caffe2rgb(Model.net, src.data[0])
             #Framebuffer.buffer1 = Framebuffer.buffer1 * (255.0 / np.percentile(Framebuffer.buffer1, 99.98)) # normalize contrast
             Viewport.show(Framebuffer.buffer1)
 
@@ -556,23 +565,20 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # probably temp? export each completed iteration
         # Viewport.export(Framebuffer.buffer1)
 
-        # early return because this turns out to be the last octave calculated in the series
+
+        # EARLY EXIT
+        # because this turned out to be the last octave calculated in the series
         if octave == Amplifier.octave_cutoff:
             Framebuffer.is_dirty = True
-            early_exit = caffe2img(Model.net, src.data[0])
-
-            # GRB: did we ever really need to resize the early exit array?
-            #early_exit = cv2.resize(early_exit, (data.capture_size[0], data.capture_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iteration_max)
-            return early_exit
+            return caffe2rgb(
+                Model.net, src.data[0])
 
+        # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if MotionDetector.wasMotionDetected:
-            early_exit = caffe2img(Model.net, src.data[0])  # pass caffe2imged net blob to buffer2 for fx
-
-            # GRB: do we actually need to resize the early exit array?
-            #early_exit = cv2.resize(early_exit, (Viewport.viewport_w, Viewport.viewport_h), interpolation = cv2.INTER_LINEAR) # normalize size to match viewport
-            Framebuffer.write_buffer2(early_exit)
+            Framebuffer.write_buffer2(
+                caffe2rgb(Model.net, src.data[0]))
             Framebuffer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] return camera'
             return which_camera.read()[1] 
@@ -589,7 +595,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     Framebuffer.is_dirty = True # yes, we'll be recycling the framebuffer
 
     # export finished img
-    return caffe2img(Model.net, src.data[0])
+    return caffe2rgb(Model.net, src.data[0])
 
 # -------
 # MAIN
@@ -629,6 +635,9 @@ def main():
 
         # kicks off rem sleep - will begin continual iteration of the image through the model
         Framebuffer.buffer1 = deepdream(net, Framebuffer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end )
+
+        
+        print '[main] !!! Framebuffer.buffer1 shape is {}'.format(Framebuffer.buffer1.shape)
 
         # a bit later
         later = time.time()
