@@ -133,36 +133,29 @@ class Viewport(object):
         self.viewport_w = data.viewport_size[0]
         self.viewport_h = data.viewport_size[1]
         self.b_show_HUD = False
+        self.keypress_mult = 0 # accelerate value changes when key held
+        self.b_show_stats = False
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
         self.save_next_frame = False
         self.username = username
-        self.keypress_mult = 0 # accelerate value changes when key held
-        self.stats_visible = False
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
 
     
     def show(self, image):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 255))
-        print image.shape
 
-        # GRB: check image size and skip resize if already at full size
+        # resize image to fit viewport, skip if already at full size
         if image.shape[1] != data.viewport_size[0]:
             image = cv2.resize(image,
                 (data.viewport_size[0], data.viewport_size[1]),
                 interpolation = cv2.INTER_LINEAR)
-        else:
-            print '!!'
-
-        print image.shape
-        print '-------'
 
         image = Composer.update(image)
 
-
         image = self.postfx(image) # HUD
-        if self.stats_visible:
+        if self.b_show_stats:
             image = self.postfx2(image) # stats
         cv2.imshow(self.window_name, image)
         self.listener(image) # refresh display
@@ -221,7 +214,7 @@ class Viewport(object):
         elif key == 43:
             self.keypress_mult +=1
             MotionDetector.delta_trigger += (1000 + (200 * self.keypress_mult))
-            self.stats_visible = True
+            self.b_show_stats = True
             #print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
 
         # - key : decrease motion threshold    
@@ -230,7 +223,7 @@ class Viewport(object):
             MotionDetector.delta_trigger -= (1000 + (100 * self.keypress_mult))
             if MotionDetector.delta_trigger < 1:
                 MotionDetector.delta_trigger = 1
-            self.stats_visible = True
+            self.b_show_stats = True
             #print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
 
         # , key : previous guide image    
@@ -284,7 +277,7 @@ class Viewport(object):
         else:
             # clear keypress multiplier
             self.keypress_mult = 0
-            self.stats_visible = False
+            self.b_show_stats = False
 
     #self.monitor() # update the monitor windows
     def show_blob(self, net, caffe_array):
@@ -308,7 +301,8 @@ class Composer(object):
 
     def update(self, image):
         if self.is_dirty: 
-            #print '[Composer] recycle'
+            print '[Composer] recycle'
+            '''
             if self.is_new_cycle:
                 #print '[Composer] inception'
                 self.buffer1 = inceptionxform(image, self.xform_scale, data.capture_size)
@@ -316,6 +310,7 @@ class Composer(object):
 
             self.is_dirty = False
             self.is_compositing_enabled = False
+            '''
 
         else:
             #print '[Composer] refresh'
@@ -335,12 +330,14 @@ class Composer(object):
         return image
 
     def write_buffer2(self,image):
+        print '[Composer][write_buffer2] image shape {}'.format(image.shape)
         # buffer 2 is locked when compositing is enabled
         if self.is_compositing_enabled == False:
             # convert and clip floating point matrix into RGB bounds
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
             ### resize buffer 2 to match viewport dimensions
-            self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
+            if image.shape[1] != data.viewport_size[0]:
+                self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
             #print '[write_buffer2] copy net blob to buffer2'
         return
 
@@ -402,7 +399,7 @@ def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(int(data.viewport_size[0] / 1.2), data.viewport_size[1]), (0, 0, 0), -1)
+    cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
@@ -608,12 +605,11 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # Viewport.export(Composer.buffer1)
 
 
-        # EARLY EXIT
-        # because this turned out to be the last octave calculated in the series
+        # AMPLIFIER CUTOFF
+        # this turned out to be the last octave calculated in the series
         if octave == Amplifier.octave_cutoff:
             Composer.is_dirty = True
-            #print '[deepdream] {:02d}:{:03d}:{:03d} early return net blob'.format(octave,i,iteration_max)
-            print '[deepdream] early return net blob {}'.format(src.data[0].shape)
+            print '[deepdream] {:02d}:{:03d}:{:03d} amplifier cutoff return net blob {}'.format(octave,i,iteration_max,src.data[0].shape)
             return caffe2rgb(
                 Model.net, src.data[0])
 
@@ -623,7 +619,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.write_buffer2(
                 caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-            #print '[deepdream] return camera'
+            print '[deepdream] early exit return camera'
             return which_camera.read()[1] 
 
         # extract details produced on the current octave
@@ -672,13 +668,18 @@ def main():
         Composer.is_new_cycle = True
         Viewport.show(Composer.buffer1)
         MotionDetector.process()
+        if MotionDetector.wasMotionDetected:
+            Composer.is_dirty = False
         # octave_scale += 0.2 * cycle
         # if octave_scale > 1.8 or octave_scale < 1.2:
         #     cycle = -1 * cycle
         # #print '[main] octave_scale {0:5.2f}'.format(octave_scale)
 
-        # kicks off rem sleep - will begin continual iteration of the image through the model
-        Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 4)
+        print 'Composer.is_dirty {}'.format(Composer.is_dirty)
+        if Composer.is_dirty == False:
+            # kicks off rem sleep - will begin continual iteration of the image through the model
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 5)
+
 
         
         #print '[main] !!! Composer.buffer1 shape is {}'.format(Composer.buffer1.shape)
@@ -698,9 +699,6 @@ def main():
 # -------- 
 # INIT
 # --------
-# GRB: why not just define the neural network here instead?
-# will become global reference to the network model once inside the loop
-# yeah? why is this global variable hanging around?
 net = None
 
 # HUD
@@ -740,9 +738,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-#Amplifier.set_package('hirez-fast')
-#Amplifier.set_package('quick2')
-Amplifier.set_package('jabba')
+Amplifier.set_package('lofi-1')
 
 
 if __name__ == "__main__":
