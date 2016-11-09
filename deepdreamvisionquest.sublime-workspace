@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"bu",
+				"buffer2"
+			],
+			[
+				"obj",
+				"objective_guide"
+			],
+			[
+				"object",
+				"objective"
+			],
+			[
 				"octave",
 				"octave_scale"
 			],
@@ -75,7 +87,7 @@
 			"file": "rem.py",
 			"settings":
 			{
-				"buffer_size": 25601,
+				"buffer_size": 25603,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -84,7 +96,7 @@
 			"file": "data.py",
 			"settings":
 			{
-				"buffer_size": 4049,
+				"buffer_size": 4458,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -102,7 +114,7 @@
 			"file": "camerautils.py",
 			"settings":
 			{
-				"buffer_size": 3717,
+				"buffer_size": 3725,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -117,13 +129,11 @@
 			}
 		},
 		{
-			"contents": "2016-01-19 00:11:32\nstudying the deep dream code. have been doing so fairly seriously for the past few days.\nreacquainting myself with the environment. understanding it better\n\nnet.blobs['data']  \t# input image is stored (caffe format) in network's data blob\nnet.blobs[end]\t\t# destination layer (end = layer name)\nsrc\t\t\t\t\t# input image (instance of net.blobs['data'])\nsrc.data\nsrc.data[:]\nsrc.data[0]\t\t\t# image data apparently stored here?\nsrc.diff[0]\t\t\t# back propagated error correction matrix (2D)\ndetail\t\t\t\t# an image array created to draw network produced detail\noctave_base\t\t\t# the image contained in the octave currently computed\ndst\t\t\t\t\t# the neural layer identified as the end layer\ndst.diff[:]\t\t\t# assumed to be the 2D neural weights & structure of the end layer (?)\ndst.data\t\noctave_base\t\t\t# the current image stage (octave) being dreamed upon\t\t\n\n\n\nimages in OpenCV are Numpy arrays\n\nblob (binary large object) often used to multimedia data types such as images and audio\n\nthinking about arrays more clearly:\n\nfor an array with shape (2,2,3): \t2 layers of (2,3) \t\t\t\t= 12 items\nfor an array with shape (2,3): \t\t2 layers of a list of 3 items \t= 6 items\nfor an array with shape (3):\t\ta list of 3 items \t\t\t\t= 3 items\n\nreshape method allows the number of dimensions and the size of each dimension to be changed as long as the total number of array elements remains the same\n\n\n\n2016-01-25 22:20:07\nwhat happens if you run rem.py right now?\n\n2016-07-26 07:24:20\napparently I was self documenting here, but it never really took off. Picking it back up as I tyake a look at what the v1 project needs to be\n\n2016-07-26 07:24:50\nAt the moment I'm going thru the code line by line cleaning up the formatting so the Linter program (Adaconbda/Sublime Text3) stops complaining. Busy work? Maybe - but is a good way to get a sense of what I had previously written\n\n2016-07-26 07:44:04\nOr maybe not - tedious. I'll make sure everything is clean\n\n2016-07-27 07:41:33\nGetting started mapping out the signal flowe of this program. Its more complex (and likely redundant) than I know how to move forward with\n\n2016-09-06 21:33:30\nI lost my way, thought I found it again, sort of did, athen lost it again. But I'm here now. I'm back.\nFinishing the website turned out to be more than just taking some amateur video in my living room. It was nearly 2 months ago, right before going to nucl.ai conference. I had so much fun that night and that morning playing with the \"AI\"\n\nWatching it in the living room (as a video) isn't compelling. I have an idea about doing a shoot with models or dancers and projecting the imagery. A sort of beta test as visual support for live performance. What would it take to make that happen. hire models? book a space?\nA good intermediate ide ais to start showing the project off socially - because its easier to meet people when theyre aliens too\n\nAnother intermediate is to record output directly from the display. I think I'd done so with the microsoft game recorder previously?\n\nSome new developments:\n1. I spent time working with RPyC which allows for asynchronous callbacks that let one script communicate with another. My intention is to decouple the motion detection component from the game loop and run it as a seperate process. I'd played with Visual Studio to profile the code. Unsurprisingly, most of the time is spent processing the NN in Caffe. My expectation is that motion detection can be made to work more fluidly.\n\n2. nVidia has newer faster GPU's. Significantly faster. I wonder how much speedup could be realized running on the new TitanX?\n\n3. Studied Pythin basics a bit further. Everywhere I used a Class, I should have used a Module\n\n4. Ive not been able to visualize the code to my satisfgaction. Partly because I dont know what I'm doing, partly because I haven't defined the problem clearly enough. What do you hope to gain from the desired output.\n\n5. Rebranding. I like the name. But its a mouthful. I've noty come up with anything more compelling. When the project was named, my understanding was much vaguer. nonexistent really. What is my uderstanding now?\n\n6. Need to do a site audit - tasks, priorities. There's a lot of work I can do right now.\n\n2016-09-09 11:50:40\nI really want to rename this thing. I dont know why, but cant let it go\nReading about Bestiaris.\n\n\"The bestiary, then, is also a reference to the symbolic language of animals\"\n\n2016-09-11 19:11:01\nI'm submitting a proposal for CODAME Art & Tech Exhibition\nARTIFICIAL EXPERIENCES is the name of the exhibit\nProposal Due by Saturday 9/17\nArtist notification by 9/21\nShowing in SF 11/11\n\n\nDescription of Project *\nA project description in 500 words (max) that includes any collaborative partners and relation to theme \"Interface\"\n\nLinks to high-resolution image(s) of your artist image and your proposed work\nEstimated Materials Cost and Time\nArtist Biography * A 100-200 word bio for publication in press materials (reference bios on CODAME site)\nArtistic Resume including past works, exhibitions, commissions, videography (provide a list of videogames, etc)\nTechnical specifications\nHow large is the artwork, size on the wall or floor footprint (metric preferred)? Any technical requirements like wifi or power? How long does it take to set up and break down?\n\n\n\n2016-09-15 14:16:04 DATA\nDesigned humane user interfaces for AAA videogames enjoyed by millions internationally.\n\nHas worked on games including Madden NFL, The Sims, Star Wars: The Force Unleashed and The Elder Scrolls Online\n\nCreative director\n\nOn the verge of a personal vision of collaborating with artificial inn telligene as a kind of robopsychiatrist. They;'re a better breed than us, but we made them so\n\nInvisible interfaces\n\nDesigns for your thumbs\n\nGrateful that humans don't behave rationally. It makes the job easier\n\ngood friend\nloving husband\nflawed human not hopeless\n\nBecame bored with that life and is a fine artisty afgain\n\nliving link betwee the 80's and the new era of machine hallucination\n\nnetworked 16 Apple IIew computers using their MIDI ports so that I could make all the computers in the lab blink at the same time. It was uncanny. \n\n\nI lost my way, thought I found it again, sort of did, athen lost it again. But I'm here now. I'm back.\n\n\nExperience an interactive psychedelic journey with a computer. Using the DeepDream convolutional neural network algorithm and real-time video feedback, the system turns your image into a vision of its own thought processes--a magic mirror. Questions about DeepDream, the magic mirror setup, and the spirit realm inside the machine are all welcome.\n\nTakeaway\nAttendees will leave with an understanding of how neural networks may be used for image synthesis, and specific steps for creating their own Deep Dreaming Magic Mirror.\n\nIntended Audience\nAnyone interested in interactive art experiences will be glad they came.\n\nFinally! Someone speaking my language! The language of Spirit.\nA language that cannot be used in the workplace. A language rarely acceptable in social gatherings (including most churches). Truth be told, the so-called \"Spiritual Path\" has led me to place of isolation. When I saw \"Find Your Spirit Animal In A Deep Dream Vision Quest\" - I quietly hoped I would meet someone that I could talk to. I sometimes yearn for belonging, but I refuse to shapeshift just to fit into someone else's tribe.\n\nWhen I discovered it was YOU giving the presentation, I could not control my enthusiasm! I could not wait to see you again. I realize we cannot know who we are now from the slice of childhood we briefly shared. But the moment you started talking about \"masks\" - I could totally picture you and I having that conversation (I wanted to have it right there and then!). Your presentation was very exciting to me. And, if I may, let me say that you have a charismatic presence on stage. But I digress...\n\nSimply stated, I would love to hang out with you. At the very least, we should get together and catch up on over 30 years. Let me share my contact details with you.\n\n2016-09-15 15:29:51\nAnyone or anything that has influenced the artist’s artworks.\n\nAny education or training in the field of art\n\nAny related experience in the field of art\n\nA summary of the artist’s artistic philosophy\n\nAny artistic insights or techniques that are employed by the artist\n\n2016-09-15 15:29:48\nThe bio should summarize the artist’s practice—including medium(s), themes, techniques, and influences\n\nmediums\nphotography\nvideogames\nsound design\nperformance art\n\nthemes\nthe alien in the familiar, the familiar in the alien\nthe language of the spirit\nMythology and storytelling\nEmptiness\n\n\n2016-09-15 15:29:45\nThe bio should open with a first line that encapsulates, as far as possible, what is most significant about the artist and his or her work, rather than opening with biographical tidbits, such as where the artist went to school, grew up, etc. For example: John Chamberlain is best known for his twisting sculptures made from scrap metal and banged up, discarded automobile parts and other industrial detritus.\n\n\n\nDESCRIPTION OF PROJECT\nA project description in 500 words (max) that includes any collaborative partners and relation to theme \"Interface\"\n\nExperience an interactive psychedelic journey within a computer interface. Using the DeepDream convolutional neural network algorithm and real-time video feedback, the system turns your image into a vision of its own thought processes--a magic mirror. Questions about DeepDream, the magic mirror setup, and the spirit realm inside the machine are all welcome. Attendees will leave with an understanding of how neural networks may be used for image synthesis\n\nLINKS TO HIGH-RESOLUTION IMAGE(S) OF YOUR ARTIST IMAGE AND YOUR PROPOSED WORK\nartist image:\n[find a picture you like]\n\nproposed work:\nhttp://www.deepdreamvisionquest.com/\n\nESTIMATED MATERIALS COST AND TIME\nN/A\n\n\nARTIST BIOGRAPHY\nA 100-200 word bio for publication in press materials\n\nGary Boodhoo combines videogames, machine learning and interface design to discover ancient images — spirit animals. Born in Jamaica, relocation to the United States provided a crash course in how to construct mythology out of the 1980's. Then computers happened and then Dungeons and Dragons happened. Today he is an industry veteran. He designs and bleeds user interfaces for videogames including The Sims and The Elder Scrolls Online. His work examines the rhythms of emergent behavior in shared digital environments. He lives in San Francisco and develops humane experiences for game studios and other creative clients.\n\n\nARTISTIC RESUME \n(including past works, exhibitions, commissions, videography (provide a list of videogames, etc)\n\nThe Ghost in the Machine Has Many Mansions, 2016\nPart of a speaker series on technological rituals\nPresented by the Society for Ritual Arts\nhttp://societyforritualarts.com/join-us-on-1219-in-san-francisco-for-the-ghost-in-the-machine-has-many-mansions/\n\nDeepDreamVisionQuest, 2016\npresented for the Game Developers Conference 2016, San Francisco\nhttp://schedule.gdconf.com/session/find-your-spirit-animal-in-a-deep-dream-vision-quest\n\nThe Elder Scrolls Online, 2015, \nA massively multiplayer online roleplaying game\nplatform: PlayStation 4, XBox One, Windows, OSX\npublisher: Bethesda Softworks\ndeveloper: Zenimax Online Studios\n\nZombie Apocalypse, 2009,\nAn apocalyptic multiplayer shoot-em-up\nplatforms: PlayStation 3, XBox 360\npublisher: Konami\ndeveloper: Nihilistic Software\n\nThe Sims 3, 2009, \nA life simulator game\nplatform:Windows, OSX\npublished and developed by Electronic Arts\n\nStar Wars: The Force Unleashed, 2008, \nAn epic science fiction action-adventure game\nplatform: PlayStation 3, XBox 360\npublished and developed by LucasArts\n\nMadden NFL, 2004,\nA football simulation game\nplatform: PlayStation 2, XBox, Windows\npublished and developed by Electronic Arts\n\n\n\nTECHNICAL SPECIFICATIONS\nHow large is the artwork, size on the wall or floor footprint (metric preferred)? Any technical requirements like wifi or power? How long does it take to set up and break down\n\n\nDeepDreamVisionQuest space requirements are flexible. It can be run sitting in front of a computer with a webcam. The technology was designed to be used socially so there must tbe room to comfortably observe and participate. There are 3 working areas to consider. Previous exhibits worked best when these areas were in close proximity to one another, with room for the computer and operator off to the side.\n\n1. Staging area for live video capture\n-\t3.5 square meters\n-\tHardware\n\t-\tlighting (2)\n\t\t-\tprefer to use house lighting when possible\n\t-\twebcam\n\t-\ttripod \n\t-\tchair\n\n2. Display area\n-\tRequires line of sight to staging area so participants can interact with video imagery\n-\tHardware\n\t-\tLarge TV or projector (depends on the space)\n\t\t-\tprefer to use house systems when possible\n\n3. Control area\n-\tPositioned less than 3m from Staging Area to accomodate cable runs\n-\tHardware\n\t-\tdesktop computer\n\t\t-\tUSB input from camera\n\t\t-\tHDMI output to display\t\n\t-\tcomputer monitor\n\t\t-\tneed surface to place or mount monitor\n\t-\tcomputer keyboard\n\t\t-\tneed surface to place or mount keyboard\n\t-\tGame controller\n\n\nHARDWARE BREAKDOWN\nLighting (2) [can venue provide ?]\nLarge TV or Projector [can venue provide?]\nTable/Desk [can venue provide?]\nChair [can venue provide?]\nWebcam\nTripod\nDesktop computer\nComputer monitor\nComputer Keyboard\nGame controller\n30' USB cable\nHDMI cable (length TBD pending venue details)\n\nSETUP/TEARDOWMN\nSetup/Teardown takes 30 minutes. I will need to do a technical rehearsal in the space before going live\n\n\n\n2016-09-17 01:14:44\nAfter all, the computer trained on pictures all humans understand. We train them by showing them many examples of what we want them to learn.\n\n2016-10-04 10:23:00\nThe project has moved over to Linux for scalability and so forth. I'm using a new Titan X Pascal gfx card and needed to go through a chain of dependencies to work properly - which wasn't happening in Windows. I am seeing a bit of a speedup in basic dreaming, and have confidence that seperating motion detection into a different process will also help.\n\nThere's so much to think about - what do I really want to do with this? I need to assume there is no operator other than myself if necessary - would like to see more behaviors happening on their own - or possibly in response to inputs other than the game controller?\nWould it be difficult to integrate MIDI?\n\n2016-10-04 10:28:00\nWhy am I unable to change the size of the frame buffer?\nOh - ut was at the top of the script\nWow! Dreaming at 960 x 540 is extremely fast, but seems like motion detection gets broken?\nOh - its the threshold values (counting fewer pixels now)\n\n2016-10-04 10:34:00\nIts so much faster that I must rethink what's happening w the motion detection and transition between dreamed frames\n\n2016-10-04 20:50:44\nstudying that code. What's the plan for Artificial Experience?\n\n2016-10-08 10:21:25\ndoing some houisecleaning w the deepdreamvisionquest code. I think that everything that's currently a class, shoule be a module for easier maintainability and understanding wtf is going on\n\n-\tMotionDetector\n-\tViewport\n-\tFramebuffer\n-\tModel\n-\tAmplifier\n\n2016-10-08 13:32:45\nmodules are:\n-\ta python file w some functions and/or variabes in it\n-\tyou import that filee into another\n-\tyou access the functions or variables in that module using the dot (.) operator\n\n\n2016-10-08 14:28:41\nstill reading up on modules and remembering how the code works\nOne observation is that the viewport sizing I;'m doing isn't consistent\nThe expectation is to be rendering and processing at 960 x 540 (a rem cycle lasts 4 secons)\nand scaling that view to 1920 x 1080, but is seems like that's getting mixed up and maybe its only the camera images that are coming in at the lowere rez?\n\n2016-10-08 14:54:32\nmaybe the uprez can be done by the OS itself - scaling the output x2?\n\n2016-10-08 17:10:41\ndont fixate on the interaction at this time - get the structure you want in place\n\n2016-10-08 19:00:30\nTo get a list of the modules that have already been imported, you can look up sys.modules.keys()\n\n\n\n\n\n2016-10-09 00:21:22\nstill refactoring the motion detection class \nhaven't yet converted it into a model\ngood improvements on responsiveness though - enough so that the idea of running it in a seperate process doesn't seem as high priority as before.\ngetting decent balance between speed and quality at 1280 x 720 w cycle time of 2 sec\n\n2016-10-09 13:34:31\nIt isn't making sense converting from classes to modules - and for what? learning? pride? convenience?\nIs a major pain in th ass to croll around this single rem.py. Would be so much easier to bve dealing with seperate files as functional chunks. \nWhat am I not getting?\n-\tglobal state in a module isn't being retained in functions without messy and weird global declarations for each usage in a function.\n\t-\tA class construct just handles this shit better\n\n- Each of the modules is totally unique. Its not like they could ever run on their own or be plugged into some other code as-is\n\n- all i need is the ability to maintain seperate namespaces\n\n\n2016-10-09 15:41:01\nI'm not sure how much effort to place into restructuring this code in a more manageble way. Its not unmanageable, but can't shake the feeling that its built on an unsteady foundation, hence the desire to look further\n\nI'm taking another look at that camera capture demo (cameo) that I'd studfies a few monbths ago\n\nprogram hub\n\timport SomeModule\n\tclass ComputerProgram\n\t\t__init__(self,params)\n\t\t\tclassvars\n\t\t\tinstatiate SomeModule.class()\n\t\trun(self)\n\t\t\tSomeModule.class().function()\n\t\tfunctions(self)\n\tif __name__ == '__main__':\n\t\tComputerProgram().run()\n\nSomeModule\n\tclass Module\n\t\t__init__(self,params)\n\t\t\tclassvars\n\t\tfunctions(self)\n\n2016-10-09 17:54:23\nI've looked into structural optimization as far as I can for the moment\nIts clear that there's a real issue (opportunity?) with these various bundles of state/behavior referencing one another globally\n\n2016-10-09 23:19:56\npushed and committed recent work to git\n\n2016-10-10 01:28:28\nI've externalized the class definition of MotionDetector\n\n2016-10-12 09:01:57\nTrying to understand what this code is doing so I can modify it\nTaking Cory's advice in following what the data is doing. Very difficult to think of these little machines as small bits of functionality.\n\ncameras ARE STORED in motion detector\ncamera IS STORED in framebuffer1\nGAME LOOP\n\tSEND framebuffer1 to viewport\n\tPROCESS the cameras STORED in the motion detector\n\t\tcurrent value of self.wasMotionDetected and self.delta_count are STORED in history vars\n\t\tthe difference between cameras IS STORED as self.t_delta_framebuffer\n\t\tthe count of non-zero pixels in t_delta IS STORED as self.delta_count\n\n\t\t# outcomes\n\t\tself.delta_count == 0 is the result of an overflow\n\t\t\t-\tall delta_count(s) were above detection threshold\n\t\t\t-\treseting the count will force wasMotionDetected == FALSE upon later comparison\n\t\tself.delta_count_history STORES the history of self.delta_count (so we can compare current outcome with previous)\n\t\tself.wasMotionDetected == TRUE means stop dreaming\n\t\tself.wasMotionDetected == FALSE means continue dreaming\n\t\tself.wasMotionDetected_history STORES the history of self.wasMotionDetected (so we can compare current outcome with previous)\n\n\t\t#epilogue\n\t\tnew camera IS STORED to queue\n\t\toldest camera IS REMOVED from queue\n\n\n\n\t\tREFRESH the images STORED in the motion detector\n\tSEND framebuffer1 to DEEPDREAM OCTAVE LOOP\nDEEPDREAM LOOP\n\tNEW CYCLE?\n\t\tSTORE camera as return value\n\t\tEXIT loop\n\n\tSETUP OCTAVES\n\t\t# COPY the original img from the Model.net.blob\n\t\t# CREATE a framebuffer for network produced DETAIL\n\t\t\t#shaped the same as original img\n\t\t# CREATE the OCTAVEARRAY\n\t\t-\tcan affect network model, octave_scale, iteration count here\n\n\tOCTAVE LOOP\n\t\t# ADD DETAIL to OCTAVE\n\t\t-\tlast (smallest) octave first\n\n\t\tNEURALITERATIONS\n\t\t\twhile:\n\t\t\t\t(iteration < max_iteration is True\n\t\t\t\tMotionDetecton.WasMotionDetected is False)\n\n\t\t\t\t# MAKESTEP (model, objective, step parameters)\n\t\t\t\t\t-\tparameters are passed here from initial deepdream function call\n\t\t\t\t\t-\tmakestep operates upon the neural net's data blob\n\t\t\t\t\t-\twe can affect guide image, step size here\n\n\t\t\t\t\tNEURAL COMPUTATION\n\t\t\t\t\tPOSTPROCESS net data blob\n\n\t\t\t\tCONVERT net data blob to RGB and store in framebuffer1\n\n\n\n\n\n\t\t\n\n\n\ndeepdream return value IS STORED in framebuffer1\nEXPORT the viewport image to filesystem\n\n\n",
 			"file": "docs/spirit animal notes.txt",
-			"file_size": 20781,
-			"file_write_time": 131208978133580108,
 			"settings":
 			{
-				"buffer_size": 20455,
+				"buffer_size": 23430,
+				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		}
@@ -272,6 +282,35 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Framebuffer",
+			"caffe2img",
+			"img2caffe",
+			"Viewport.show",
+			"buffer1",
+			"Framebuffer.buffer1",
+			"which_camera.read()[1]",
+			"buffer2",
+			"Framebuffer",
+			"framebuffer",
+			"Framebuffer",
+			"update",
+			"_dreamy",
+			".is_dirty",
+			"end",
+			"Model.end",
+			"camera",
+			"cameras",
+			"CAMERA",
+			"camera",
+			"CAMERA",
+			"camera",
+			"motion detector",
+			"Framebuffer.is_dirty",
+			"framebuffer1",
+			"flip",
+			"iter_n",
+			"octave_base",
+			"octave_current",
 			"iterationPostProcess",
 			"np",
 			"sobel",
@@ -370,36 +409,7 @@
 			"self.cap.read",
 			".cap.r",
 			"cap",
-			"MotionDetector",
-			"motiondetector",
-			"MotionDetector",
-			"camera",
-			"delta_count_last",
-			"old_delta_trigger",
-			"delta_count_threshold",
-			"720",
-			"1280",
-			"720",
-			"1280",
-			"process",
-			"self.",
-			"set_mode_gpu",
-			"main",
-			"motion",
-			"1000",
-			"1080",
-			"1920",
-			"540",
-			"960",
-			"camera",
-			"Tracker.",
-			"Tracker2.",
-			"t_now",
-			"    Tracker2.t_now",
-			" Tracker2.",
-			"Tracker2.t_now",
-			"Tracker2.",
-			"isResting"
+			"MotionDetector"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -417,7 +427,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -426,15 +436,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 25601,
+						"buffer_size": 25603,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								12705,
-								12705
+								24582,
+								24582
 							]
 						],
 						"settings":
@@ -445,10 +455,10 @@
 							"word_wrap": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 5115.0,
+						"translation.y": 14200.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -457,15 +467,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4049,
+						"buffer_size": 4458,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1130,
-								1130
+								3338,
+								3338
 							]
 						],
 						"settings":
@@ -474,10 +484,10 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2904.0,
+						"translation.y": 3168.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -502,7 +512,7 @@
 							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 755.0,
+						"translation.y": 73.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 5,
@@ -511,7 +521,7 @@
 			]
 		},
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -520,15 +530,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3717,
+						"buffer_size": 3725,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3267,
-								3267
+								899,
+								899
 							]
 						],
 						"settings":
@@ -542,7 +552,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -570,7 +580,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -579,15 +589,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 20455,
+						"buffer_size": 23430,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								20354,
-								20354
+								21578,
+								21578
 							]
 						],
 						"settings":
@@ -596,10 +606,10 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 10003.0,
+						"translation.y": 10046.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				}
 			]
@@ -633,7 +643,7 @@
 		"cols":
 		[
 			0.0,
-			0.521022980919,
+			0.519460480919,
 			1.0
 		],
 		"rows":

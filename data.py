@@ -1,4 +1,4 @@
-capture_size = [1280,720]
+capture_size = [640,360]
 viewport_size = [1280,720]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
@@ -81,42 +81,24 @@ layers = [
 settings = {}
 
 
-settings['niceplaces'] = {
-	'iterations':30,
-	'step_size':2,
+
+
+
+
+
+settings['watt'] = {
+	'iterations':5,
+	'step_size':5.0,
 	'octaves':6,
-	'octave_cutoff':7,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0.01,
-	'duration':8,
-	'comments':'hello',
-	'viewport_size':[1920,1080],
-	'capture_size':[1280,720],
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
-
-
-settings['niceplaces-good'] = {
-	'iterations':10,
-	'step_size':1.6,
-	'octaves':4,
 	'octave_cutoff':4,
 	'octave_scale':1.5,
-	'iteration_mult':0,
-	'step_mult':0.0,
-	'duration':276,
-	'comments':'amazing. works great with places model too',
-	'viewport_size':[1920,1080],
+	'iteration_mult':0.0,
+	'step_mult':0.02,
+	'duration':1.5,
+	'comments':'default',
+	'viewport_size':[1280,720],
 	'capture_size':[1280,720],
+	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
@@ -128,15 +110,62 @@ settings['niceplaces-good'] = {
 	'threshold':50000
 }
 
-
-settings['hifi-best'] = {
-	'iterations':8,
-	'step_size':4.0,
+settings['ghost'] = {
+	'iterations':5,
+	'step_size':5.0,
 	'octaves':6,
 	'octave_cutoff':4,
-	'octave_scale':1.6,
-	'iteration_mult':0.2,
-	'step_mult':0.2,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.02,
+	'duration':1.5,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['ghost2'] = {
+	'iterations':5,
+	'step_size':2.0,
+	'octaves':6,
+	'octave_cutoff':4,
+	'octave_scale':1.3,
+	'iteration_mult':0.0,
+	'step_mult':0.5,
+	'duration':1.5,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['lofi-1'] = {
+	'iterations':10,
+	'step_size':5.0,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.1,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
@@ -153,14 +182,42 @@ settings['hifi-best'] = {
 	'threshold':50000
 }
 
+
 settings['jabba'] = {
 	'iterations':10,
 	'step_size':5.0,
+	'octaves':8,
+	'octave_cutoff':5,
+	'octave_scale':1.1,
+	'iteration_mult':0.25,
+	'step_mult':0.01,
+	'duration':31,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+
+
+
+settings['jabba-sm'] = {
+	'iterations':10,
+	'step_size':4.0,
 	'octaves':5,
-	'octave_cutoff':3,
-	'octave_scale':1.5,
-	'iteration_mult':0.5,
-	'step_mult':0.02,
+	'octave_cutoff':5,
+	'octave_scale':1.3,
+	'iteration_mult':0.25,
+	'step_mult':0.00,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
@@ -181,10 +238,10 @@ settings['wtf'] = {
 	'iterations':80,
 	'step_size':4.0,
 	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.5,
-	'step_mult':0.02,
+	'octave_cutoff':6,
+	'octave_scale':1.6,
+	'iteration_mult':0.25,
+	'step_mult':0.03,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
@@ -200,4 +257,5 @@ settings['wtf'] = {
 	],
 	'threshold':50000
 }
+
 

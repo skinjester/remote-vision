@@ -449,7 +449,7 @@ How it works, a romance in simple language
 			#	ITERATE from small to large
 				-	OCTAVE is index for OCTAVEARRAY
 				-	OCTAVE_CURRENT is framebuffer for each OCTAVE
-				-	RESAMPLE DETAIL to match shape of OCTAVE_CURRENT
+				-	RESAMPLE DETAIL to mat ch shape of OCTAVE_CURRENT
 					-	DETAIL comes from SETUPOCTAVES or previous OCTAVEARRAY CYCLE
 				-	RESIZE the NETBLOB
 				-	ADD DETAILS + OCTAVE_CURRENT to NETBLOB
@@ -497,19 +497,41 @@ How it works, a romance in simple language
 				-	Return FINISHED
 
 
-
 #	FRAMEBUFFER
-	is_dirty:	the type of frame in BUFFER1, dirty when recycling, clean when refreshing
-	is_new_cycle
-	BUFFER1
-	BUFFER2
-	is_compositing_enabled
 
-	FRAMEBUFFER REFRESH means BUFFER1 contains CAMERA
-	FRAMEBUFFER RECYCLE means BUFFER1 contains 
+------------------------------
+What is the COMPOSER?
+	NumPy array with shape (height,width,RGB)		
+	Always contains RGB image data
+	Stores Game Loop SOURCES prior to display
+		-	Deep Dream
+		-	Motion Detector
+		-	Overlays
+			-	HUD
+			-	Alerts
+	Processes Game Loop SOURCES into OUTPUTS
+		-	compositing
+		-	resizing
+	Flexibility
+		-	SOURCES in the COMPOSER can be any size
+			-	SOURCES in the COMPOSER are resized to the COMPOSITE W,H when composited
+		-	OUTPUTS from the COMPOSER are resized to the VIEWPORT W,H
 
-What is the difference between FRAMEBUFFER and VIEWPORT
-FRAMEBUFFER is projected onscreen through VIEWPORT
+------------------------------
+What is the VIEWPORT
+	An OpenCV window we created to draw on the screen
+	An Event Listener for external input
+		-	listens for keyboard events every frame
+	Flexibility
+		-	window can be drawn at any size
+		-	supports multiple windows
+			-	all windows use the same event listener
+		-	provides PREPROCESS inserts
+			-	color transform
+		-	provides POSTPROCESS inserts
+			-	HUD overlay
+			-	ALERT overlay
+
 
 
 currently,
@@ -537,18 +559,95 @@ we sometimes write directly to buffer2
 	-	deepdream exits and returns camera
 	-	buffer1 stores deepdream return value (camera)
 
+2016-11-07 17:03:13
+-	Tracking
+	-	automate tracking thresholds
+	-	trigger events based on "hot" areas of the screen
+		-	screen edges?
+		-	the cell of an n x n grid with the brightest value?
 
+-	dynamics
+	-	cleanup the "programs" currently in use to allow switching between them
+	-	cleanup color processing on viewport
+	-	add support for automated events
 
-What is FRAMEBUFFER?
-	NumPy array with shape (height,width,RGB)		
-	Always contains RGB image data
-	Stores Game Loop output prior to display
+-	display
+	-	keep a buffer of final output data (history buffer)
+	-	playback history buffer
+	-	composite / replace live with history
+	-	global frame blending (as in after effects)
+		-	 no longer special case new camera image acquisition
+		-	 all frames are averaged together before display
 
+-	HUD cleanup
+	-	image export
+	-	twitter post on demand (?)
 
-What is VIEWPORT
-	An OpenCV window we created to draw on the screen
+AUTOMATE TRACKING THRESHOLDS
+every time I set up a session, I have to double check the threshold and lower it or raise it so that motion is detected at a known degree of sensitivity.
 
+if subjects are close to the camera, all the counted values increase
 
+AUTOMATED EVENTS
+-	different kind of transforms on REM cycle
+	-	scale vertical vs. cale vertical + h, anchor left
+	-	value of scale variable
+		-	random?
+		-	sequenced?
+		-	cycle?
+		-	related to number of pixels counted during motion detection?
+	-	blur multiplier
+	-	different feature maps on a given layer
 
-		resamples FRAMEBUFFER for specified width x height
+BEST LAYERS
+inception_4d_5x5_reduce
+
+2016-11-07 18:06:56
+theres a bug with the viewp[ort scaling - its scaling from upper left anchor instead of center anchor
+
+2016-11-07 23:20:57
+a more efficient way to resample the viewport?
+
+2016-11-08 01:32:23
+added feature map selector to make_step() wow...
+
+2016-11-08 14:45:10
+taking a second look at feature map rendering style
+priority for this work session is to get tracking automated
+better metrics on HUD
+fix viewport scaling to work from center instead of top left edge
+
+username
+settings
+threshold
+last
+now
+
+2016-11-08 15:40:51
+CREATE AN INVENTORY OF EFFECTS. BE ABLE TO SWITCH BETWEEN THEM
+
+for what I'm looking at right now I want to specify:
+-	Model
+	-	Layer Index
+	-	Feature Index
+-	Deepdream basic parameters
+	-	Iterations
+	-	Octaves
+	-	Octave cutoff
+	-	Octave scale
+	-	Step Size
+	-	Step Size multiplier
+-	Renderer
+	-	Make_Step()
+	-	Make_Step_Feature_Map()
+	-	REM cycle flag (TRUE/FALSE)
+		-	TRUE (current value, hallucinate until new camera input)
+		-	FALSE (stop processing until new camera input)
+-	Modifiers
+	-	Feature Index incrementor
+	-	Layer Index incrementor
+	-	Octave Scale
+	-	Pause Motion Detection
+	-	REM Transform scale
+	-	REM Transform center point
 

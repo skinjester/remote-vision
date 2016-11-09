@@ -25,7 +25,7 @@ class MotionDetector(object):
         return cv2.absdiff(t2, t0)
     
     def repopulate_queue(self):
-        print '[motiondetector] repopulate queue'
+        #print '[motiondetector] repopulate queue'
         self.t_minus = self.camera.read()[1] 
         self.t_now = self.camera.read()[1]
         self.t_plus = self.camera.read()[1]
@@ -44,22 +44,22 @@ class MotionDetector(object):
         
         if (self.delta_count >= self.delta_trigger and 
             self.delta_count_history >= self.delta_trigger):
-            print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
+            #print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.delta_count = 0
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.update_log('detect','*')
-            print "---- [motiondetector] movement started"
+            #print "---- [motiondetector] movement started"
             self.wasMotionDetected = True
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.update_log('detect','-')
-            print "---- [motiondetector] movement ended"
+            #print "---- [motiondetector] movement ended"
             self.wasMotionDetected = False
  
         else:
             self.update_log('detect','-')
-            print "---- [motiondetector] beneath threshold"
+            #print "---- [motiondetector] beneath threshold"
             self.wasMotionDetected = False
 
         # logging
@@ -81,7 +81,7 @@ class MotionDetector(object):
         return self.wasMotionDetected == self.wasMotionDetected_history
 
     def refresh_queue(self):
-        print "---- [motiondetector] refresh queue"
+        #print "---- [motiondetector] refresh queue"
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()[1]
