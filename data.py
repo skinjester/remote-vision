@@ -159,13 +159,13 @@ settings['ghost2'] = {
 }
 
 settings['lofi-1'] = {
-	'iterations':10,
-	'step_size':5.0,
+	'iterations':7,
+	'step_size':6.0,
 	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
+	'octave_cutoff':3,
+	'octave_scale':1.2,
 	'iteration_mult':0.5,
-	'step_mult':0.1,
+	'step_mult':0.0,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
