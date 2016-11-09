@@ -107,11 +107,11 @@ settings['watt'] = {
 }
 
 settings['ghost'] = {
-	'iterations':30,
+	'iterations':100,
 	'step_size':4.0,
-	'octaves':8,
-	'octave_cutoff':4,
-	'octave_scale':1.3,
+	'octaves':3,
+	'octave_cutoff':2,
+	'octave_scale':1.4,
 	'iteration_mult':0.0,
 	'step_mult':0.0,
 	'duration':1.5,
@@ -130,36 +130,12 @@ settings['ghost'] = {
 	'threshold':50000
 }
 
-settings['ghost2'] = {
-	'iterations':5,
-	'step_size':2.0,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.3,
-	'iteration_mult':0.0,
-	'step_mult':0.5,
-	'duration':1.5,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
-	'model':'places',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
-
-settings['lofi-1'] = {
-	'iterations':7,
-	'step_size':6.0,
+settings['lofi'] = {
+	'iterations':10,
+	'step_size':8.0,
 	'octaves':4,
-	'octave_cutoff':3,
-	'octave_scale':1.2,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
 	'iteration_mult':0.5,
 	'step_mult':0.0,
 	'duration':31,

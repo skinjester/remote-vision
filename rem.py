@@ -349,7 +349,7 @@ def inceptionxform(image,scale,capture_size):
 
 
 def iterationPostProcess(net_data_blob):
-    return blur(net_data_blob, 0.7)
+    return blur(net_data_blob, 0.5)
 
 def blur(img, sigma):
     if sigma > 0:
@@ -677,7 +677,7 @@ def main():
         print 'Composer.is_dirty {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False:
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 5)
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 11)
 
 
         

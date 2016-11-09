@@ -9,6 +9,10 @@ class Fifo(list):
             del self.back[:]
         return super(Fifo, self).pop()
 
+class FifoList(list):
+	def pop(self):
+	    return super(FifoList, self).pop(0)
+
 if __name__ == '__main__':
     a = Fifo()
     a.append(10)
