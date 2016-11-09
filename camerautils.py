@@ -20,6 +20,8 @@ class MotionDetector(object):
         self.is_paused = False
         self.noise_level = 0
         self.update_log = log
+        self.history = []
+        self.history_queue_length = 4
     
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
@@ -42,6 +44,11 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view) - self.noise_level
         
+        #self.delta_trigger = self.add_to_history(self.delta_count)
+        self.delta_trigger = self.add_to_history(self.delta_count)
+        print '[motiondetector] delta_trigger {}'.format(self.delta_trigger)
+        
+        
         if (self.delta_count >= self.delta_trigger and 
             self.delta_count_history >= self.delta_trigger):
             #print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
@@ -59,7 +66,7 @@ class MotionDetector(object):
  
         else:
             self.update_log('detect','-')
-            #print "---- [motiondetector] beneath threshold"
+            print "---- [motiondetector] beneath threshold"
             self.wasMotionDetected = False
 
         # logging
@@ -77,6 +84,14 @@ class MotionDetector(object):
         self.update_log('now',nowmsg)
         self.refresh_queue()
 
+    def add_to_history(self,value):
+        self.history.append(self.delta_count)
+        if len(self.history) > self.history_queue_length:
+            self.history.pop(0)
+        return int(sum(self.history)/(self.history_queue_length-1)) + self.history_queue_length + 3000
+
+
+
     def isResting(self):
         return self.wasMotionDetected == self.wasMotionDetected_history
 
@@ -85,4 +100,4 @@ class MotionDetector(object):
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()[1]
-        self.t_plus = cv2.blur(self.t_plus,(16,16))
+        self.t_plus = cv2.blur(self.t_plus,(2,2))

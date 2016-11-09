@@ -40,7 +40,7 @@ class Amplifier(object):
         self.package_name = key
 
 class Model(object):
-    def __init__(self, modelkey='googlenet', current_layer=1):
+    def __init__(self, modelkey='googlenet', current_layer=0):
         self.guide_features = None
         self.net = None
         self.net_fn = None
@@ -330,15 +330,14 @@ class Composer(object):
         return image
 
     def write_buffer2(self,image):
-        print '[Composer][write_buffer2] image shape {}'.format(image.shape)
-        # buffer 2 is locked when compositing is enabled
         if self.is_compositing_enabled == False:
             # convert and clip floating point matrix into RGB bounds
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
+
             ### resize buffer 2 to match viewport dimensions
             if image.shape[1] != data.viewport_size[0]:
+                print '[Composer][write_buffer2] resize buffer2 to viewport'
                 self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
-            #print '[write_buffer2] copy net blob to buffer2'
         return
 
     # def write(self, buffer=1, rgbimage):
@@ -738,7 +737,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_package('lofi-1')
+Amplifier.set_package('ghost')
 
 
 if __name__ == "__main__":

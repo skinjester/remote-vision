@@ -1,5 +1,5 @@
-capture_size = [640,360]
-viewport_size = [1280,720]
+capture_size = [1600,896]
+viewport_size = [1600,896]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -25,6 +25,7 @@ models['places'] = ('googlenet_places205','deploy.prototxt','places205_train_ite
 
 
 layers = [
+	'inception_4d/5x5_reduce',
 	'conv2/3x3',
 	'conv2/3x3_reduce',
 	'conv2/norm2',
@@ -81,11 +82,6 @@ layers = [
 settings = {}
 
 
-
-
-
-
-
 settings['watt'] = {
 	'iterations':5,
 	'step_size':5.0,
@@ -111,13 +107,13 @@ settings['watt'] = {
 }
 
 settings['ghost'] = {
-	'iterations':5,
-	'step_size':5.0,
-	'octaves':6,
+	'iterations':30,
+	'step_size':4.0,
+	'octaves':8,
 	'octave_cutoff':4,
-	'octave_scale':1.5,
+	'octave_scale':1.3,
 	'iteration_mult':0.0,
-	'step_mult':0.02,
+	'step_mult':0.0,
 	'duration':1.5,
 	'comments':'default',
 	'viewport_size':[1280,720],
@@ -183,14 +179,14 @@ settings['lofi-1'] = {
 }
 
 
-settings['jabba'] = {
+settings['hifi-lg'] = {
 	'iterations':10,
-	'step_size':5.0,
-	'octaves':8,
+	'step_size':4.0,
+	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.1,
-	'iteration_mult':0.25,
-	'step_mult':0.01,
+	'octave_scale':1.8,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],

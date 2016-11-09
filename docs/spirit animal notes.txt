@@ -651,3 +651,14 @@ for what I'm looking at right now I want to specify:
 	-	REM Transform scale
 	-	REM Transform center point
 
+2016-11-08 22:47:32
+about to start work on automated tracking. I think that collecting the last n samples of the delta_count then calculating a moving average from that to select the threshold i sthe right place to start
+
+x check the full range of display resolutions available for camera
+
+2. draw stats on screen as needed
+
+3. represent delta count as % is the value the same independent of capture size ?
+
+2016-11-09 02:45:47
+I've made the motion detection threshold dynamic - the raw delta count values are placed in fifo queue with fixed length, the queue values are averaged with each step. the threshold value is set to that. Its effective
