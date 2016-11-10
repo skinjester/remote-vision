@@ -1,5 +1,5 @@
-capture_size = [1600,896]
-viewport_size = [1600,896]
+capture_size = [1280,720]
+viewport_size = [1920,1080]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -155,12 +155,12 @@ settings['lofi'] = {
 }
 
 
-settings['hifi-lg'] = {
-	'iterations':10,
-	'step_size':4.0,
+settings['hifi'] = {
+	'iterations':20,
+	'step_size':3.0,
 	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.8,
+	'octave_scale':1.3,
 	'iteration_mult':0.0,
 	'step_mult':0.0,
 	'duration':31,

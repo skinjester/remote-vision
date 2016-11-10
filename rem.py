@@ -158,7 +158,13 @@ class Viewport(object):
         if self.b_show_stats:
             image = self.postfx2(image) # stats
         cv2.imshow(self.window_name, image)
+
+
         self.listener(image) # refresh display
+
+        # calling the listener function completes opencv window refresh
+        # we pass the fuilly composited image to the function because... why?
+        #listener(image) 
 
         # export image if condition is met
        # if someFlag:
@@ -273,17 +279,6 @@ class Viewport(object):
         # z key: next network layer
         elif key == 122:
             Model.prev_layer()
-
-        else:
-            # clear keypress multiplier
-            self.keypress_mult = 0
-            self.b_show_stats = False
-
-    #self.monitor() # update the monitor windows
-    def show_blob(self, net, caffe_array):
-        image = caffe2rgb(net, caffe_array)
-        image = image * (255.0 / np.percentile(image, 100.0))
-        self.show(image)
 
     def shutdown(self):
         sys.exit()
@@ -737,7 +732,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_package('ghost')
+Amplifier.set_package('hifi')
 
 
 if __name__ == "__main__":

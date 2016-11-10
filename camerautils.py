@@ -45,9 +45,9 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
         
-        #self.delta_trigger = self.add_to_history(self.delta_count)
+        
         self.delta_trigger = self.add_to_history(self.delta_count)
-        print '{:7} {}'.format(self.delta_trigger,self.history)
+        #print '{:7} {}'.format(self.delta_trigger,self.history)
         
         
         if (self.delta_count >= self.delta_trigger and 

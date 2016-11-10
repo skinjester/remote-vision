@@ -688,3 +688,44 @@ maybe there is another way to calculate moton detection?
 
 2016-11-09 12:09:00
 maybe. need to move on to other things though. the current method is an improvement
+
+2016-11-09 12:58:45
+lookimg so Dark when webcm contrast/exposure is made sorta noir
+
+2016-11-09 15:26:49
+Looking at creating "programs" that I can switch between
+
+2016-11-09 16:21:43
+how do I "switch" programs now?
+Amplifier.set_package('ghost')
+
+what if I could keybind that behavior and switch between?
+
+what is a "program"?
+what is the difference between program A and program B?
+
+# 1
+A: begins at inception_4d/5x5_reduce
+B: begins at inception_5a/5x5_reduce
+
+# 2
+A: octave_scale = 1.8
+B: octave_scale = 1.2
+
+# 3
+A:	uses make_step_featuremap
+B:	uses make_step
+
+# 4
+A: static mode
+B: REM mode
+
+# 5
+A: uses 'places' model
+B: uses 'cars' model
+
+# 6
+A: starts at featuremap[1,2,3,4,5] index 0
+B: starts at featuremap[5,10,15] index 2
+B
+
