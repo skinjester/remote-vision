@@ -80,7 +80,7 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
-features = [0,1,2,3]
+features = [0,1,2,3,4,5,6,7,8,9,10]
 
 
 program = {}
@@ -182,8 +182,32 @@ program['hifi-layers-all'] = {
 	'threshold':50000
 }
 
+program['hifi-featuremap'] = {
+	'iterations':8,
+	'step_size':4.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'duration':31,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
 
-program['lofi-layers-all'] = {
+
+program['geo-layers-all'] = {
 	'iterations':50,
 	'step_size':2.0,
 	'octaves':8,

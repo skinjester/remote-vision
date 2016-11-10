@@ -96,6 +96,8 @@ class Model(object):
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]),
             channel_swap=(2, 1, 0))
 
+        
+
     def set_program(self, name):
         self.iterations = data.program[name]['iterations']
         self.stepsize_base = data.program[name]['step_size']
@@ -135,15 +137,16 @@ class Model(object):
 
     def set_endlayer(self,end):
         self.end = end
-        Viewport.force_refresh = True # force screen refresh
-        print '######## [Model] new layer {} ########'.format(end)
-        update_log('layer',end)
+        Viewport.force_refresh = True
+        print '######## [Model] new layer {}/featuremaps={}'.format(end,self.net.blobs[self.end].data.shape[1])
+        update_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
+
 
     def set_featuremap(self,index):
-        self.current_feature = index
-        MotionDetector.wasMotionDetected = True # force refresh
-
-        update_log('featuremap',index)
+        self.feature_ID = self.features[index]
+        Viewport.force_refresh = True
+        print '######## [Model] new featuremap {}'.format(self.feature_ID)
+        update_log('featuremap',self.feature_ID)
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -156,6 +159,23 @@ class Model(object):
         if self.current_layer > len(self.layers)-1:
             self.current_layer = 0
         self.set_endlayer(self.layers[self.current_layer])
+
+    def prev_feature(self):
+        self.current_feature -= 1
+        if self.current_feature < 0:
+            self.current_feature = len(self.features)-1
+        self.set_featuremap(self.current_feature)
+
+    def next_feature(self):
+        self.current_feature += 1
+        if self.current_feature > len(self.features)-1:
+            self.current_feature = 0
+        self.set_featuremap(self.current_feature)
+
+    def get_feature_ID(self):
+        return self.features[self.current_feature]
+
+
  
 class Viewport(object):
 
@@ -410,23 +430,15 @@ def listener(image): # yeah... passing image as a convenience
         Viewport.b_show_stats = True
         print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
 
-    # , key : previous guide image    
+    # , key : previous featuremap    
     elif key == 44:
-        MotionDetector.is_paused = False
-        MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
-        MotionDetector.wasMotionDetected = True
-        Composer.is_compositing_enabled = False
-        Model.prev_guide()
-        print '[listener] previous guide image'
+        print '[listener] previous featuremap'
+        Model.prev_feature()
 
-    # . key : next guide image    
+    # . key : next featuremap    
     elif key == 46:
-        MotionDetector.is_paused = False
-        MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
-        MotionDetector.wasMotionDetected = True
-        Composer.is_compositing_enabled = False
-        Model.next_guide()
-        print '[listener] next guide image'
+        print '[listener] next featuremap'
+        Model.next_feature()
 
     # 1 key : toggle motion detect window
     elif key == 49: 
@@ -487,6 +499,7 @@ def objective_guide(dst):
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
+'''
 def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2, feature=1):
     print '[make_step] wasMotionDetected {}'.format(MotionDetector.wasMotionDetected)
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
@@ -513,41 +526,47 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
+'''
 
 
-# def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
-#     '''Basic gradient ascent step.'''
 
-#     src = net.blobs['data'] # input image is stored in Net's 'data' blob
-#     dst = net.blobs[end]
+# -------
+# implements forward and backward passes thru the network
+# apply normalized ascent step upon the image in the networks data blob
+# supports Feature Map activation
+# ------- 
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
 
-#     ox, oy = np.random.randint(-jitter, jitter+1, 2)
-#     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
+    src = net.blobs['data'] # input image is stored in Net's 'data' blob
+    dst = net.blobs[end]
+
+    ox, oy = np.random.randint(-jitter, jitter+1, 2)
+    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
             
-#     net.forward(end=end)
+    net.forward(end=end)
         
-#     if feature == -1:
-#         dst.diff[:] = dst.data
-#     else:
-#         dst.diff.fill(0.0)
-#         dst.diff[0,feature,:] = dst.data[0,feature,:]
+    if feature == -1:
+        dst.diff[:] = dst.data
+    else:
+        dst.diff.fill(0.0)
+        dst.diff[0,feature,:] = dst.data[0,feature,:]
 
-#     net.backward(start=end)
-#     g = src.diff[0]
-#     # apply normalized ascent step to the input image
-#     m = np.abs(g).mean()
+    net.backward(start=end)
+    g = src.diff[0]
+    # apply normalized ascent step to the input image
+    m = np.abs(g).mean()
 
-#     if m > 0.0:
-#         src.data[:] += step_size/m * g
+    if m > 0.0:
+        src.data[:] += step_size/m * g
 
-#     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
+    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
             
-#     if clip:
-#         bias = net.transformer.mean['data']
-#         src.data[:] = np.clip(src.data, -bias, 255-bias)
+    if clip:
+        bias = net.transformer.mean['data']
+        src.data[:] = np.clip(src.data, -bias, 255-bias)
 
-#     # postprocess (blur) this iteration
-#     src.data[0] = iterationPostProcess(src.data[0])
+    # postprocess (blur) this iteration
+    src.data[0] = iterationPostProcess(src.data[0])
 
 # -------
 # REM CYCLE
@@ -708,7 +727,7 @@ def main():
         print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 11)
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.feature_ID)
             Viewport.force_refresh = False
 
         
@@ -768,7 +787,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_program('lofi')
+Amplifier.set_program('hifi-featuremap')
 
 
 if __name__ == "__main__":

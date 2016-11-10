@@ -734,3 +734,11 @@ moved event listener out of Viewport class is now a global function
 2016-11-09 20:24:21
 passing the listener function to Viewport instance
 
+2016-11-10 09:36:59
+changing layers forces new cycle now, implementing same for featuremaps
+
+2016-11-10 12:03:55
+verifying feature map incrementor setup
+
+2016-11-10 12:12:14
+works. doing some cleanup before commiting
