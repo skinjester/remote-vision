@@ -731,3 +731,6 @@ B: starts at featuremap[5,10,15] index 2
 2016-11-09 20:15:10
 moved event listener out of Viewport class is now a global function
 
+2016-11-09 20:24:21
+passing the listener function to Viewport instance
+

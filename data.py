@@ -53,6 +53,7 @@ layers = [
 	'inception_4d/5x5',
 	'inception_4d/5x5_reduce',
 	'inception_4d/output',
+	'inception_4d/pool',
 	'inception_4e/1x1',
 	'inception_4e/3x3',
 	'inception_4e/3x3_reduce',
@@ -65,6 +66,7 @@ layers = [
 	'inception_5a/3x3',
 	'inception_5a/3x3_reduce',
 	'inception_5a/5x5',
+
 	'inception_5a/5x5_reduce',
 	'inception_5a/output',
 	'inception_5a/pool',
@@ -78,11 +80,13 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
+features = [0,1,2,3]
 
-settings = {}
+
+program = {}
 
 
-settings['watt'] = {
+program['watt'] = {
 	'iterations':5,
 	'step_size':5.0,
 	'octaves':6,
@@ -106,7 +110,7 @@ settings['watt'] = {
 	'threshold':50000
 }
 
-settings['ghost-layers-all'] = {
+program['ghost-layers-all'] = {
 	'iterations':30,
 	'step_size':2.0,
 	'octaves':6,
@@ -130,7 +134,7 @@ settings['ghost-layers-all'] = {
 	'threshold':50000
 }
 
-settings['ghost'] = {
+program['ghost'] = {
 	'iterations':100,
 	'step_size':4.0,
 	'octaves':3,
@@ -154,14 +158,14 @@ settings['ghost'] = {
 	'threshold':50000
 }
 
-settings['hifi-layers-all'] = {
+program['hifi-layers-all'] = {
 	'iterations':50,
-	'step_size':3.0,
+	'step_size':2.0,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
-	'step_mult':0.0,
+	'step_mult':0.1,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
@@ -179,21 +183,21 @@ settings['hifi-layers-all'] = {
 }
 
 
-settings['lofi-layers-all'] = {
-	'iterations':10,
-	'step_size':4.0,
-	'octaves':2,
-	'octave_cutoff':2,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0.0,
+program['lofi-layers-all'] = {
+	'iterations':50,
+	'step_size':2.0,
+	'octaves':8,
+	'octave_cutoff':8,
+	'octave_scale':1.2,
+	'iteration_mult':0.0,
+	'step_mult':0.02,
 	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
 	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
+		'inception_3b/5x5',
 		'inception_4d/pool'
 	],
 	'guides':[
@@ -203,7 +207,7 @@ settings['lofi-layers-all'] = {
 	'threshold':50000
 }
 
-settings['lofi'] = {
+program['lofi'] = {
 	'iterations':10,
 	'step_size':8.0,
 	'octaves':4,
@@ -228,7 +232,7 @@ settings['lofi'] = {
 }
 
 
-settings['jabba-sm'] = {
+program['jabba-sm'] = {
 	'iterations':10,
 	'step_size':4.0,
 	'octaves':5,
@@ -252,7 +256,7 @@ settings['jabba-sm'] = {
 	'threshold':50000
 }
 
-settings['wtf'] = {
+program['wtf'] = {
 	'iterations':80,
 	'step_size':4.0,
 	'octaves':6,

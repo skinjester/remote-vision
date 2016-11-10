@@ -29,14 +29,14 @@ class Amplifier(object):
         self.jitter = 320
         self.package_name = None
 
-    def set_package(self, key):
-        self.iterations = data.settings[key]['iterations']
-        self.stepsize_base = data.settings[key]['step_size']
-        self.octaves = data.settings[key]['octaves']
-        self.octave_cutoff = data.settings[key]['octave_cutoff']
-        self.octave_scale = data.settings[key]['octave_scale']
-        self.iteration_mult = data.settings[key]['iteration_mult']
-        self.step_mult = data.settings[key]['step_mult']
+    def set_program(self, key):
+        self.iterations = data.program[key]['iterations']
+        self.stepsize_base = data.program[key]['step_size']
+        self.octaves = data.program[key]['octaves']
+        self.octave_cutoff = data.program[key]['octave_cutoff']
+        self.octave_scale = data.program[key]['octave_scale']
+        self.iteration_mult = data.program[key]['iteration_mult']
+        self.step_mult = data.program[key]['step_mult']
         self.package_name = key
 
 class Model(object):
@@ -49,12 +49,29 @@ class Model(object):
         self.end = None
         self.models = data.models
         self.guides = data.guides
+        self.features = data.features
         self.current_guide = 0
         self.current_layer = current_layer
+        self.current_feature = 0
         self.layers = data.layers
         self.first_time_through = True
+
+        # amplification
+        self.iterations = None
+        self.stepsize = None
+        self.stepsize_base = None
+        self.octaves = None
+        self.octave_cutoff = None
+        self.octave_scale = None
+        self.iteration_mult = None
+        self.step_mult = None
+        self.jitter = 320
+        self.package_name = None
+
         self.choose_model(modelkey)
         self.set_endlayer(self.layers[self.current_layer])
+        self.set_featuremap(self.features[self.current_feature])
+
 
     def choose_model(self, key):
         self.net_fn = '{}/{}/{}'.format(self.models['path'], self.models[key][0], self.models[key][1])
@@ -78,6 +95,16 @@ class Model(object):
         self.net = caffe.Classifier('tmp.prototxt',
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]),
             channel_swap=(2, 1, 0))
+
+    def set_program(self, name):
+        self.iterations = data.program[name]['iterations']
+        self.stepsize_base = data.program[name]['step_size']
+        self.octaves = data.program[name]['octaves']
+        self.octave_cutoff = data.program[name]['octave_cutoff']
+        self.octave_scale = data.program[name]['octave_scale']
+        self.iteration_mult = data.program[name]['iteration_mult']
+        self.step_mult = data.program[name]['step_mult']
+        self.package_name = name
 
     def guide_image(self):
         # current guide img
@@ -108,11 +135,15 @@ class Model(object):
 
     def set_endlayer(self,end):
         self.end = end
-        # jeez really?
-        #self.guide_image()
+        Viewport.force_refresh = True # force screen refresh
+        print '######## [Model] new layer {} ########'.format(end)
+        update_log('layer',end)
+
+    def set_featuremap(self,index):
+        self.current_feature = index
         MotionDetector.wasMotionDetected = True # force refresh
 
-        update_log('layer',end)
+        update_log('featuremap',index)
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -140,6 +171,7 @@ class Viewport(object):
         self.save_next_frame = False
         self.username = username
         self.listener = listener
+        self.force_refresh = False
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
 
     
@@ -151,7 +183,7 @@ class Viewport(object):
         if image.shape[1] != data.viewport_size[0]:
             image = cv2.resize(image,
                 (data.viewport_size[0], data.viewport_size[1]),
-                interpolation = cv2.INTER_AREA)
+                interpolation = cv2.INTER_LINEAR)
 
         image = Composer.update(image)
 
@@ -163,15 +195,10 @@ class Viewport(object):
         self.monitor()
         self.listener(image) # refresh display
 
-        # calling the listener function completes opencv window refresh
-        # we pass the fuilly composited image to the function because... why?
-        #listener(image) 
-
         # export image if condition is met
        # if someFlag:
             #someFlag = False
             #self.export(image)
-
 
     def export(self, image):
         pass
@@ -334,6 +361,7 @@ def show_HUD(image):
     write_Text('now')
     write_Text('model')
     write_Text('layer')
+    write_Text('featuremap')
     write_Text('guide')
     write_Text('width')
     write_Text('height')
@@ -349,38 +377,38 @@ def show_HUD(image):
 # keyboard event handler
 def listener(image): # yeah... passing image as a convenience
     key = cv2.waitKey(1) & 0xFF
-    ##print '[listener] key:{}'.format(key)
+    #print '[listener] key:{}'.format(key)
 
     # Escape key: Exit
     if key == 27:
+        print '[listener] shutdown'
         Viewport.shutdown()
-        #print '[listener] shutdown'
 
     # ENTER key: save picture
     elif key==13:
-        #print '[listener] save'
+        print '[listener] save'
         Viewport.export(image)
 
     # `(tilde) key: toggle HUD
     elif key == 96:
         Viewport.b_show_HUD = not Viewport.b_show_HUD
-        #print '[listener] HUD: {}'.format(MotionDetector.delta_trigger)
+        print '[listener] HUD'
 
-    # + key : increase motion threshold
-    elif key == 43:
+    # + key (numpad): increase motion threshold
+    elif key == 171:
         Viewport.keypress_mult +=1
         MotionDetector.delta_trigger += (1000 + (200 * Viewport.keypress_mult))
         Viewport.b_show_stats = True
-        #print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
+        print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
 
-    # - key : decrease motion threshold    
-    elif key == 45: 
+    # - key (numpad) : decrease motion threshold    
+    elif key == 173: 
         Viewport.keypress_mult +=1
         MotionDetector.delta_trigger -= (1000 + (100 * Viewport.keypress_mult))
         if MotionDetector.delta_trigger < 1:
             MotionDetector.delta_trigger = 1
         Viewport.b_show_stats = True
-        #print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
+        print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
 
     # , key : previous guide image    
     elif key == 44:
@@ -389,6 +417,7 @@ def listener(image): # yeah... passing image as a convenience
         MotionDetector.wasMotionDetected = True
         Composer.is_compositing_enabled = False
         Model.prev_guide()
+        print '[listener] previous guide image'
 
     # . key : next guide image    
     elif key == 46:
@@ -397,6 +426,7 @@ def listener(image): # yeah... passing image as a convenience
         MotionDetector.wasMotionDetected = True
         Composer.is_compositing_enabled = False
         Model.next_guide()
+        print '[listener] next guide image'
 
     # 1 key : toggle motion detect window
     elif key == 49: 
@@ -405,12 +435,12 @@ def listener(image): # yeah... passing image as a convenience
             cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
         else:
             cv2.destroyWindow('delta')   
-        #print '[keylistener] motion detect monitor: {}'.format(Viewport.motiondetect_log_enabled)
+        print '[keylistener] motion detect monitor: {}'.format(Viewport.motiondetect_log_enabled)
 
     # p key : pause/unpause motion detection    
     elif key == 112:
         MotionDetector.is_paused = not MotionDetector.is_paused
-        #print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
+        print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
         if MotionDetector.is_paused:
             MotionDetector.delta_trigger_history = MotionDetector.delta_trigger
             MotionDetector.delta_trigger = data.viewport_size[0] * data.viewport_size[1]
@@ -424,12 +454,13 @@ def listener(image): # yeah... passing image as a convenience
 
     # x key: previous network layer
     elif key == 120:
+        print '>>> [listener] next layer'
         Model.next_layer()
 
     # z key: next network layer
     elif key == 122:
+        print '<<< [listener] previous layer'
         Model.prev_layer()
-
 
 # a couple of utility functions for converting to and from Caffe's input image layout
 def rgb2caffe(net, img):
@@ -457,6 +488,7 @@ def objective_guide(dst):
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
 def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2, feature=1):
+    print '[make_step] wasMotionDetected {}'.format(MotionDetector.wasMotionDetected)
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
     dst = net.blobs[end] # destination is the end layer specified by argument
 
@@ -481,6 +513,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
+
 
 # def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
 #     '''Basic gradient ascent step.'''
@@ -529,7 +562,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     # GRB: Not seeing this condition get hit after several minutes of observation    
     if MotionDetector.wasMotionDetected:
-        pass
+        Composer.write_buffer2(which_camera.read()[1])
+        Composer.is_dirty = False # no, we'll be refreshing the frane buffer
+        print '!!!! [deepdream] abort return camera'
+        return which_camera.read()[1] 
         #print '[deepdream] was.MotionDetected TRUE'
         #return which_camera.read()[1]
         #return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
@@ -545,7 +581,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # OCTAVEARRAY CYCLE, last (smallest) octave first
     for octave, octave_current in enumerate(octaves[::-1]):
         h, w = octave_current.shape[-2:]
-        #print 'octave_current w:{}  octave_current h:{}'.format(w,h)
         h1, w1 = detail.shape[-2:]
         detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
 
@@ -562,12 +597,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         i=0
         while i < iteration_max:
             MotionDetector.process()
-            if MotionDetector.wasMotionDetected:
+            if not MotionDetector.isResting():
                 break
 
             # delegate gradient ascent to step function
+            print '{:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
             make_step(Model.net, end=end, **step_params)
-            #print '{:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
 
             # write netblob to Composer
             Composer.buffer1 = caffe2rgb(Model.net, src.data[0])
@@ -645,7 +680,7 @@ def main():
     caffe.set_mode_gpu()
 
     # parameters
-    #Amplifier.set_package('hirez-fast')
+    #Amplifier.set_program('hirez-fast')
     iterations = Amplifier.iterations
     stepsize = Amplifier.stepsize_base
     octaves = Amplifier.octaves
@@ -670,11 +705,11 @@ def main():
         #     cycle = -1 * cycle
         # #print '[main] octave_scale {0:5.2f}'.format(octave_scale)
 
-        print 'Composer.is_dirty {}'.format(Composer.is_dirty)
-        if Composer.is_dirty == False:
+        print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
+        if Composer.is_dirty == False or Viewport.force_refresh:
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = 11)
-
+            Viewport.force_refresh = False
 
         
         #print '[main] !!! Composer.buffer1 shape is {}'.format(Composer.buffer1.shape)
@@ -682,7 +717,7 @@ def main():
         # a bit later
         later = time.time()
         difference = later - now
-        print '[main] finish REM cycle:{0:5.2f}s'.format(difference)
+        print '[main] end cycle: {0:5.2f}s'.format(difference)
         print '-'*20
         duration_msg = '{}s'.format(difference)
         update_log('rem_cycle',duration_msg)
@@ -733,7 +768,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_package('hifi-layers-all')
+Amplifier.set_program('lofi')
 
 
 if __name__ == "__main__":
