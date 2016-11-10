@@ -727,5 +727,7 @@ B: uses 'cars' model
 # 6
 A: starts at featuremap[1,2,3,4,5] index 0
 B: starts at featuremap[5,10,15] index 2
-B
+
+2016-11-09 20:15:10
+moved event listener out of Viewport class is now a global function
 

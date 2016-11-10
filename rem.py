@@ -128,7 +128,7 @@ class Model(object):
  
 class Viewport(object):
 
-    def __init__(self, window_name='new', username='@skinjester'):
+    def __init__(self, window_name, username, listener):
         self.window_name = window_name
         self.viewport_w = data.viewport_size[0]
         self.viewport_h = data.viewport_size[1]
@@ -139,6 +139,7 @@ class Viewport(object):
         self.blend_ratio = 0.0
         self.save_next_frame = False
         self.username = username
+        self.listener = listener
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
 
     
@@ -150,7 +151,7 @@ class Viewport(object):
         if image.shape[1] != data.viewport_size[0]:
             image = cv2.resize(image,
                 (data.viewport_size[0], data.viewport_size[1]),
-                interpolation = cv2.INTER_LINEAR)
+                interpolation = cv2.INTER_AREA)
 
         image = Composer.update(image)
 
@@ -159,7 +160,7 @@ class Viewport(object):
             image = self.postfx2(image) # stats
         cv2.imshow(self.window_name, image)
 
-
+        self.monitor()
         self.listener(image) # refresh display
 
         # calling the listener function completes opencv window refresh
@@ -195,90 +196,6 @@ class Viewport(object):
     def monitor(self):
         if self.motiondetect_log_enabled:
             cv2.imshow('delta', MotionDetector.t_delta_framebuffer)
-    
-    def listener(self, image): # yeah... passing image as a convenience
-        self.monitor()
-        key = cv2.waitKey(1) & 0xFF
-        ##print '[listener] key:{}'.format(key)
-
-        # Escape key: Exit
-        if key == 27:
-            self.shutdown()
-            #print '[listener] shutdown'
-
-        # ENTER key: save picture
-        elif key==13:
-            #print '[listener] save'
-            self.export(image)
-
-        # `(tilde) key: toggle HUD
-        elif key == 96:
-            self.b_show_HUD = not self.b_show_HUD
-            #print '[listener] HUD: {}'.format(MotionDetector.delta_trigger)
-
-        # + key : increase motion threshold
-        elif key == 43:
-            self.keypress_mult +=1
-            MotionDetector.delta_trigger += (1000 + (200 * self.keypress_mult))
-            self.b_show_stats = True
-            #print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
-
-        # - key : decrease motion threshold    
-        elif key == 45: 
-            self.keypress_mult +=1
-            MotionDetector.delta_trigger -= (1000 + (100 * self.keypress_mult))
-            if MotionDetector.delta_trigger < 1:
-                MotionDetector.delta_trigger = 1
-            self.b_show_stats = True
-            #print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
-
-        # , key : previous guide image    
-        elif key == 44:
-            MotionDetector.is_paused = False
-            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
-            MotionDetector.wasMotionDetected = True
-            Composer.is_compositing_enabled = False
-            Model.prev_guide()
-
-        # . key : next guide image    
-        elif key == 46:
-            MotionDetector.is_paused = False
-            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
-            MotionDetector.wasMotionDetected = True
-            Composer.is_compositing_enabled = False
-            Model.next_guide()
-
-        # 1 key : toggle motion detect window
-        elif key == 49: 
-            self.motiondetect_log_enabled = not self.motiondetect_log_enabled
-            if self.motiondetect_log_enabled:
-                cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
-            else:
-                cv2.destroyWindow('delta')   
-            #print '[keylistener] motion detect monitor: {}'.format(self.motiondetect_log_enabled)
-
-        # p key : pause/unpause motion detection    
-        elif key == 112:
-            MotionDetector.is_paused = not MotionDetector.is_paused
-            #print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
-            if MotionDetector.is_paused:
-                MotionDetector.delta_trigger_history = MotionDetector.delta_trigger
-                MotionDetector.delta_trigger = data.viewport_size[0] * data.viewport_size[1]
-                MotionDetector.wasMotionDetected = False
-                MotionDetector.wasMotionDetected_history = False
-                MotionDetector.timer_enabled = False
-                self.delta_count = 0
-                self.delta_count_history = 0
-            else:
-                MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
-
-        # x key: previous network layer
-        elif key == 120:
-            Model.next_layer()
-
-        # z key: next network layer
-        elif key == 122:
-            Model.prev_layer()
 
     def shutdown(self):
         sys.exit()
@@ -341,7 +258,6 @@ class Composer(object):
 def inceptionxform(image,scale,capture_size):
     return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
     #return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
-
 
 def iterationPostProcess(net_data_blob):
     return blur(net_data_blob, 0.5)
@@ -430,6 +346,91 @@ def show_HUD(image):
     return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
     cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)
 
+# keyboard event handler
+def listener(image): # yeah... passing image as a convenience
+    key = cv2.waitKey(1) & 0xFF
+    ##print '[listener] key:{}'.format(key)
+
+    # Escape key: Exit
+    if key == 27:
+        Viewport.shutdown()
+        #print '[listener] shutdown'
+
+    # ENTER key: save picture
+    elif key==13:
+        #print '[listener] save'
+        Viewport.export(image)
+
+    # `(tilde) key: toggle HUD
+    elif key == 96:
+        Viewport.b_show_HUD = not Viewport.b_show_HUD
+        #print '[listener] HUD: {}'.format(MotionDetector.delta_trigger)
+
+    # + key : increase motion threshold
+    elif key == 43:
+        Viewport.keypress_mult +=1
+        MotionDetector.delta_trigger += (1000 + (200 * Viewport.keypress_mult))
+        Viewport.b_show_stats = True
+        #print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
+
+    # - key : decrease motion threshold    
+    elif key == 45: 
+        Viewport.keypress_mult +=1
+        MotionDetector.delta_trigger -= (1000 + (100 * Viewport.keypress_mult))
+        if MotionDetector.delta_trigger < 1:
+            MotionDetector.delta_trigger = 1
+        Viewport.b_show_stats = True
+        #print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
+
+    # , key : previous guide image    
+    elif key == 44:
+        MotionDetector.is_paused = False
+        MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+        MotionDetector.wasMotionDetected = True
+        Composer.is_compositing_enabled = False
+        Model.prev_guide()
+
+    # . key : next guide image    
+    elif key == 46:
+        MotionDetector.is_paused = False
+        MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+        MotionDetector.wasMotionDetected = True
+        Composer.is_compositing_enabled = False
+        Model.next_guide()
+
+    # 1 key : toggle motion detect window
+    elif key == 49: 
+        Viewport.motiondetect_log_enabled = not Viewport.motiondetect_log_enabled
+        if Viewport.motiondetect_log_enabled:
+            cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
+        else:
+            cv2.destroyWindow('delta')   
+        #print '[keylistener] motion detect monitor: {}'.format(Viewport.motiondetect_log_enabled)
+
+    # p key : pause/unpause motion detection    
+    elif key == 112:
+        MotionDetector.is_paused = not MotionDetector.is_paused
+        #print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
+        if MotionDetector.is_paused:
+            MotionDetector.delta_trigger_history = MotionDetector.delta_trigger
+            MotionDetector.delta_trigger = data.viewport_size[0] * data.viewport_size[1]
+            MotionDetector.wasMotionDetected = False
+            MotionDetector.wasMotionDetected_history = False
+            MotionDetector.timer_enabled = False
+            Viewport.delta_count = 0
+            Viewport.delta_count_history = 0
+        else:
+            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+
+    # x key: previous network layer
+    elif key == 120:
+        Model.next_layer()
+
+    # z key: next network layer
+    elif key == 122:
+        Model.prev_layer()
+
+
 # a couple of utility functions for converting to and from Caffe's input image layout
 def rgb2caffe(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
@@ -455,65 +456,65 @@ def objective_guide(dst):
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # ------- 
-# def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2):
-#     src = net.blobs['data']     # input image is stored in Net's 'data' blob
-#     dst = net.blobs[end]        # destination is the end layer specified by argument
-
-#     ox, oy = np.random.randint(-jitter, jitter + 1, 2)          # calculate jitter
-#     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
-
-#     # this bit is where the neural net runs the hallucination
-#     net.forward(end=end)    # make sure we stop on the chosen neural layer
-#     objective(dst)          # specify the optimization objective
-#     net.backward(start=end) # backwards propagation
-#     g = src.diff[0]         # store the error 
-
-#     # apply normalized ascent step to the image array 
-#     src.data[:] += step_size / np.abs(g).mean() * g
-
-#     # unshift image jitter              
-#     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)   
-
-#     # subtract image mean and clip our matrix to the values
-#     bias = net.transformer.mean['data']
-#     src.data[:] = np.clip(src.data, -bias, 255-bias)
-
-#     # postprocess (blur) this iteration
-#     src.data[0] = iterationPostProcess(src.data[0])
-
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
-    '''Basic gradient ascent step.'''
-
+def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2, feature=1):
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
-    dst = net.blobs[end]
+    dst = net.blobs[end] # destination is the end layer specified by argument
 
-    ox, oy = np.random.randint(-jitter, jitter+1, 2)
+    ox, oy = np.random.randint(-jitter, jitter + 1, 2)          # calculate jitter
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
-            
-    net.forward(end=end)
-        
-    if feature == -1:
-        dst.diff[:] = dst.data
-    else:
-        dst.diff.fill(0.0)
-        dst.diff[0,feature,:] = dst.data[0,feature,:]
 
-    net.backward(start=end)
-    g = src.diff[0]
-    # apply normalized ascent step to the input image
-    m = np.abs(g).mean()
+    # this bit is where the neural net runs the hallucination
+    net.forward(end=end)    # make sure we stop on the chosen neural layer
+    objective(dst)          # specify the optimization objective
+    net.backward(start=end) # backwards propagation
+    g = src.diff[0]         # store the error 
 
-    if m > 0.0:
-        src.data[:] += step_size/m * g
+    # apply normalized ascent step to the image array 
+    src.data[:] += step_size / np.abs(g).mean() * g
 
-    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
-            
-    if clip:
-        bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 255-bias)
+    # unshift image jitter              
+    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)   
+
+    # subtract image mean and clip our matrix to the values
+    bias = net.transformer.mean['data']
+    src.data[:] = np.clip(src.data, -bias, 255-bias)
 
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
+
+# def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
+#     '''Basic gradient ascent step.'''
+
+#     src = net.blobs['data'] # input image is stored in Net's 'data' blob
+#     dst = net.blobs[end]
+
+#     ox, oy = np.random.randint(-jitter, jitter+1, 2)
+#     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
+            
+#     net.forward(end=end)
+        
+#     if feature == -1:
+#         dst.diff[:] = dst.data
+#     else:
+#         dst.diff.fill(0.0)
+#         dst.diff[0,feature,:] = dst.data[0,feature,:]
+
+#     net.backward(start=end)
+#     g = src.diff[0]
+#     # apply normalized ascent step to the input image
+#     m = np.abs(g).mean()
+
+#     if m > 0.0:
+#         src.data[:] += step_size/m * g
+
+#     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
+            
+#     if clip:
+#         bias = net.transformer.mean['data']
+#         src.data[:] = np.clip(src.data, -bias, 255-bias)
+
+#     # postprocess (blur) this iteration
+#     src.data[0] = iterationPostProcess(src.data[0])
 
 # -------
 # REM CYCLE
@@ -722,7 +723,7 @@ which_camera.set(3, data.capture_size[0])
 which_camera.set(4, data.capture_size[1])
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
-Viewport = Viewport('deepdreamvisionquest','@deepdreamvisionquest')
+Viewport = Viewport('deepdreamvisionquest','@deepdreamvisionquest', listener)
 Composer = Composer()
 Model = Model()
 Amplifier = Amplifier()
@@ -732,7 +733,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_package('hifi')
+Amplifier.set_package('hifi-layers-all')
 
 
 if __name__ == "__main__":

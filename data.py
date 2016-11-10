@@ -106,6 +106,30 @@ settings['watt'] = {
 	'threshold':50000
 }
 
+settings['ghost-layers-all'] = {
+	'iterations':30,
+	'step_size':2.0,
+	'octaves':6,
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'duration':1.5,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
 settings['ghost'] = {
 	'iterations':100,
 	'step_size':4.0,
@@ -115,6 +139,55 @@ settings['ghost'] = {
 	'iteration_mult':0.0,
 	'step_mult':0.0,
 	'duration':1.5,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+settings['hifi-layers-all'] = {
+	'iterations':50,
+	'step_size':3.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'duration':31,
+	'comments':'default',
+	'viewport_size':[1280,720],
+	'capture_size':[1280,720],
+	'model':'places',
+	'layers':[
+		'inception_4a/pool',
+		'inception_4d/pool'
+	],
+	'guides':[
+		'eagle1.jpg',
+		'eyeballs.jpg'
+	],
+	'threshold':50000
+}
+
+
+settings['lofi-layers-all'] = {
+	'iterations':10,
+	'step_size':4.0,
+	'octaves':2,
+	'octave_cutoff':2,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.0,
+	'duration':31,
 	'comments':'default',
 	'viewport_size':[1280,720],
 	'capture_size':[1280,720],
@@ -153,33 +226,6 @@ settings['lofi'] = {
 	],
 	'threshold':50000
 }
-
-
-settings['hifi'] = {
-	'iterations':20,
-	'step_size':3.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.3,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
-	'model':'places',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
-
-
 
 
 settings['jabba-sm'] = {
