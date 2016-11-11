@@ -83,29 +83,13 @@ layers = [
 program = []
 
 program.append({
-	'name':'ghost-layers-all',
-	'iterations':30,
-	'step_size':2.0,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4c/output'
-	],
-	'features':[1]
-})
-
-program.append({
 	'name':'ghost',
 	'iterations':50,
 	'step_size':2.0,
 	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.25,
+	'octave_scale':1.1,
+	'iteration_mult':0.0,
 	'step_mult':0.01,
 	'model':'places',
 	'layers':[
@@ -166,6 +150,22 @@ program.append({
 })
 
 program.append({
+	'name':'ghost1',
+	'iterations':10,
+	'step_size':2.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'places',
+	'layers':[
+		'inception_4d/5x5_reduce',
+	],
+	'features':[-1,0,1,2,3]
+})
+
+program.append({
 	'name':'hifi-layers-all',
 	'iterations':50,
 	'step_size':2.0,
@@ -178,7 +178,7 @@ program.append({
 	'layers':[
 		'inception_4c/output'
 	],
-	'features':[1]
+	'features':[0,1,2,3]
 })
 
 

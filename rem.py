@@ -35,6 +35,9 @@ class Model(object):
         self.layers = data.layers
         self.first_time_through = True
 
+        self.program = data.program
+        self.current_program = 0
+
         # amplification
         self.iterations = None
         self.stepsize = None
@@ -126,6 +129,18 @@ class Model(object):
         if self.current_feature > max_feature_index-1:
             self.current_feature = 0
         self.set_featuremap()
+
+    def prev_program(self):
+        self.current_program -= 1
+        if self.current_program < 0:
+            self.current_program = len(self.program)-1
+        self.set_program(self.current_program)
+
+    def next_program(self):
+        self.current_program += 1
+        if self.current_program > len(self.program)-1:
+            self.current_program = 0
+        self.set_program(self.current_program)
 
 class Viewport(object):
 
@@ -308,8 +323,8 @@ def show_stats(image):
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
-    opacity = 0.3
-    cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
+    opacity = 1.0
+    #cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
@@ -337,6 +352,7 @@ def show_HUD(image):
     write_Text('featuremap')
     write_Text('width')
     write_Text('height')
+    write_Text('scale')
     write_Text('octave')
     write_Text('iteration')
     write_Text('step_size')
@@ -419,10 +435,12 @@ def listener():
     # -> key: next program
     elif key == 83:
         print 'next program'
+        Model.next_program()
 
     # <- key: previous program
     elif key == 81:
         print 'previous program'
+        Model.prev_program()
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -605,6 +623,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_log('guide',guidemsg)
             update_log('iteration',iterationmsg)
             update_log('step_size',stepsizemsg)
+            update_log('scale',Model.octave_scale)
             update_log('program',Model.package_name)
             update_log('threshold',thresholdmsg)
             update_log('floor',floormsg)
@@ -693,7 +712,7 @@ def main():
             Viewport.save_next_frame = True
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.features[Model.current_feature])
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
                 print '[main] FORCED REFRESH'
@@ -763,7 +782,7 @@ Model = Model()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Model.set_program(1)
+Model.set_program(0)
 
 
 if __name__ == "__main__":
