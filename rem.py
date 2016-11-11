@@ -17,29 +17,6 @@ import caffe
 from camerautils import MotionDetector
 
 class Model(object):
-    def __init__(self):
-        self.iterations = None
-        self.stepsize = None
-        self.stepsize_base = None
-        self.octaves = None
-        self.octave_cutoff = None
-        self.octave_scale = None
-        self.iteration_mult = None
-        self.step_mult = None
-        self.jitter = 320
-        self.package_name = None
-
-    def set_program(self, key):
-        self.iterations = data.program[key]['iterations']
-        self.stepsize_base = data.program[key]['step_size']
-        self.octaves = data.program[key]['octaves']
-        self.octave_cutoff = data.program[key]['octave_cutoff']
-        self.octave_scale = data.program[key]['octave_scale']
-        self.iteration_mult = data.program[key]['iteration_mult']
-        self.step_mult = data.program[key]['step_mult']
-        self.package_name = key
-
-class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
         self.guide_features = None
         self.net = None
