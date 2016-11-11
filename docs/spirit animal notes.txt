@@ -778,3 +778,29 @@ clean saves of high res material are guaranteed only when a cycle is completed -
 2016-11-11 09:53:05
 -	work out how to switch programs with program select
 -	create programs and test
+
+2016-11-11 10:50:01
+modifying program list data structure
+
+2016-11-11 11:10:21
+wtf did that code work the first time through :) :) :)
+
+2016-11-11 11:21:08
+adding some error handling to prevent crash when featuremap index goes out of range for a particular layer
+
+2016-11-11 11:24:07
+now isnt really the time for that... revisit iof possible
+
+2016-11-11 11:30:46
+fixed the problem at featuremap selection
+
+2016-11-11 11:39:46
+basic program selection working - need to flesh out further
+
+2016-11-11 12:41:05
+model parameters not updating when I switch programs - may need to abandon that idea for now
+
+2016-11-11 12:47:43
+simple fix. working now.
+give yourself 30 calm minutes to find some cool settings
+add more from the location

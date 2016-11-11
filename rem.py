@@ -89,8 +89,10 @@ class Model(object):
         self.step_mult = data.program[index]['step_mult']
         self.layers = data.program[index]['layers']
         self.features = data.program[index]['features']
+        self.current_feature = 0;
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
+
 
     def set_endlayer(self,end):
         self.end = end
@@ -120,14 +122,17 @@ class Model(object):
         max_feature_index = self.net.blobs[self.end].data.shape[1]
         self.current_feature -= 1
         if self.current_feature < 0:
-            self.current_feature = max_feature_index-1
+            self.current_feature = len(self.features)-1
         self.set_featuremap()
 
     def next_feature(self):
         max_feature_index = self.net.blobs[self.end].data.shape[1]
         self.current_feature += 1
-        if self.current_feature > max_feature_index-1:
+
+        if self.current_feature > len(self.features)-1:
             self.current_feature = 0
+        if self.current_feature > max_feature_index-1:
+            self.current_feature = -1
         self.set_featuremap()
 
     def prev_program(self):
