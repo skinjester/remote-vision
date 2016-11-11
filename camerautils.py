@@ -31,6 +31,7 @@ class MotionDetector(object):
         if self.is_paused:
             self.wasMotionDetected = False
             return
+        print '-'*20    
         print "[motiondetector][process]"
         # history 
         self.wasMotionDetected_history = self.wasMotionDetected  #??
@@ -46,6 +47,7 @@ class MotionDetector(object):
         
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
         print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
+
         
         
         if (self.delta_count >= self.delta_trigger and 

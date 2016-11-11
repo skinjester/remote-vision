@@ -80,11 +80,7 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
-features = range(1,24)
-
-
 program = {}
-
 
 program['ghost-layers-all'] = {
 	'iterations':30,
@@ -96,10 +92,9 @@ program['ghost-layers-all'] = {
 	'step_mult':0.01,
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
+		'inception_4c/output'
 	],
-	'noise_level':50000
+	'features':[1]
 }
 
 program['ghost'] = {
@@ -112,10 +107,10 @@ program['ghost'] = {
 	'step_mult':0.01,
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
+		'inception_3b/5x5',
 		'inception_4d/pool'
 	],
-	'noise_level':50000
+	'features':[1,3,5,7,9,11,13]
 }
 
 program['hifi-layers-all'] = {
@@ -128,10 +123,9 @@ program['hifi-layers-all'] = {
 	'step_mult':0.1,
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
+		'inception_4c/output'
 	],
-	'noise_level':50000
+	'features':[1]
 }
 
 program['hifi-featuremap'] = {
@@ -144,10 +138,9 @@ program['hifi-featuremap'] = {
 	'step_mult':0.0,
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
+		'inception_4c/output'
 	],
-	'noise_level':50000
+	'features':[1]
 }
 
 
@@ -161,10 +154,9 @@ program['geo-layers-all'] = {
 	'step_mult':0.02,
 	'model':'places',
 	'layers':[
-		'inception_3b/5x5',
-		'inception_4d/pool'
+		'inception_4c/output'
 	],
-	'noise_level':50000
+	'features':[1]
 }
 
 program['lofi'] = {
@@ -177,43 +169,15 @@ program['lofi'] = {
 	'step_mult':0.0,
 	'model':'places',
 	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
+		'inception_4c/output'
 	],
-	'noise_level':50000
+	'features':[1]
 }
 
 
-program['jabba-sm'] = {
-	'iterations':10,
-	'step_size':4.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.3,
-	'iteration_mult':0.25,
-	'step_mult':0.00,
-	'model':'places',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'noise_level':50000
-}
-
-program['wtf'] = {
-	'iterations':80,
-	'step_size':4.0,
-	'octaves':6,
-	'octave_cutoff':6,
-	'octave_scale':1.6,
-	'iteration_mult':0.25,
-	'step_mult':0.03,
-	'model':'places',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'noise_level':50000
-}
+# print '*' * 8
+# print program['ghost']['layers'][0]
+# print '*' * 8
+# quit()
 
 

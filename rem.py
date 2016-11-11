@@ -50,7 +50,7 @@ class Model(object):
         self.models = data.models
         self.guides = data.guides
 
-        self.features = data.features
+        self.features = None
         self.current_feature = 0
 
         self.current_guide = 0
@@ -71,8 +71,8 @@ class Model(object):
         self.package_name = None
 
         self.choose_model(modelkey)
-        self.set_endlayer(self.layers[self.current_layer])
-        self.set_featuremap()
+        #self.set_endlayer(self.layers[self.current_layer])
+        #self.set_featuremap()
 
 
     def choose_model(self, key):
@@ -99,6 +99,7 @@ class Model(object):
             channel_swap=(2, 1, 0))
   
     def set_program(self, name):
+        self.package_name = name
         self.iterations = data.program[name]['iterations']
         self.stepsize_base = data.program[name]['step_size']
         self.octaves = data.program[name]['octaves']
@@ -106,7 +107,10 @@ class Model(object):
         self.octave_scale = data.program[name]['octave_scale']
         self.iteration_mult = data.program[name]['iteration_mult']
         self.step_mult = data.program[name]['step_mult']
-        self.package_name = name
+        self.layers = data.program[name]['layers']
+        self.features = data.program[name]['features']
+        self.set_endlayer(self.layers[0])
+        self.set_featuremap()
 
     def set_endlayer(self,end):
         self.end = end
@@ -144,9 +148,6 @@ class Model(object):
             self.current_feature = 0
         self.set_featuremap()
 
-
-
- 
 class Viewport(object):
 
     def __init__(self, window_name, username, listener):
@@ -183,7 +184,7 @@ class Viewport(object):
         cv2.imshow(self.window_name, image)
 
         self.monitor()
-        self.listener(image) # refresh display
+        self.listener() # refresh display
 
         # export image if condition is met
        # if someFlag:
@@ -364,7 +365,7 @@ def show_HUD(image):
     cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)
 
 # keyboard event handler
-def listener(image): # yeah... passing image as a convenience
+def listener():
     key = cv2.waitKey(1) & 0xFF
     #print '[listener] key:{}'.format(key)
 
@@ -394,7 +395,7 @@ def listener(image): # yeah... passing image as a convenience
         if MotionDetector.floor < 1:
             MotionDetector.floor = 1
         print '[listener] Viewport.floor -- {}'.format(MotionDetector.floor)
-        
+
     # , key : previous featuremap    
     elif key == 44:
         print '[listener] previous featuremap'
@@ -432,6 +433,15 @@ def listener(image): # yeah... passing image as a convenience
     elif key == 122:
         print '<<< [listener] previous layer'
         Model.prev_layer()
+
+    # -> key: next program
+    elif key == 83:
+        print 'next program'
+
+    # <- key: previous program
+    elif key == 81:
+        print 'previous program'
+
 
 # a couple of utility functions for converting to and from Caffe's input image layout
 def rgb2caffe(net, img):
@@ -711,8 +721,8 @@ def main():
         # a bit later
         later = time.time()
         difference = later - now
-        print '[main] end cycle: {0:5.2f}s'.format(difference)
-        print '-'*20
+        #print '[main] end cycle)'
+        #print '-'*20
         duration_msg = '{}s'.format(difference)
         update_log('rem_cycle',duration_msg)
         now = time.time()
