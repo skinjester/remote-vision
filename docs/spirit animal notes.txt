@@ -749,8 +749,8 @@ modifying the program data definitions
 2016-11-10 17:50:12
 remaining
 x	fix pause functionality
--	work out how to switch model with program select
--	exporting stills
+-	work out how to switch programs with program select
+x	exporting stills
 -	create programs and test
 
 2016-11-10 19:12:55
@@ -764,3 +764,17 @@ pulling layer list from program definitions now
 
 2016-11-10 23:35:53
 pulling featuremap list from program definitions now
+
+2016-11-11 08:18:26
+Setup 1p at Hotel Zetta. Take the next hour to look at switching network models with progam
+
+2016-11-11 09:32:07
+autosaving fully composited frames at end of cycle. still need ability to save on demand
+
+2016-11-11 09:50:37
+forced refresh will save the return value from deepdream early exit - this will be a clean camera image. Saving on demand also implemented - this saves whatever is in the image buffer - scaled up to dimensions of viewport.
+clean saves of high res material are guaranteed only when a cycle is completed - and that saving is automated
+
+2016-11-11 09:53:05
+-	work out how to switch programs with program select
+-	create programs and test

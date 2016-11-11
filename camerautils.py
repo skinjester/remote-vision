@@ -46,7 +46,7 @@ class MotionDetector(object):
         
         
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
-        print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
+        #print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
 
         
         

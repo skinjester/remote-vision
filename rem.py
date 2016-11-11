@@ -163,6 +163,7 @@ class Viewport(object):
         self.username = username
         self.listener = listener
         self.force_refresh = False
+        self.image = None # current composited image
         cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
 
     
@@ -184,23 +185,25 @@ class Viewport(object):
         cv2.imshow(self.window_name, image)
 
         self.monitor()
-        self.listener() # refresh display
+        self.listener()
+
+        # GRB: temp structure for saving fully rendered frames
+        self.image = image
 
         # export image if condition is met
-       # if someFlag:
-            #someFlag = False
-            #self.export(image)
+        # if self.save_next_frame:
+        #     self.save_next_frame = False
+        #     self.export(image)
 
-    def export(self, image):
-        pass
-        # self.save_next_frame = True
-        # #print '[main] save rendered frame'
-        # Viewport.save_next_frame = False
-        # make_sure_path_exists(Viewport.username)
-        # export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
-        # savefile = cv2.cvtColor(Composer.buffer1, cv2.COLOR_BGR2RGB)
-        # PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
-        #tweet(export_path)
+    def export(self,image=None):
+        print '[Viewport] export'
+        if image == None:
+            image = self.image
+        make_sure_path_exists(Viewport.username)
+        export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
+        savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+        # #tweet(export_path)
 
     def postfx(self, image):
         if self.b_show_HUD:
@@ -367,7 +370,7 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    #print '[listener] key:{}'.format(key)
+    print '[listener] key:{}'.format(key)
 
     # Escape key: Exit
     if key == 27:
@@ -375,9 +378,9 @@ def listener():
         Viewport.shutdown()
 
     # ENTER key: save picture
-    elif key==13:
+    elif key==10:
         print '[listener] save'
-        Viewport.export(image)
+        Viewport.export()
 
     # `(tilde) key: toggle HUD
     elif key == 96:
@@ -588,7 +591,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if Viewport.force_refresh:
                 Composer.write_buffer2(which_camera.read()[1])
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-                print '!!!! [deepdream] FORCE REFRESH'
+                print '[deepdream] FORCE REFRESH'
                 return which_camera.read()[1] 
 
             MotionDetector.process()
@@ -707,28 +710,38 @@ def main():
         print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
 
-            if Viewport.force_refresh:
-                print '[main] FORCED REFRESH'
+
+            Viewport.save_next_frame = True
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            print '************ feature_ID {} ****************'.format(Model.features[Model.current_feature])
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.features[Model.current_feature])
-            Viewport.force_refresh = False
+
+            if Viewport.force_refresh:
+                print '[main] FORCED REFRESH'
+                Viewport.export(Composer.buffer1)
+                Viewport.force_refresh = False
+        else:
+            if Viewport.save_next_frame:
+                Viewport.export()
+            Viewport.save_next_frame = False
+
+
 
         
         #print '[main] !!! Composer.buffer1 shape is {}'.format(Composer.buffer1.shape)
+        #Viewport.save_next_frame = True
 
         # a bit later
         later = time.time()
         difference = later - now
-        #print '[main] end cycle)'
-        #print '-'*20
         duration_msg = '{}s'.format(difference)
         update_log('rem_cycle',duration_msg)
         now = time.time()
 
-        # export each finished img to filesystem
-        #Viewport.export(Composer.buffer1)
+        print '[main] end cycle)'
+
+        #Viewport.save_next_frame = True
+
 
 # -------- 
 # INIT
@@ -762,7 +775,7 @@ which_camera.set(3, data.capture_size[0])
 which_camera.set(4, data.capture_size[1])
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
-Viewport = Viewport('deepdreamvisionquest','@deepdreamvisionquest', listener)
+Viewport = Viewport('deepdreamvisionquest','ARTEX', listener)
 Composer = Composer()
 Model = Model()
 

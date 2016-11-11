@@ -66,7 +66,6 @@ layers = [
 	'inception_5a/3x3',
 	'inception_5a/3x3_reduce',
 	'inception_5a/5x5',
-
 	'inception_5a/5x5_reduce',
 	'inception_5a/output',
 	'inception_5a/pool',
@@ -102,15 +101,65 @@ program['ghost'] = {
 	'step_size':2.0,
 	'octaves':6,
 	'octave_cutoff':6,
-	'octave_scale':1.4,
+	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
 	'model':'places',
 	'layers':[
+		'inception_4d/5x5_reduce',
+		'conv2/3x3',
+		'conv2/3x3_reduce',
+		'conv2/norm2',
+		'inception_3a/1x1',
+		'inception_3a/3x3',
 		'inception_3b/5x5',
-		'inception_4d/pool'
+		'inception_3b/output',
+		'inception_3b/pool',
+		'inception_4a/1x1',
+		'inception_4a/3x3',
+		'inception_4b/3x3_reduce',
+		'inception_4b/5x5',
+		'inception_4b/5x5_reduce',
+		'inception_4b/output',
+		'inception_4b/pool',
+		'inception_4b/pool_proj',
+		'inception_4c/1x1',
+		'inception_4c/3x3',
+		'inception_4c/3x3_reduce',
+		'inception_4c/5x5',
+		'inception_4c/5x5_reduce',
+		'inception_4c/output',
+		'inception_4c/pool',
+		'inception_4d/3x3',
+		'inception_4d/5x5',
+		'inception_4d/5x5_reduce',
+		'inception_4d/output',
+		'inception_4d/pool',
+		'inception_4e/1x1',
+		'inception_4e/3x3',
+		'inception_4e/3x3_reduce',
+		'inception_4e/5x5',
+		'inception_4e/5x5_reduce',
+		'inception_4e/output',
+		'inception_4e/pool',
+		'inception_4e/pool_proj',
+		'inception_5a/1x1',
+		'inception_5a/3x3',
+		'inception_5a/3x3_reduce',
+		'inception_5a/5x5',
+		'inception_5a/5x5_reduce',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
+		'inception_5b/5x5',
+		'inception_5b/5x5_reduce',
+		'inception_5b/output',
+		'inception_5b/pool',
+		'inception_5b/pool_proj'
 	],
-	'features':[1,3,5,7,9,11,13]
+	'features':range(-1,96)
 }
 
 program['hifi-layers-all'] = {
@@ -140,7 +189,7 @@ program['hifi-featuremap'] = {
 	'layers':[
 		'inception_4c/output'
 	],
-	'features':[1]
+	'features':range(-1,96)
 }
 
 
