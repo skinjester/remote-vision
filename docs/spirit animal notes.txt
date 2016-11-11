@@ -742,3 +742,16 @@ verifying feature map incrementor setup
 
 2016-11-10 12:12:14
 works. doing some cleanup before commiting
+
+2016-11-10 15:45:02
+modifying the program data definitions
+
+2016-11-10 17:50:12
+remaining
+x	fix pause functionality
+-	work out how to switch model with program select
+-	exporting stills
+-	create programs and test
+
+2016-11-10 19:12:55
+fixed pause functionality - much less convoluted than previous implement

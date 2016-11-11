@@ -80,35 +80,11 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
-features = [0,1,2,3,4,5,6,7,8,9,10]
+features = range(1,24)
 
 
 program = {}
 
-
-program['watt'] = {
-	'iterations':5,
-	'step_size':5.0,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.02,
-	'duration':1.5,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
-	'model':'places',
-	'layers':[
-		'inception_4a/pool',
-		'inception_4d/pool'
-	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
-}
 
 program['ghost-layers-all'] = {
 	'iterations':30,
@@ -118,44 +94,28 @@ program['ghost-layers-all'] = {
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
-	'duration':1.5,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 program['ghost'] = {
-	'iterations':100,
-	'step_size':4.0,
-	'octaves':3,
-	'octave_cutoff':2,
+	'iterations':50,
+	'step_size':2.0,
+	'octaves':6,
+	'octave_cutoff':6,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'duration':1.5,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
+	'step_mult':0.01,
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 program['hifi-layers-all'] = {
@@ -166,44 +126,28 @@ program['hifi-layers-all'] = {
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
 	'step_mult':0.1,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 program['hifi-featuremap'] = {
-	'iterations':8,
+	'iterations':10,
 	'step_size':4.0,
-	'octaves':5,
-	'octave_cutoff':5,
+	'octaves':4,
+	'octave_cutoff':2,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
 	'step_mult':0.0,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 
@@ -215,20 +159,12 @@ program['geo-layers-all'] = {
 	'octave_scale':1.2,
 	'iteration_mult':0.0,
 	'step_mult':0.02,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_3b/5x5',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 program['lofi'] = {
@@ -239,20 +175,12 @@ program['lofi'] = {
 	'octave_scale':1.4,
 	'iteration_mult':0.5,
 	'step_mult':0.0,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 
@@ -264,20 +192,12 @@ program['jabba-sm'] = {
 	'octave_scale':1.3,
 	'iteration_mult':0.25,
 	'step_mult':0.00,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 program['wtf'] = {
@@ -288,20 +208,12 @@ program['wtf'] = {
 	'octave_scale':1.6,
 	'iteration_mult':0.25,
 	'step_mult':0.03,
-	'duration':31,
-	'comments':'default',
-	'viewport_size':[1280,720],
-	'capture_size':[1280,720],
 	'model':'places',
 	'layers':[
 		'inception_4a/pool',
 		'inception_4d/pool'
 	],
-	'guides':[
-		'eagle1.jpg',
-		'eyeballs.jpg'
-	],
-	'threshold':50000
+	'noise_level':50000
 }
 
 

@@ -49,10 +49,12 @@ class Model(object):
         self.end = None
         self.models = data.models
         self.guides = data.guides
+
         self.features = data.features
+        self.current_feature = 0
+
         self.current_guide = 0
         self.current_layer = current_layer
-        self.current_feature = 0
         self.layers = data.layers
         self.first_time_through = True
 
@@ -70,7 +72,7 @@ class Model(object):
 
         self.choose_model(modelkey)
         self.set_endlayer(self.layers[self.current_layer])
-        self.set_featuremap(self.features[self.current_feature])
+        self.set_featuremap()
 
 
     def choose_model(self, key):
@@ -95,9 +97,7 @@ class Model(object):
         self.net = caffe.Classifier('tmp.prototxt',
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]),
             channel_swap=(2, 1, 0))
-
-        
-
+  
     def set_program(self, name):
         self.iterations = data.program[name]['iterations']
         self.stepsize_base = data.program[name]['step_size']
@@ -108,45 +108,11 @@ class Model(object):
         self.step_mult = data.program[name]['step_mult']
         self.package_name = name
 
-    def guide_image(self):
-        # current guide img
-        guide = np.float32(PIL.Image.open(self.guides[self.current_guide]))
-
-        #  pick some target layer and extract guide image features
-        h, w = guide.shape[:2]
-        src, dst = self.net.blobs['data'], self.net.blobs[self.end]
-        src.reshape(1, 3, h, w)
-        src.data[0] = rgb2caffe(self.net, guide)
-        self.net.forward(end=self.end)
-        self.guide_features = dst.data[0].copy()
-        MotionDetector.wasMotionDetected = True  # force refresh
-
-    def next_guide(self):
-        self.current_guide += 1
-        if self.current_guide > len(self.guides)-1:
-            self.current_guide = 0
-        self.guide_image()
-        
-
-    def prev_guide(self):
-        self.current_guide -= 1
-        if self.current_guide < 0:
-            self.current_guide = len(self.guides)-1
-        self.guide_image()
-        MotionDetector.is_paused = False
-
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
         print '######## [Model] new layer {}/featuremaps={}'.format(end,self.net.blobs[self.end].data.shape[1])
         update_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
-
-
-    def set_featuremap(self,index):
-        self.feature_ID = self.features[index]
-        Viewport.force_refresh = True
-        print '######## [Model] new featuremap {}'.format(self.feature_ID)
-        update_log('featuremap',self.feature_ID)
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -160,20 +126,24 @@ class Model(object):
             self.current_layer = 0
         self.set_endlayer(self.layers[self.current_layer])
 
+    def set_featuremap(self):
+        Viewport.force_refresh = True
+        featuremap = self.features[self.current_feature]
+        print '######## [Model] new featuremap {}'.format(featuremap)
+        update_log('featuremap',featuremap)
+
     def prev_feature(self):
         self.current_feature -= 1
         if self.current_feature < 0:
             self.current_feature = len(self.features)-1
-        self.set_featuremap(self.current_feature)
+        self.set_featuremap()
 
     def next_feature(self):
         self.current_feature += 1
         if self.current_feature > len(self.features)-1:
             self.current_feature = 0
-        self.set_featuremap(self.current_feature)
+        self.set_featuremap()
 
-    def get_feature_ID(self):
-        return self.features[self.current_feature]
 
 
  
@@ -454,13 +424,7 @@ def listener(image): # yeah... passing image as a convenience
         MotionDetector.is_paused = not MotionDetector.is_paused
         print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
         if MotionDetector.is_paused:
-            MotionDetector.delta_trigger_history = MotionDetector.delta_trigger
-            MotionDetector.delta_trigger = data.viewport_size[0] * data.viewport_size[1]
-            MotionDetector.wasMotionDetected = False
-            MotionDetector.wasMotionDetected_history = False
-            MotionDetector.timer_enabled = False
-            Viewport.delta_count = 0
-            Viewport.delta_count_history = 0
+            print 'paused already?'
         else:
             MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
 
@@ -727,7 +691,8 @@ def main():
         print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.feature_ID)
+            print '************ feature_ID {} ****************'.format(Model.features[Model.current_feature])
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.features[Model.current_feature])
             Viewport.force_refresh = False
 
         
@@ -787,7 +752,7 @@ Amplifier = Amplifier()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_program('hifi-featuremap')
+Amplifier.set_program('ghost')
 
 
 if __name__ == "__main__":

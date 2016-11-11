@@ -18,7 +18,7 @@ class MotionDetector(object):
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
-        self.noise_level = 4000 # changed to lover value at night
+        self.noise_level = 20000 # changed to lover value at night
         self.update_log = log
         self.history = []
         self.history_queue_length = 50
@@ -26,15 +26,12 @@ class MotionDetector(object):
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
     
-    def repopulate_queue(self):
-        #print '[motiondetector] repopulate queue'
-        self.t_minus = self.camera.read()[1] 
-        self.t_now = self.camera.read()[1]
-        self.t_plus = self.camera.read()[1]
-        self.t_plus = cv2.blur(self.t_plus,(20,20))
-    
+   
     def process(self):
-        print "[motiondetector][process] enters with: wasMotionDetected {}".format(self.wasMotionDetected)
+        if self.is_paused:
+            self.wasMotionDetected = False
+            return
+        print "[motiondetector][process]"
         # history 
         self.wasMotionDetected_history = self.wasMotionDetected  #??
         self.delta_count_history = self.delta_count   
@@ -47,30 +44,29 @@ class MotionDetector(object):
         self.delta_count = cv2.countNonZero(img_count_view)
         
         
-        #self.delta_trigger = self.add_to_history(self.delta_count)
-        #print 'delta_avg: {}'.format(self.delta_trigger)
+        self.delta_trigger = self.add_to_history(self.delta_count) + self.noise_level
+        print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
         
         
         if (self.delta_count >= self.delta_trigger and 
             self.delta_count_history >= self.delta_trigger):
-            #print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
+            print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.delta_count = 0
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.delta_count -= int(self.delta_count/2)
             self.update_log('detect','*')
             self.wasMotionDetected = True
-            print "[motiondetector] movement started. wasMotionDetected {}".format(self.wasMotionDetected)
+            print "[motiondetector] movement started"
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.update_log('detect','-')
-            print "[motiondetector] movement ended. wasMotionDetected {}".format(self.wasMotionDetected)
- 
+            print "[motiondetector] movement ended"
         else:
             self.update_log('detect','-')
             self.wasMotionDetected = False
-            print "[motiondetector] beneath threshold. wasMotionDetected {}".format(self.wasMotionDetected)
+            #print "[motiondetector] beneath threshold."
 
         # logging
         lastmsg = '{:0>6}'.format(self.delta_count_history)
@@ -92,8 +88,8 @@ class MotionDetector(object):
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
         value = int(sum(self.history)/(self.history_queue_length))
-        if value > self.noise_level * 1.5:
-            value -= self.noise_level
+        # if value < self.noise_level:
+        #     value += self.noise_level
         return value
 
 
