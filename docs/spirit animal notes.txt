@@ -755,3 +755,6 @@ x	fix pause functionality
 
 2016-11-10 19:12:55
 fixed pause functionality - much less convoluted than previous implement
+
+2016-11-10 21:19:50
+assigning layers to those specified in a program's layer list

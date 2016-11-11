@@ -16,7 +16,7 @@ os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caf
 import caffe
 from camerautils import MotionDetector
 
-class Amplifier(object):
+class Model(object):
     def __init__(self):
         self.iterations = None
         self.stepsize = None
@@ -342,23 +342,22 @@ def show_HUD(image):
 
     # write text to overlay
     # col1
-    cv2.putText(overlay, log['detect'], (5, 35), font, 2.0, (0,255,0))
+    cv2.putText(overlay, log['detect'], (x, 40), font, 2.0, (0,255,0))
     cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 2.0, white)
-    write_Text('username')
-    write_Text('settings')
+    write_Text('program')
+    write_Text('floor')
     write_Text('threshold')
     write_Text('last')
     write_Text('now')
     write_Text('model')
     write_Text('layer')
     write_Text('featuremap')
-    write_Text('guide')
     write_Text('width')
     write_Text('height')
     write_Text('octave')
     write_Text('iteration')
     write_Text('step_size')
-    write_Text('rem_cycle')
+
 
     # add overlay back to source
     return cv2.addWeighted(overlay, opacity, image, 1-opacity, 0, image)
@@ -386,20 +385,16 @@ def listener(image): # yeah... passing image as a convenience
 
     # + key (numpad): increase motion threshold
     elif key == 171:
-        Viewport.keypress_mult +=1
-        MotionDetector.delta_trigger += (1000 + (200 * Viewport.keypress_mult))
-        Viewport.b_show_stats = True
-        print '[listener] delta_trigger ++ {}'.format(MotionDetector.delta_trigger)
+        MotionDetector.floor += 1000
+        print '[listener] Viewport.floor ++ {}'.format(MotionDetector.floor)
 
     # - key (numpad) : decrease motion threshold    
     elif key == 173: 
-        Viewport.keypress_mult +=1
-        MotionDetector.delta_trigger -= (1000 + (100 * Viewport.keypress_mult))
-        if MotionDetector.delta_trigger < 1:
-            MotionDetector.delta_trigger = 1
-        Viewport.b_show_stats = True
-        print '[listener] delta_trigger -- {}'.format(MotionDetector.delta_trigger)
-
+        MotionDetector.floor -= 1000
+        if MotionDetector.floor < 1:
+            MotionDetector.floor = 1
+        print '[listener] Viewport.floor -- {}'.format(MotionDetector.floor)
+        
     # , key : previous featuremap    
     elif key == 44:
         print '[listener] previous featuremap'
@@ -573,12 +568,19 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # add the changed details to the network's input image
         src.data[0] = octave_current + detail
 
-        Amplifier.stepsize = Amplifier.stepsize_base # reset step size to default each octave
-        step_params['step_size'] = Amplifier.stepsize # modifying the **step_params list for makestep
+        Model.stepsize = Model.stepsize_base # reset step size to default each octave
+        step_params['step_size'] = Model.stepsize # modifying the **step_params list for makestep
 
         # OCTAVECYCLE
         i=0
         while i < iteration_max:
+            # FORCE REFRESH
+            if Viewport.force_refresh:
+                Composer.write_buffer2(which_camera.read()[1])
+                Composer.is_dirty = False # no, we'll be refreshing the frane buffer
+                print '!!!! [deepdream] FORCE REFRESH'
+                return which_camera.read()[1] 
+
             MotionDetector.process()
             if not MotionDetector.isResting():
                 break
@@ -594,35 +596,37 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
-            step_params['step_size'] += x * Amplifier.step_mult * 1.0
+            step_params['step_size'] += x * Model.step_mult * 1.0
 
             i += 1
 
             # logging
-            octavemsg = '{}/{}({})'.format(octave,octave_n,Amplifier.octave_cutoff)
+            octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
-            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iteration_max,Amplifier.iteration_mult)
-            stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Amplifier.step_mult)
+            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iteration_max,Model.iteration_mult)
+            stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Model.step_mult)
             thresholdmsg = '{:0>6}'.format(MotionDetector.delta_trigger)
+            floormsg = '{:0>6}'.format(MotionDetector.floor)
             update_log('octave',octavemsg)
             update_log('width',w)
             update_log('height',h)
             update_log('guide',guidemsg)
-            #update_log('layer',end)
             update_log('iteration',iterationmsg)
             update_log('step_size',stepsizemsg)
-            update_log('settings',Amplifier.package_name)
+            update_log('program',Model.package_name)
             update_log('threshold',thresholdmsg)
+            update_log('floor',floormsg)
 
         # probably temp? export each completed iteration
         # Viewport.export(Composer.buffer1)
 
 
-        # AMPLIFIER CUTOFF
+
+        # CUTOFF
         # this turned out to be the last octave calculated in the series
-        if octave == Amplifier.octave_cutoff:
+        if octave == Model.octave_cutoff:
             Composer.is_dirty = True
-            print '[deepdream] {:02d}:{:03d}:{:03d} amplifier cutoff return net blob {}'.format(octave,i,iteration_max,src.data[0].shape)
+            print '[deepdream] {:02d}:{:03d}:{:03d} Model cutoff return net blob {}'.format(octave,i,iteration_max,src.data[0].shape)
             return caffe2rgb(
                 Model.net, src.data[0])
 
@@ -635,12 +639,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             print '[deepdream] early exit return camera'
             return which_camera.read()[1] 
 
+
+
         # extract details produced on the current octave
         detail = src.data[0] - octave_current
 
         # reduce iteration count for the next octave
-        iteration_max = iteration_max - int(iteration_max * Amplifier.iteration_mult)
-        #iteration_max = Amplifier.next_iteration(iteration_max)
+        iteration_max = iteration_max - int(iteration_max * Model.iteration_mult)
+        #iteration_max = Model.next_iteration(iteration_max)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     #print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iteration_max)
@@ -663,15 +669,15 @@ def main():
     caffe.set_mode_gpu()
 
     # parameters
-    #Amplifier.set_program('hirez-fast')
-    iterations = Amplifier.iterations
-    stepsize = Amplifier.stepsize_base
-    octaves = Amplifier.octaves
-    octave_scale = Amplifier.octave_scale
+    #Model.set_program('hirez-fast')
+    iterations = Model.iterations
+    stepsize = Model.stepsize_base
+    octaves = Model.octaves
+    octave_scale = Model.octave_scale
     jitter = 300
     update_log('model',Model.caffemodel)
     update_log('username',Viewport.username)
-    update_log('settings',Amplifier.package_name)
+    update_log('settings',Model.package_name)
 
 
     # the madness begins 
@@ -690,6 +696,10 @@ def main():
 
         print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
+
+            if Viewport.force_refresh:
+                print '[main] FORCED REFRESH'
+
             # kicks off rem sleep - will begin continual iteration of the image through the model
             print '************ feature_ID {} ****************'.format(Model.features[Model.current_feature])
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = iterations, octave_n = octaves, octave_scale = octave_scale, step_size = stepsize, end = Model.end, feature = Model.features[Model.current_feature])
@@ -745,14 +755,13 @@ MotionDetector = MotionDetector(16000, which_camera, update_log)
 Viewport = Viewport('deepdreamvisionquest','@deepdreamvisionquest', listener)
 Composer = Composer()
 Model = Model()
-Amplifier = Amplifier()
 
 # model is googlenet unless specified otherwise
 #Model.choose_model('places')
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Amplifier.set_program('ghost')
+Model.set_program('ghost')
 
 
 if __name__ == "__main__":

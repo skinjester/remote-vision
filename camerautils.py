@@ -18,7 +18,7 @@ class MotionDetector(object):
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
-        self.noise_level = 20000 # changed to lover value at night
+        self.floor = 20000 # changed to lover value at night
         self.update_log = log
         self.history = []
         self.history_queue_length = 50
@@ -44,7 +44,7 @@ class MotionDetector(object):
         self.delta_count = cv2.countNonZero(img_count_view)
         
         
-        self.delta_trigger = self.add_to_history(self.delta_count) + self.noise_level
+        self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
         print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
         
         
@@ -88,8 +88,8 @@ class MotionDetector(object):
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
         value = int(sum(self.history)/(self.history_queue_length))
-        # if value < self.noise_level:
-        #     value += self.noise_level
+        # if value < self.floor:
+        #     value += self.floor
         return value
 
 
