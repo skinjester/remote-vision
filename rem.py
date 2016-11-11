@@ -98,17 +98,17 @@ class Model(object):
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]),
             channel_swap=(2, 1, 0))
   
-    def set_program(self, name):
-        self.package_name = name
-        self.iterations = data.program[name]['iterations']
-        self.stepsize_base = data.program[name]['step_size']
-        self.octaves = data.program[name]['octaves']
-        self.octave_cutoff = data.program[name]['octave_cutoff']
-        self.octave_scale = data.program[name]['octave_scale']
-        self.iteration_mult = data.program[name]['iteration_mult']
-        self.step_mult = data.program[name]['step_mult']
-        self.layers = data.program[name]['layers']
-        self.features = data.program[name]['features']
+    def set_program(self, index):
+        self.package_name = data.program[index]['name']
+        self.iterations = data.program[index]['iterations']
+        self.stepsize_base = data.program[index]['step_size']
+        self.octaves = data.program[index]['octaves']
+        self.octave_cutoff = data.program[index]['octave_cutoff']
+        self.octave_scale = data.program[index]['octave_scale']
+        self.iteration_mult = data.program[index]['iteration_mult']
+        self.step_mult = data.program[index]['step_mult']
+        self.layers = data.program[index]['layers']
+        self.features = data.program[index]['features']
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
 
@@ -329,7 +329,7 @@ def show_stats(image):
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
-    opacity = 0.5
+    opacity = 0.3
     cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
@@ -540,6 +540,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
 
+
 # -------
 # REM CYCLE
 # ------- 
@@ -604,7 +605,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # write netblob to Composer
             Composer.buffer1 = caffe2rgb(Model.net, src.data[0])
-            #Composer.buffer1 = Composer.buffer1 * (255.0 / np.percentile(Composer.buffer1, 99.98)) # normalize contrast
             Viewport.show(Composer.buffer1)
 
             # attenuate step size over rem cycle
@@ -784,7 +784,7 @@ Model = Model()
 #Model.choose_model('cars')
 #Model.set_endlayer(data.layers[0])
 
-Model.set_program('ghost')
+Model.set_program(1)
 
 
 if __name__ == "__main__":

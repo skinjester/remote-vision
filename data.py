@@ -79,9 +79,11 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
-program = {}
+# a list of programs
+program = []
 
-program['ghost-layers-all'] = {
+program.append({
+	'name':'ghost-layers-all',
 	'iterations':30,
 	'step_size':2.0,
 	'octaves':6,
@@ -94,15 +96,16 @@ program['ghost-layers-all'] = {
 		'inception_4c/output'
 	],
 	'features':[1]
-}
+})
 
-program['ghost'] = {
+program.append({
+	'name':'ghost',
 	'iterations':50,
 	'step_size':2.0,
-	'octaves':6,
-	'octave_cutoff':6,
+	'octaves':5,
+	'octave_cutoff':5,
 	'octave_scale':1.5,
-	'iteration_mult':0.0,
+	'iteration_mult':0.25,
 	'step_mult':0.01,
 	'model':'places',
 	'layers':[
@@ -160,9 +163,10 @@ program['ghost'] = {
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96)
-}
+})
 
-program['hifi-layers-all'] = {
+program.append({
+	'name':'hifi-layers-all',
 	'iterations':50,
 	'step_size':2.0,
 	'octaves':5,
@@ -175,9 +179,11 @@ program['hifi-layers-all'] = {
 		'inception_4c/output'
 	],
 	'features':[1]
-}
+})
 
-program['hifi-featuremap'] = {
+
+program.append({
+	'name':'hifi-featuremap',
 	'iterations':10,
 	'step_size':4.0,
 	'octaves':4,
@@ -190,10 +196,10 @@ program['hifi-featuremap'] = {
 		'inception_4c/output'
 	],
 	'features':range(-1,96)
-}
+})
 
-
-program['geo-layers-all'] = {
+program.append({
+	'name':'geo-layers-all',
 	'iterations':50,
 	'step_size':2.0,
 	'octaves':8,
@@ -206,9 +212,10 @@ program['geo-layers-all'] = {
 		'inception_4c/output'
 	],
 	'features':[1]
-}
+})
 
-program['lofi'] = {
+program.append({
+	'name':'lofi',
 	'iterations':10,
 	'step_size':8.0,
 	'octaves':4,
@@ -221,11 +228,14 @@ program['lofi'] = {
 		'inception_4c/output'
 	],
 	'features':[1]
-}
-
+})
 
 # print '*' * 8
-# print program['ghost']['layers'][0]
+# #print program['ghost']['layers'][0]
+
+# print program[0]['name']
+
+
 # print '*' * 8
 # quit()
 
