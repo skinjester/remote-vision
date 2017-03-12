@@ -18,7 +18,7 @@ class MotionDetector(object):
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
-        self.floor = 20000 # changed to lover value at night
+        self.floor = 2000 # changed to lover value at night
         self.update_log = log
         self.history = []
         self.history_queue_length = 50
