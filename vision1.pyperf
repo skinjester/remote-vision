@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<ProfilingTarget xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ProjectTarget>
-    <TargetProject>a4bf1897-6136-41c4-996c-71f166e2f275</TargetProject>
-    <FriendlyName>vision</FriendlyName>
-  </ProjectTarget>
-</ProfilingTarget>
