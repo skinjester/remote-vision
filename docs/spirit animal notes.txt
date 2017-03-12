@@ -804,3 +804,5 @@ model parameters not updating when I switch programs - may need to abandon that 
 simple fix. working now.
 give yourself 30 calm minutes to find some cool settings
 add more from the location
+
+Turning up the silence in Sci-Fi city at @codame artificial experience show
