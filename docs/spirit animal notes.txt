@@ -810,3 +810,8 @@ Turning up the silence in Sci-Fi city at @codame artificial experience show
 
 2017-03-12 15:53:49
 rethinking some ideas for the L.A.S.T Festival exhibit
+
+
+2017-03-14 14:59:45
+Its working again, but had to wipe everything. The program was behaving strangely on this new machine. Described above. Despite dreading it, I reinstalled Linux and then the deep learning dev environment. Refined the notes I've been keeping on this. Maybe some new advantages. OpenCV is now at v3.2. I compiled it with option to do linear algebra with Cuda library. Its hard to tell if theres been a speedup or not. It felt faster though
+
