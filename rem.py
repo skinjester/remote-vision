@@ -284,8 +284,11 @@ def iterationPostProcess(net_data_blob):
 
 def blur(img, sigma):
     if sigma > 0:
+        img2 = img
         img = nd.filters.gaussian_filter(img, sigma, order=0)
-    return img
+    return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
+
+   
 
 def sobel(img):
     xgrad = nd.filters.sobel(img, 0)
@@ -531,7 +534,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     m = np.abs(g).mean()
 
     if m > 0.0:
-        src.data[:] += step_size/m * g
+        src.data[:] += step_size/m * (g*2)
 
     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
             

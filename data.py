@@ -102,13 +102,13 @@ program.append({
 
 program.append({
 	'name':'hifi-featuremap',
-	'iterations':10,
-	'step_size':4.0,
+	'iterations':20,
+	'step_size':1.5,
 	'octaves':5,
-	'octave_cutoff':4,
+	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
-	'step_mult':0.1,
+	'step_mult':0.0,
 	'model':'places',
 	'layers':[
 		'inception_4d/5x5_reduce',
