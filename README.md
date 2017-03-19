@@ -1,4 +1,3 @@
-# DeepDream Vision Quest
 This script runs the Deep Dream neural visualization on camera input to produce live output.
 
 
