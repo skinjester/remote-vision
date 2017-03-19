@@ -12,9 +12,9 @@ class MotionDetector(object):
         self.t_minus = self.camera.read()[1] 
         self.t_now = self.camera.read()[1]
         self.t_plus = self.camera.read()[1]
-        self.t_delta_framebuffer = np.zeros((self.camera.get(4), self.camera.get(3) ,3), np.uint8) # empty img
-        self.width = self.camera.get(3)
-        self.height = self.camera.get(4)
+        self.width = int(self.camera.get(3))
+        self.height = int(self.camera.get(4))
+        self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # empty img
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
