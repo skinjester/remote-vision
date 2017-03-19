@@ -1,15 +1,17 @@
 import cv2
 
-
 #capture from camera at location 0
+cv2.namedWindow('input', cv2.WINDOW_NORMAL)
 cap = cv2.VideoCapture(0)
 #set the width and height
 cap.set(3,1920)
 cap.set(4,1080)
 
+def read():
+	return cv2.flip(cv2.transpose(cap.read()[1]),1)
 
 while True:
-    ret, img = cap.read()
+    img = read()
     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.imshow("input", img)
 
@@ -23,6 +25,7 @@ while True:
 
 cv2.destroyAllWindows() 
 cv2.VideoCapture(0).release()
+
 
 
 

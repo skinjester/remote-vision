@@ -15,6 +15,7 @@ import tweepy
 os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
 from camerautils import MotionDetector
+import camerautils
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -781,7 +782,7 @@ which_camera.set(3, data.capture_size[0])
 which_camera.set(4, data.capture_size[1])
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
-Viewport = Viewport('deepdreamvisionquest','ARTEX', listener)
+Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
 

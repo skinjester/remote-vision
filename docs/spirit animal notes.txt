@@ -833,3 +833,17 @@ can i make it show only fully rendered frames?
 well first of all, lets review how it works
 
 
+
+2017-03-19 14:44:13
+I have the camera transform working in a test project
+probably overthinking.
+the goal:
+rotate the camera input upon reading it
+
+is this a matter of:
+1. creating a wrapper function to extend cv2.VideoCapture.read()
+2. decorating the existing function?
+
+2017-03-19 15:06:02
+motion detection runs in portrait now
+
