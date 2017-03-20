@@ -836,7 +836,8 @@ well first of all, lets review how it works
 
 2017-03-19 14:44:13
 I have the camera transform working in a test project
-probably overthinking.
+probably 
+overthinking.
 the goal:
 rotate the camera input upon reading it
 
@@ -847,3 +848,11 @@ is this a matter of:
 2017-03-19 15:06:02
 motion detection runs in portrait now
 
+
+2017-03-19 21:23:50
+getting close. its a bit of a hack.
+
+
+2017-03-19 21:33:03
+hardcoded portrait orientation is working
+- next step is to switch between portrait and landscpae 

@@ -2,8 +2,12 @@ import numpy as np
 import cv2
 
 
-def preprocess(img):
-    return cv2.flip(cv2.transpose(img),1)
+def preprocess(image):
+    print '[camerautils][preprocess] argument image.shape: {}'.format(image.shape)
+    img = cv2.flip(cv2.transpose(image),1)
+    print '[camerautils][preprocess] return image.shape: {}'.format(img.shape)
+    return img
+    #return image.transpose((1,0,2))[:,::-1,:]
 
 
 class MotionDetector(object):
