@@ -1,5 +1,5 @@
 capture_size = [1280,720]
-viewport_size = [1920,1080]
+viewport_size = [720,1280]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -86,11 +86,11 @@ program = []
 program.append({
 	'name':'geo',
 	'iterations':10,
-	'step_size':6.0,
-	'octaves':6,
-	'octave_cutoff':3,
+	'step_size':3.0,
+	'octaves':4,
+	'octave_cutoff':4,
 	'octave_scale':1.4,
-	'iteration_mult':0.0,
+	'iteration_mult':0.5,
 	'step_mult':0.0,
 	'model':'places',
 	'layers':[

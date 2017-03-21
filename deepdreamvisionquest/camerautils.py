@@ -1,6 +1,15 @@
 import numpy as np
 import cv2
 
+
+def preprocess(image):
+    print '[camerautils][preprocess] argument image.shape: {}'.format(image.shape)
+    img = cv2.flip(cv2.transpose(image),1)
+    print '[camerautils][preprocess] return image.shape: {}'.format(img.shape)
+    return img
+    #return image.transpose((1,0,2))[:,::-1,:]
+
+
 class MotionDetector(object):
 
     def __init__(self, delta_trigger, which_camera, log):
@@ -9,12 +18,17 @@ class MotionDetector(object):
         self.delta_count = 0
         self.delta_count_history = 0
         self.camera = which_camera
-        self.t_minus = self.camera.read()[1] 
-        self.t_now = self.camera.read()[1]
-        self.t_plus = self.camera.read()[1]
+
+        self.t_minus = preprocess(self.camera.read()[1])
+        self.t_now = preprocess(self.camera.read()[1])
+        self.t_plus = preprocess(self.camera.read()[1])
+
+        # do width & height will need to switch ?
         self.width = int(self.camera.get(3))
         self.height = int(self.camera.get(4))
-        self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # empty img
+
+
+        self.t_delta_framebuffer = preprocess(np.zeros((self.height, self.width ,3), np.uint8)) # empty img
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
@@ -38,7 +52,6 @@ class MotionDetector(object):
         self.delta_count_history = self.delta_count   
 
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
-        #self.t_delta_framebuffer = cv2.flip(self.t_delta_framebuffer, 1)
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
         cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
@@ -102,5 +115,5 @@ class MotionDetector(object):
         #print "---- [motiondetector] refresh queue"
         self.t_minus = self.t_now
         self.t_now = self.t_plus
-        self.t_plus = self.camera.read()[1]
+        self.t_plus = preprocess(self.camera.read()[1])
         self.t_plus = cv2.blur(self.t_plus,(20,20))

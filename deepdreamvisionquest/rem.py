@@ -15,6 +15,7 @@ import tweepy
 os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
 from camerautils import MotionDetector
+from camerautils import preprocess
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -163,19 +164,21 @@ class Viewport(object):
         self.listener = listener
         self.force_refresh = False
         self.image = None # current composited image
-        cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     
     def show(self, image):
         # convert and clip floating point matrix into RGB bounds as integers
-        image = np.uint8(np.clip(image, 0, 255))
+        image = np.uint8(np.clip(image, 0, 224)) # tweaked to get some hilites in output
+
+        print '[Viewport][show] image:{}'.format(image.shape)
 
         # resize image to fit viewport, skip if already at full size
-        if image.shape[1] != data.viewport_size[0]:
-            image = cv2.resize(image,
-                (data.viewport_size[0], data.viewport_size[1]),
-                interpolation = cv2.INTER_LINEAR)
+        if image.shape[0] != data.viewport_size[0]:
+            image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
+            print '[Viewport][show] resized:{}'.format(image.shape)     
 
+        print '[Viewport][show] checking again, image:{}'.format(image.shape) 
         image = Composer.update(image)
 
         image = self.postfx(image) # HUD
@@ -222,6 +225,7 @@ class Viewport(object):
 
 class Composer(object):
 
+
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
@@ -234,7 +238,7 @@ class Composer(object):
     def update(self, image):
         if self.is_dirty: 
             print '[Composer] recycle'
-            '''
+
             if self.is_new_cycle:
                 #print '[Composer] inception'
                 self.buffer1 = inceptionxform(image, self.xform_scale, data.capture_size)
@@ -242,7 +246,7 @@ class Composer(object):
 
             self.is_dirty = False
             self.is_compositing_enabled = False
-            '''
+
 
         else:
             #print '[Composer] refresh'
@@ -272,8 +276,6 @@ class Composer(object):
                 self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
         return
 
-    # def write(self, buffer=1, rgbimage):
-    #     if
 
 def inceptionxform(image,scale,capture_size):
     return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
@@ -286,7 +288,8 @@ def blur(img, sigma):
     if sigma > 0:
         img2 = img
         img = nd.filters.gaussian_filter(img, sigma, order=0)
-    return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
+        return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
+    return img
 
    
 
@@ -557,15 +560,20 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # disabling this prevents the previous camera capture from being flushed
         # (we end up seeing it as a ghost image before hallucination begins on the new camera)
 
-    # GRB: Not seeing this condition get hit after several minutes of observation    
+
+    # GRB: Not entirely sure why this condition gets triggered 
+    # noticing it when the system starts up. does it appear at other times? when?
     if MotionDetector.wasMotionDetected:
-        Composer.write_buffer2(which_camera.read()[1])
+        Composer.write_buffer2(preprocess(which_camera.read()[1]))
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         print '!!!! [deepdream] abort return camera'
-        return which_camera.read()[1] 
+        return preprocess(which_camera.read()[1])
         #print '[deepdream] was.MotionDetected TRUE'
         #return which_camera.read()[1]
         #return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
+
+    # print '[deepdream] base_img shape is: {}'.format(base_img.shape)
+    # exit()
 
     # SETUPOCTAVES---
     Composer.is_new_cycle = False
@@ -595,10 +603,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
             # FORCE REFRESH
             if Viewport.force_refresh:
-                Composer.write_buffer2(which_camera.read()[1])
+                Composer.write_buffer2(preprocess(which_camera.read()[1]))
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 print '[deepdream] FORCE REFRESH'
-                return which_camera.read()[1] 
+                return preprocess(which_camera.read()[1])
 
             MotionDetector.process()
             if not MotionDetector.isResting():
@@ -652,11 +660,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if MotionDetector.wasMotionDetected:
-            Composer.write_buffer2(
-                caffe2rgb(Model.net, src.data[0]))
+            Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] early exit return camera'
-            return which_camera.read()[1] 
+            return preprocess(which_camera.read()[1])
 
 
 
@@ -681,7 +688,7 @@ def main():
 
     # start timer
     now = time.time()
-    cycle = 2
+    cycle = 1
 
     # set GPU mode
     caffe.set_device(0)
@@ -700,7 +707,8 @@ def main():
 
 
     # the madness begins 
-    Composer.buffer1 = which_camera.read()[1] # initial camera image for init
+    Composer.buffer1 = preprocess(which_camera.read()[1]) # initial camera image for init
+
     while True:
         print 'new cycle'
         Composer.is_new_cycle = True
@@ -708,14 +716,15 @@ def main():
         MotionDetector.process()
         if MotionDetector.wasMotionDetected:
             Composer.is_dirty = False
+
+        # GRB: worth looking into?   
         # octave_scale += 0.2 * cycle
         # if octave_scale > 1.8 or octave_scale < 1.2:
         #     cycle = -1 * cycle
         # #print '[main] octave_scale {0:5.2f}'.format(octave_scale)
 
-        print '[main] Composer.is_dirty {}'.format(Composer.is_dirty)
+        print '[main] Composer.is_dirty: {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
-
 
             Viewport.save_next_frame = True
 
@@ -781,7 +790,7 @@ which_camera.set(3, data.capture_size[0])
 which_camera.set(4, data.capture_size[1])
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
-Viewport = Viewport('deepdreamvisionquest','ARTEX', listener)
+Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
 
