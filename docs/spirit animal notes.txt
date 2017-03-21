@@ -855,4 +855,13 @@ getting close. its a bit of a hack.
 
 2017-03-19 21:33:03
 hardcoded portrait orientation is working
-- next step is to switch between portrait and landscpae 
+
+NEXT STEPS
+- study python function decorators
+- cleanup camera orientation functionality
+	- choose between portrait and landscape at launch
+- examine frame export
+	- what's it currently doing?
+- investigate the functionality of a Memory class
+	- stores rendered output in RAM as an array
+	- playback rendered output to framebuffer
