@@ -865,3 +865,34 @@ NEXT STEPS
 - investigate the functionality of a Memory class
 	- stores rendered output in RAM as an array
 	- playback rendered output to framebuffer
+- guide images
+- switch between 2 cameras
+	- camera 1 faces faces the viewer and acts as a mirror
+	- camera 2 is behind the screen and acts as a window
+
+
+2017-03-21 21:34:43
+I reimplemented the camera capture system as a threaded queue after a bit of sould searching. Not sure what I was expecting to see. Something? Nothing? Is the system behaving more smoothly now? I can't actually tell. Seems largely the same. How would I be able to tell?
+Is there a way for me to profile the systems performance?
+- avg. iteration time
+- octaves/sec
+- current calculation time
+- last cycle time
+
+
+2017-03-21 21:37:58
+Is the motion capture not threaded enough? should all of that be happening on a seperate thread? what would be the benefit?
+Instead, could it happen on a seperate process?
+What if the deepdream computation was happening on a different thread instead, and the output was being queued so that
+deepdream.read() would return the next frame in the queue? how woyuld this change the approach to frame buffering?
+
+
+Python threading doesn't multiprocess - it just makes more efficient use of the CPU
+What about the rpyc stuff I'd previously looked at?
+The idea is that motion detection and deep dreaming happen in seperate processes
+The expected benefit:
+computation happens in queues and results fill up a bin
+Asynchronous
+- decouples display rate from computation rate
+display pulls the next available frame from a bin and shows it
+may be possible to compute upon bin1.read() + bin2.read()

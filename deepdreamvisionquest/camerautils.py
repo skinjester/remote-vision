@@ -1,8 +1,11 @@
 import numpy as np
 import cv2
+import datetime
+from threading import Thread
 
 
 def preprocess(image):
+    # check the cam
     print '[camerautils][preprocess] argument image.shape: {}'.format(image.shape)
     img = cv2.flip(cv2.transpose(image),1)
     print '[camerautils][preprocess] return image.shape: {}'.format(img.shape)
@@ -10,25 +13,62 @@ def preprocess(image):
     #return image.transpose((1,0,2))[:,::-1,:]
 
 
+class WebcamVideoStream(object):
+    def __init__(self, src=0, capture_width=1920, capture_height=1080, alignment=False):
+        # set camera dimensiions before reading frames
+        # requested size is rounded to nearest camera size if non-matching
+        self.stream = cv2.VideoCapture(src)
+        self.stream.set(3, capture_width)
+        self.stream.set(4, capture_height)
+        self.width = self.stream.get(3)
+        self.height = self.stream.get(4)
+        self.stopped = False
+        self.alignment = alignment
+        (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
+        if self.alignment:
+            self.frame = cv2.flip(cv2.transpose(self.frame),1)
+
+    def start(self):
+        Thread(target=self.update, args=()).start()
+        return self
+    def update(self):
+        # infinite loop until the thread is stopped
+        while True:
+            if self.stopped:
+                return
+            img = self.stream.read()[1]
+            if self.alignment:
+                img = cv2.flip(cv2.transpose(img),1)
+            print 'capture: {}'.format(img.shape)
+            self.frame = img
+
+    def read(self):
+        print "read: {}".format(self.frame.shape)
+        return self.frame
+
+    def realign(self):
+        self.alignment = not self.alignment
+
+    def stop(self):
+        self.stopped = True
+
 class MotionDetector(object):
 
-    def __init__(self, delta_trigger, which_camera, log):
+    def __init__(self, delta_trigger, camera, log):
         self.delta_trigger = delta_trigger
         self.delta_trigger_history = delta_trigger
         self.delta_count = 0
         self.delta_count_history = 0
-        self.camera = which_camera
+        self.camera = camera
 
-        self.t_minus = preprocess(self.camera.read()[1])
-        self.t_now = preprocess(self.camera.read()[1])
-        self.t_plus = preprocess(self.camera.read()[1])
+        self.t_minus = self.camera.read()
+        self.t_now = self.camera.read()
+        self.t_plus =self.camera.read()
 
-        # do width & height will need to switch ?
-        self.width = int(self.camera.get(3))
-        self.height = int(self.camera.get(4))
+        self.width = self.t_minus.shape[1]
+        self.height = self.t_minus.shape[0]
 
-
-        self.t_delta_framebuffer = preprocess(np.zeros((self.height, self.width ,3), np.uint8)) # empty img
+        self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # empty img
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
@@ -36,11 +76,10 @@ class MotionDetector(object):
         self.update_log = log
         self.history = []
         self.history_queue_length = 50
-    
+
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
     
-   
     def process(self):
         if self.is_paused:
             self.wasMotionDetected = False
@@ -48,7 +87,7 @@ class MotionDetector(object):
         print '-'*20    
         print "[motiondetector][process]"
         # history 
-        self.wasMotionDetected_history = self.wasMotionDetected  #??
+        self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count   
 
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
@@ -115,5 +154,5 @@ class MotionDetector(object):
         #print "---- [motiondetector] refresh queue"
         self.t_minus = self.t_now
         self.t_now = self.t_plus
-        self.t_plus = preprocess(self.camera.read()[1])
+        self.t_plus = self.camera.read()
         self.t_plus = cv2.blur(self.t_plus,(20,20))

@@ -16,6 +16,7 @@ os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caf
 import caffe
 from camerautils import MotionDetector
 from camerautils import preprocess
+from camerautils import WebcamVideoStream
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -221,6 +222,8 @@ class Viewport(object):
             cv2.imshow('delta', MotionDetector.t_delta_framebuffer)
 
     def shutdown(self):
+        cv2.destroyAllWindows()
+        which_camera.stop()
         sys.exit()
 
 class Composer(object):
@@ -564,12 +567,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # GRB: Not entirely sure why this condition gets triggered 
     # noticing it when the system starts up. does it appear at other times? when?
     if MotionDetector.wasMotionDetected:
-        Composer.write_buffer2(preprocess(which_camera.read()[1]))
+        Composer.write_buffer2(which_camera.read())
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         print '!!!! [deepdream] abort return camera'
-        return preprocess(which_camera.read()[1])
+        return which_camera.read()
         #print '[deepdream] was.MotionDetected TRUE'
-        #return which_camera.read()[1]
+        #return which_camera.read()
         #return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
 
     # print '[deepdream] base_img shape is: {}'.format(base_img.shape)
@@ -603,10 +606,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
             # FORCE REFRESH
             if Viewport.force_refresh:
-                Composer.write_buffer2(preprocess(which_camera.read()[1]))
+                Composer.write_buffer2(which_camera.read())
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 print '[deepdream] FORCE REFRESH'
-                return preprocess(which_camera.read()[1])
+                return which_camera.read()
 
             MotionDetector.process()
             if not MotionDetector.isResting():
@@ -663,7 +666,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] early exit return camera'
-            return preprocess(which_camera.read()[1])
+            return which_camera.read()
 
 
 
@@ -707,7 +710,7 @@ def main():
 
 
     # the madness begins 
-    Composer.buffer1 = preprocess(which_camera.read()[1]) # initial camera image for init
+    Composer.buffer1 = which_camera.read() # initial camera image for init
 
     while True:
         print 'new cycle'
@@ -728,6 +731,7 @@ def main():
 
             Viewport.save_next_frame = True
 
+            print 'dd'
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
@@ -784,10 +788,14 @@ log = {
     'rem_cycle': None
 }
 
+
+
 # set global camera object to input dimensions
-which_camera = cv2.VideoCapture(0)
-which_camera.set(3, data.capture_size[0])
-which_camera.set(4, data.capture_size[1])
+# which_camera = cv2.VideoCapture(0)
+# which_camera.set(3, data.capture_size[0])
+# which_camera.set(4, data.capture_size[1])
+
+which_camera = WebcamVideoStream(0, 1280, 720, alignment=True).start()
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
