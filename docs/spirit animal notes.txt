@@ -896,3 +896,53 @@ Asynchronous
 - decouples display rate from computation rate
 display pulls the next available frame from a bin and shows it
 may be possible to compute upon bin1.read() + bin2.read()
+
+
+2017-03-21 23:14:29
+looking at rpyc
+reading up on python multiprocessing, which offers similar API as Threading
+
+The multiprocessing module comes with plenty of built-in options for building a parallel application. But the three most basic (and safest) are the Process, Queue and Lock classes. 
+
+PROCESS
+The Process is an abstraction that sets up another (Python) process, provides it code to run and a way for the parent application to control execution.
+
+from multiprocessing import Process
+
+def say_hello(name='world'):
+    print "Hello, %s" % name
+
+p = Process(target=say_hello)
+p.start()
+p.join()
+
+QUEUES
+
+Queue objects are exactly what they sound like: a thread/process safe, FIFO data structure. They can store any Python object (though simple ones are best) and are extremely useful for sharing data between processes. Queues are especially useful when passed as a parameter to a Process' target function to enable the Process to consume (or return) data.
+
+from multiprocessing import Queue
+
+q = Queue()
+
+q.put('Why hello there!')
+q.put(['a', 1, {'b': 'c'}])
+
+q.get() # Returns 'Why hello there!'
+q.get() # Returns ['a', 1, {'b': 'c'}]
+q.get() # waits for more data to pass through the queue
+
+LOCKS
+
+Like Queue objects, Locks are relatively straightforward. They allow your code to claim the lock, blocking other processes from executing similar code until the process has completed and release the lock. 
+
+
+2017-03-22 08:29:11
+looking at the test application,significant speedups are possible, but how can I apply these ideas to deepdreamvisionquest?
+QUEUES:
+	next camera frame
+	next deepdream render
+	next displayed frame
+
+* is it possible to retrieve data from the queue that has already been read? is it random access, or is it sequential by definition?
+
+I'm assuming that queung this information lets me address it asynchronously. For example, show the deepdream rendered que once every second
