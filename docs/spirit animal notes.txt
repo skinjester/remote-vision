@@ -946,3 +946,63 @@ QUEUES:
 * is it possible to retrieve data from the queue that has already been read? is it random access, or is it sequential by definition?
 
 I'm assuming that queung this information lets me address it asynchronously. For example, show the deepdream rendered que once every second
+
+
+2017-03-22 08:47:04
+who are the workers?
+
+the deepdream function
+the capture function
+
+the compose/viewport functio
+
+
+2017-03-22 19:50:21
+I came across some code samples showing a single threaded, multithreaded and multiprocess approach to structuring code. I'm becnhmarking those approaches to see what they do
+
+range: 1,10000,1
+
+SINGLE THREADED
+runtime: 50.6829841137s
+CPU load during run: 0.96
+1 core is in 100% usage throughout
+
+MULTITHREADED 
+runtime: 83.9671368599s
+2.10
+all cores are approx 19-30% in use
+* note that this 
+
+MULTIPROCESSOR
+runtime: 72.0738749504s
+2.05
+all cores are approx 30-40% in use
+* note that this 
+
+these results are unexpected. taking out the print statements and remeasuring
+ending some processes to get a cleaner benchmark
+
+10000, 100000, 100
+
+SINGLE THREADED
+runtime: 86.0674118996s
+
+MULTITHREADED (4 threads)
+runtime: 89.8049190044s
+
+
+MULTITHREADED (8 threads)
+runtime: 96.2501211166s
+
+
+MULTITHREADED (16 threads)
+runtime: 106.664397955s
+
+
+MULTIPROCESS (4 processes)
+runtime: 88.1409959793s
+
+MULTIPROCESS (12 processes)
+runtime: 88.1409959793s
+
+
