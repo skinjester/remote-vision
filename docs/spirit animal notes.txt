@@ -1006,3 +1006,20 @@ MULTIPROCESS (12 processes)
 runtime: 88.1409959793s
 
 
+2017-03-22 21:11:22
+No room to investigate this much further beyond tonight.My fundamental premise is the right one - decouple computation from display, but implementation is too expensive
+
+
+2017-03-22 21:23:25
+trying one more exercise - slightly different method
+
+
+
+2017-03-23 00:47:04
+pulled myself away from the optimization experiments and started looking at image processing.
+there's a difference between using nd.filters and cv2.filters
+getting significantly wider blur fx with some new methods
+
+
+2017-03-23 00:52:21
+ending worksession - frustrating and rewarding at once. there's so much I dont know

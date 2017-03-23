@@ -285,14 +285,42 @@ def inceptionxform(image,scale,capture_size):
     #return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
 
 def iterationPostProcess(net_data_blob):
-    return blur(net_data_blob, 0.5)
+    print 'shape of net_data_blob9 is {}'.format(net_data_blob.shape)
+    #img = caffe2rgb(Model.net, net_data_blob)
+    #return rgb2caffe(blur(img, 0.5))
+    return blur(net_data_blob, 13, 13)
 
-def blur(img, sigma):
-    if sigma > 0:
+def blur(img, sigmax, sigmay):
+    print 'shape of blur input img is {}'.format(img.shape)
+    if (sigmax or sigmay) > 0:
+        img1 = caffe2rgb(Model.net, img)
+        print 'shape of img1 is {}'.format(img1.shape)
         img2 = img
-        img = nd.filters.gaussian_filter(img, sigma, order=0)
-        return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
+        #img = nd.filters.gaussian_filter(img, sigma, order=0)
+        img1 = cv2.GaussianBlur(img1,(sigmax,sigmay),0)
+        img1 = rgb2caffe(Model.net, img1)
+        print 'shape of img1 is {}'.format(img1.shape)
+        return img1
     return img
+
+def colorxform(img, sigma):
+    img1 = caffe2rgb(Model.net, img)
+    img_yuv = cv2.cvtColor(img1, cv2.COLOR_BGR2YUV)
+    img_yuv = np.uint8(np.clip(img_yuv, 0, 255))
+
+    # # equalize the histogram of the Y channel
+    img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+
+
+    # # convert the YUV image back to BGR format
+    img2 = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+
+    # back to a net blob
+    img2 = rgb2caffe(Model.net, img2)
+
+    return img
+
+
 
    
 
