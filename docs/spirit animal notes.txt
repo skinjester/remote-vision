@@ -20,6 +20,8 @@ octave_base			# the current image stage (octave) being dreamed upon
 
 images in OpenCV are Numpy arrays
 
+
+
 blob (binary large object) often used to multimedia data types such as images and audio
 
 thinking about arrays more clearly:
@@ -1023,3 +1025,15 @@ getting significantly wider blur fx with some new methods
 
 2017-03-23 00:52:21
 ending worksession - frustrating and rewarding at once. there's so much I dont know
+
+
+2017-03-23 19:01:48
+doing some remedial work on numpy before starting this image processing worksession
+
+
+2017-03-23 21:17:43
+wrapped up the remedial work. took a closer look at numpy arrays and matplotlib
+
+
+2017-03-23 21:18:32
+so moving forward - how would I subtract from the output red channel each frame, checking to see if it was 0

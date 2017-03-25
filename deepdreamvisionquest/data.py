@@ -1,5 +1,5 @@
-capture_size = [1280,720]
-viewport_size = [720,1280]
+capture_size = [1920,1080]
+viewport_size = [1080,1920]
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -99,6 +99,66 @@ program.append({
 	'features':[-1,0,1]
 })
 
+
+program.append({
+	'name':'lofi-featuremap',
+	'iterations':10,
+	'step_size':2,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.5,
+	'step_mult':0.1,
+	'model':'places',
+	'layers':[
+		'inception_4d/5x5_reduce',
+		'inception_3b/pool',
+		'inception_4a/1x1',
+		'inception_4a/3x3',
+		'inception_4b/3x3_reduce',
+		'inception_4b/5x5',
+		'inception_4b/5x5_reduce',
+		'inception_4b/output',
+		'inception_4b/pool',
+		'inception_4b/pool_proj',
+		'inception_4c/1x1',
+		'inception_4c/3x3',
+		'inception_4c/3x3_reduce',
+		'inception_4c/5x5',
+		'inception_4c/5x5_reduce',
+		'inception_4c/output',
+		'inception_4c/pool',
+		'inception_4d/3x3',
+		'inception_4d/5x5',
+		'inception_4d/5x5_reduce',
+		'inception_4d/output',
+		'inception_4d/pool',
+		'inception_4e/1x1',
+		'inception_4e/3x3',
+		'inception_4e/3x3_reduce',
+		'inception_4e/5x5',
+		'inception_4e/5x5_reduce',
+		'inception_4e/output',
+		'inception_4e/pool',
+		'inception_4e/pool_proj',
+		'inception_5a/1x1',
+		'inception_5a/3x3',
+		'inception_5a/3x3_reduce',
+		'inception_5a/5x5',
+		'inception_5a/5x5_reduce',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
+		'inception_5b/5x5',
+		'inception_5b/5x5_reduce',
+		'inception_5b/output',
+		'inception_5b/pool',
+		'inception_5b/pool_proj'
+	],
+	'features':range(-1,96)
+})
 
 program.append({
 	'name':'hifi-featuremap',

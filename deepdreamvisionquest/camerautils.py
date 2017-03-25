@@ -39,11 +39,11 @@ class WebcamVideoStream(object):
             img = self.stream.read()[1]
             if self.alignment:
                 img = cv2.flip(cv2.transpose(img),1)
-            print 'capture: {}'.format(img.shape)
+            print '[Video-queue][capture] {} {}'.format(img.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
             self.frame = img
 
     def read(self):
-        print "read: {}".format(self.frame.shape)
+        print "[Video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
         return self.frame
 
     def realign(self):

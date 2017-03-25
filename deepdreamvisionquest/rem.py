@@ -17,6 +17,8 @@ import caffe
 from camerautils import MotionDetector
 from camerautils import preprocess
 from camerautils import WebcamVideoStream
+from random import randint
+
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -77,8 +79,7 @@ class Model(object):
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
-            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]),
-            channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
   
     def set_program(self, index):
         self.package_name = data.program[index]['name']
@@ -172,14 +173,12 @@ class Viewport(object):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 224)) # tweaked to get some hilites in output
 
-        print '[Viewport][show] image:{}'.format(image.shape)
+        print '[Viewport][show] input size:{}'.format(image.shape)
 
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != data.viewport_size[0]:
             image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[Viewport][show] resized:{}'.format(image.shape)     
-
-        print '[Viewport][show] checking again, image:{}'.format(image.shape) 
         image = Composer.update(image)
 
         image = self.postfx(image) # HUD
@@ -200,7 +199,7 @@ class Viewport(object):
 
     def export(self,image=None):
         print '[Viewport] export'
-        if image == None:
+        if image is None:
             image = self.image
         make_sure_path_exists(Viewport.username)
         export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
@@ -236,13 +235,14 @@ class Composer(object):
         self.buffer2 = np.zeros((data.viewport_size[1], data.viewport_size[0], 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = 0.09
+        self.xform_scale = 0.001
 
     def update(self, image):
         if self.is_dirty: 
             print '[Composer] recycle'
 
             if self.is_new_cycle:
+                #pass
                 #print '[Composer] inception'
                 self.buffer1 = inceptionxform(image, self.xform_scale, data.capture_size)
                 #print '[Composer] xform scale {}'.format(self.xform_scale)
@@ -281,31 +281,32 @@ class Composer(object):
 
 
 def inceptionxform(image,scale,capture_size):
-    return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-    #return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
+    #return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+    return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
 
 def iterationPostProcess(net_data_blob):
     print 'shape of net_data_blob9 is {}'.format(net_data_blob.shape)
-    #img = caffe2rgb(Model.net, net_data_blob)
-    #return rgb2caffe(blur(img, 0.5))
-    return blur(net_data_blob, 13, 13)
+    img = caffe2rgb(Model.net, net_data_blob)
+    img = blur(img, 3, 3)
+
+    return rgb2caffe(Model.net, img)
+
 
 def blur(img, sigmax, sigmay):
-    print 'shape of blur input img is {}'.format(img.shape)
-    if (sigmax or sigmay) > 0:
-        img1 = caffe2rgb(Model.net, img)
-        print 'shape of img1 is {}'.format(img1.shape)
-        img2 = img
-        #img = nd.filters.gaussian_filter(img, sigma, order=0)
-        img1 = cv2.GaussianBlur(img1,(sigmax,sigmay),0)
-        img1 = rgb2caffe(Model.net, img1)
-        print 'shape of img1 is {}'.format(img1.shape)
-        return img1
+    if (int(time.time()) % 2):
+        print 
+        return img
+    print '[blur] {}:{}:{}'.format(img.shape, sigmax, sigmay)
+
+    #img = nd.filters.gaussian_filter(img, sigma, order=0)
+    img = cv2.medianBlur(img,(sigmax))
+    # img1 = cv2.bilateralFilter(img,15,75,75)
+
     return img
 
-def colorxform(img, sigma):
-    img1 = caffe2rgb(Model.net, img)
-    img_yuv = cv2.cvtColor(img1, cv2.COLOR_BGR2YUV)
+def colorxform(img):
+    # img1 = caffe2rgb(Model.net, img)
+    img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     img_yuv = np.uint8(np.clip(img_yuv, 0, 255))
 
     # # equalize the histogram of the Y channel
@@ -318,7 +319,7 @@ def colorxform(img, sigma):
     # back to a net blob
     img2 = rgb2caffe(Model.net, img2)
 
-    return img
+    return img2
 
 
 
@@ -365,8 +366,8 @@ def show_stats(image):
 def show_HUD(image):
     # rectangle
     overlay = image.copy()
-    opacity = 1.0
-    #cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
+    opacity = 0.5
+    cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
@@ -504,7 +505,8 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
-
+def shiftfunc(n):
+    return int(100* np.sin(n/100))
 
 # -------
 # implements forward and backward passes thru the network
@@ -548,6 +550,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # ------- 
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
 
+    print '--> [step] step_size:{} feature:{} end:{}'.format(step_size,feature,end)
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
     dst = net.blobs[end]
 
@@ -555,7 +558,8 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
             
     net.forward(end=end)
-        
+    
+    # feature inspection
     if feature == -1:
         dst.diff[:] = dst.data
     else:
@@ -564,11 +568,9 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
 
     net.backward(start=end)
     g = src.diff[0]
-    # apply normalized ascent step to the input image
-    m = np.abs(g).mean()
 
-    if m > 0.0:
-        src.data[:] += step_size/m * (g*2)
+    # apply normalized ascent step to the input image
+    src.data[:] += step_size/np.abs(g).mean() * (g*step_size)
 
     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
             
@@ -577,7 +579,14 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
         src.data[:] = np.clip(src.data, -bias, 255-bias)
 
     # postprocess (blur) this iteration
+    # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
     src.data[0] = iterationPostProcess(src.data[0])
+
+    # print "what type of data is this?"
+    # print "src.data[0] shape:{}".format(src.data[0].shape)
+    # exit()
+
+
 
 
 # -------
@@ -611,7 +620,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     src = Model.net.blobs['data']
     octaves = [rgb2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
-        octaves.append(nd.zoom(octaves[-1], (1, 1.0 / octave_scale, 1.0 / octave_scale), order=1))
+        octaves.append(nd.zoom(octaves[-1], (1, round((1.0 / octave_scale),2), round((1.0 / octave_scale),2)), order=1))
     detail = np.zeros_like(octaves[-1])
 
     # OCTAVEARRAY CYCLE, last (smallest) octave first
@@ -644,7 +653,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 break
 
             # delegate gradient ascent to step function
-            print '{:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
+            print '-> {:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
             make_step(Model.net, end=end, **step_params)
 
             # write netblob to Composer
@@ -699,17 +708,17 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
 
         # extract details produced on the current octave
-        detail = src.data[0] - octave_current
+        detail = src.data[0] - (octave_current-(randint(0,9)-5))
 
         # reduce iteration count for the next octave
-        iteration_max = iteration_max - int(iteration_max * Model.iteration_mult)
+        iteration_max = int(iteration_max - (iteration_max * Model.iteration_mult))
         #iteration_max = Model.next_iteration(iteration_max)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
     #print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iteration_max)
     Composer.is_dirty = True # yes, we'll be recycling the Composer
 
-    # export finished img
+    # return rendered img
     return caffe2rgb(Model.net, src.data[0])
 
 # -------
@@ -748,35 +757,35 @@ def main():
         if MotionDetector.wasMotionDetected:
             Composer.is_dirty = False
 
-        # GRB: worth looking into?   
-        # octave_scale += 0.2 * cycle
-        # if octave_scale > 1.8 or octave_scale < 1.2:
-        #     cycle = -1 * cycle
-        # #print '[main] octave_scale {0:5.2f}'.format(octave_scale)
+
 
         print '[main] Composer.is_dirty: {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
 
             Viewport.save_next_frame = True
 
-            print 'dd'
+            for n in range(Composer.buffer1.shape[1]): # number of rows in the image
+                Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], shiftfunc(n))
+
+            #GRB: worth looking into?   
+            # octave_scale += 0.01 * cycle
+            # if octave_scale > 1.8 or octave_scale < 1.2:
+            #     cycle = -1 * cycle
+            print '****** [main] octave_scale {0:5.2f} *******'.format(octave_scale)
+
+            print 'rem cycle start: shape of Composer.buffer:{}'.format(Composer.buffer1.shape)
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
                 print '[main] FORCED REFRESH'
-                Viewport.export(Composer.buffer1)
+                #Viewport.export(Composer.buffer1)
                 Viewport.force_refresh = False
         else:
-            if Viewport.save_next_frame:
-                Viewport.export()
+            # if Viewport.save_next_frame:
+            #     Viewport.export()
             Viewport.save_next_frame = False
 
-
-
-        
-        #print '[main] !!! Composer.buffer1 shape is {}'.format(Composer.buffer1.shape)
-        #Viewport.save_next_frame = True
 
         # a bit later
         later = time.time()
@@ -785,7 +794,7 @@ def main():
         update_log('rem_cycle',duration_msg)
         now = time.time()
 
-        print '[main] end cycle)'
+        print '[main] cycle duration:{})'.format(duration_msg)
 
         #Viewport.save_next_frame = True
 
