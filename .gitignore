@@ -11,3 +11,5 @@ ARTEX_/
 ARTEX/
 
 deepdreamvisionquest/dev/
+
+*.sublime-workspace
