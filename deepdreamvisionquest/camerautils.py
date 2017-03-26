@@ -46,18 +46,18 @@ class WebcamVideoStream(object):
     def read(self):
         print "[Video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
 
-        invGamma = 1.0 / self.gamma
-        table = np.array([((i / 255.0) ** invGamma) * 255
-            for i in np.arange(0, 256)]).astype("uint8")
+        # invGamma = 1.0 / self.gamma
+        # table = np.array([((i / 255.0) ** invGamma) * 255
+        #     for i in np.arange(0, 256)]).astype("uint8")
 
-        # apply gamma correction using the lookup table
-        img_gamma =  cv2.LUT(self.frame, table)
+        # # apply gamma correction using the lookup table
+        # img_gamma =  cv2.LUT(self.frame, table)
 
-        return img_gamma
+        # return img_gamma
+        return self.frame
 
     def realign(self):
         self.alignment = not self.alignment
-
 
     def stop(self):
         self.stopped = True

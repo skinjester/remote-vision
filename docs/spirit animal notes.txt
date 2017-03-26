@@ -1096,3 +1096,21 @@ came across method for gamma correction
 I've been able to get a kind of color grading happening with what I've learned today. The code is sluggish at the moment as not of what I've added is optimized, and in particular  the vignette that I'm adding is sort of expensive. Also not sure if gamma correction on the input or the output or both is the way to go. I have the computation setup on the camera input, but again, pretty wasteful - is calculating the lookuptable every frame, when it only needs to do so on init and when the gamma value changes.
 
 I'll want to add a control for increasing/decreasing gamma. Interesting to see how it reacts to exposure and brightness set on the Linux camera control utility
+
+
+2017-03-26 10:08:30
+turned off the color grading functionality created yesterday until I can optimize a bit further. 
+goals:
+	- integrate camera 2
+		- realtime switching between cameras
+		- composite views
+			- overlay
+			- 2-up
+		- just had an odd idea - is it possible or desirable to create a small snapsot of the camera and composite that on to the viewposrt so that, multiple frames are always shown.
+			- further, it would behave liek the queue I'd been thinking about, the most recent capture would always be shown as the last image, and would push older images out of the stack.
+
+
+2017-03-26 10:12:25
+easy enough to access the different cameras by indes. a good start :)
+- add a keybind to switch between cameras at runtime
+

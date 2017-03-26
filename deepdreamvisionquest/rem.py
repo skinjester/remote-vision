@@ -18,6 +18,7 @@ from camerautils import MotionDetector
 from camerautils import preprocess
 from camerautils import WebcamVideoStream
 from random import randint
+import inspect
 
 
 class Model(object):
@@ -211,7 +212,7 @@ class Viewport(object):
 
         # this would be a good place for color processing that
         # only affects the output (i.e. not cycled back into the net)
-        image = vignette(image,300)
+        #image = vignette(image,300)
         if self.b_show_HUD:
             image = show_HUD(image)
         return image
@@ -226,7 +227,8 @@ class Viewport(object):
 
     def shutdown(self):
         cv2.destroyAllWindows()
-        which_camera.stop()
+        for cam in Camera:
+            cam.stop()
         sys.exit()
 
 class Composer(object):
@@ -489,15 +491,25 @@ def listener():
         print '<<< [listener] previous layer'
         Model.prev_layer()
 
-    # -> key: next program
+    # right-arrow key: next program
     elif key == 83:
         print 'next program'
         Model.next_program()
 
-    # <- key: previous program
+    # left-arrow key: previous program
     elif key == 81:
         print 'previous program'
         Model.prev_program()
+
+    # F1 key: camera1
+    elif key == 190:
+        print '{:.>4} [{}] F1 pressed (CAMERA 1)'.format(inspect.stack()[0][2],inspect.stack()[0][3])
+        #Model.prev_program()
+
+    # F1 key: camera1
+    elif key == 191:
+        print '{:.>4} [{}] F2 pressed (CAMERA 2)'.format(inspect.stack()[0][2],inspect.stack()[0][3])
+        #Model.prev_program()
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -617,12 +629,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # GRB: Not entirely sure why this condition gets triggered 
     # noticing it when the system starts up. does it appear at other times? when?
     if MotionDetector.wasMotionDetected:
-        Composer.write_buffer2(which_camera.read())
+        Composer.write_buffer2(Camera[0].read())
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         print '!!!! [deepdream] abort return camera'
-        return which_camera.read()
+        return Camera[0].read()
         #print '[deepdream] was.MotionDetected TRUE'
-        #return which_camera.read()
+        #return Camera[0].read()
         #return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
 
     # print '[deepdream] base_img shape is: {}'.format(base_img.shape)
@@ -656,10 +668,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
             # FORCE REFRESH
             if Viewport.force_refresh:
-                Composer.write_buffer2(which_camera.read())
+                Composer.write_buffer2(Camera[0].read())
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 print '[deepdream] FORCE REFRESH'
-                return which_camera.read()
+                return Camera[0].read()
 
             MotionDetector.process()
             if not MotionDetector.isResting():
@@ -716,7 +728,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
             print '[deepdream] early exit return camera'
-            return which_camera.read()
+            return Camera[0].read()
 
 
 
@@ -760,7 +772,7 @@ def main():
 
 
     # the madness begins 
-    Composer.buffer1 = which_camera.read() # initial camera image for init
+    Composer.buffer1 = Camera[0].read() # initial camera image for init
 
     while True:
         print 'new cycle'
@@ -845,13 +857,13 @@ log = {
 
 
 # set global camera object to input dimensions
-# which_camera = cv2.VideoCapture(0)
-# which_camera.set(3, data.capture_size[0])
-# which_camera.set(4, data.capture_size[1])
+# Camera[0] = cv2.VideoCapture(0)
+# Camera[0].set(3, data.capture_size[0])
+# Camera[0].set(4, data.capture_size[1])
+Camera = []
+Camera.append(WebcamVideoStream(1, 1280, 720, alignment=True, gamma=0.5).start())
 
-which_camera = WebcamVideoStream(0, 1280, 720, alignment=True, gamma=0.5).start()
-
-MotionDetector = MotionDetector(16000, which_camera, update_log)
+MotionDetector = MotionDetector(16000, Camera[0], update_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
