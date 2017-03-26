@@ -208,6 +208,10 @@ class Viewport(object):
         # #tweet(export_path)
 
     def postfx(self, image):
+
+        # this would be a good place for color processing that
+        # only affects the output (i.e. not cycled back into the net)
+        image = vignette(image,300)
         if self.b_show_HUD:
             image = show_HUD(image)
         return image
@@ -289,13 +293,13 @@ def iterationPostProcess(net_data_blob):
     img = caffe2rgb(Model.net, net_data_blob)
     img = blur(img, 3, 3)
 
+
     return rgb2caffe(Model.net, img)
 
 
 def blur(img, sigmax, sigmay):
-    if (int(time.time()) % 2):
-        print 
-        return img
+    # if (int(time.time()) % 0.5):
+    #     return img
     print '[blur] {}:{}:{}'.format(img.shape, sigmax, sigmay)
 
     #img = nd.filters.gaussian_filter(img, sigma, order=0)
@@ -304,26 +308,36 @@ def blur(img, sigmax, sigmay):
 
     return img
 
-def colorxform(img):
-    # img1 = caffe2rgb(Model.net, img)
-    img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
-    img_yuv = np.uint8(np.clip(img_yuv, 0, 255))
-
-    # # equalize the histogram of the Y channel
-    img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
 
 
-    # # convert the YUV image back to BGR format
-    img2 = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+def vignette(img,param):
+    rows,cols = img.shape[:2]
+    kernel_x = cv2.getGaussianKernel(cols,param)
+    kernel_y = cv2.getGaussianKernel(rows,param)
+    kernel = kernel_y * kernel_x.T
+    mask = 255 * kernel / np.linalg.norm(kernel)
+    output = np.copy(img)
+    for i in range(3):
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * (mask * 4)), 0, 255)) 
+    return output
 
-    # back to a net blob
-    img2 = rgb2caffe(Model.net, img2)
+'''
+# generating vignette mask using Gaussian kernels
+kernel_x = cv2.getGaussianKernel(cols,200)
+kernel_y = cv2.getGaussianKernel(rows,200)
+kernel = kernel_y * kernel_x.T
+mask = 255 * kernel / np.linalg.norm(kernel)
+output = np.copy(img)
 
-    return img2
+# applying the mask to each channel in the input image
+for i in range(3):
+    output[:,:,i] = output[:,:,i] * mask
+'''
 
+def equalize_histogram(img):
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    return clahe.apply(img)
 
-
-   
 
 def sobel(img):
     xgrad = nd.filters.sobel(img, 0)
@@ -506,7 +520,7 @@ def objective_guide(dst):
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
 def shiftfunc(n):
-    return int(100* np.sin(n/100))
+    return int(3* np.sin(0.25*n/3))
 
 # -------
 # implements forward and backward passes thru the network
@@ -576,7 +590,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
             
     if clip:
         bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 255-bias)
+        src.data[:] = np.clip(src.data, -bias, 200-bias)
 
     # postprocess (blur) this iteration
     # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
@@ -585,7 +599,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     # print "what type of data is this?"
     # print "src.data[0] shape:{}".format(src.data[0].shape)
     # exit()
-
 
 
 
@@ -764,13 +777,17 @@ def main():
 
             Viewport.save_next_frame = True
 
+            # applies transform to frame buffer each cycle
+            # code shouldnt be placed here
+            # but why shouldn't function calls for postprocessing be placed here?
+
             for n in range(Composer.buffer1.shape[1]): # number of rows in the image
-                Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], shiftfunc(n))
+                Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], 3*shiftfunc(n))
 
             #GRB: worth looking into?   
-            # octave_scale += 0.01 * cycle
-            # if octave_scale > 1.8 or octave_scale < 1.2:
-            #     cycle = -1 * cycle
+            octave_scale += 0.05 * cycle
+            if octave_scale > 1.6 or octave_scale < 1.2:
+                cycle = -1 * cycle
             print '****** [main] octave_scale {0:5.2f} *******'.format(octave_scale)
 
             print 'rem cycle start: shape of Composer.buffer:{}'.format(Composer.buffer1.shape)
@@ -832,7 +849,7 @@ log = {
 # which_camera.set(3, data.capture_size[0])
 # which_camera.set(4, data.capture_size[1])
 
-which_camera = WebcamVideoStream(0, 1280, 720, alignment=True).start()
+which_camera = WebcamVideoStream(0, 1280, 720, alignment=True, gamma=0.5).start()
 
 MotionDetector = MotionDetector(16000, which_camera, update_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)

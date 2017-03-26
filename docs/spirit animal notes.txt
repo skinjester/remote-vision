@@ -1037,3 +1037,62 @@ wrapped up the remedial work. took a closer look at numpy arrays and matplotlib
 
 2017-03-23 21:18:32
 so moving forward - how would I subtract from the output red channel each frame, checking to see if it was 0
+
+
+2017-03-25 01:05:29
+figured out the crash that turned up during last session - or at least figured out how to avoid it. When the number of max iterations is reduced, less time is spent computing. It seems that if the same image is passed to the network at a high enough rate, it crashes. No idea why. Its arcane. Anyway, by scaling the recycled input with a multiplier > 0 the problem doesnt turn up.
+
+More sigfnificantly, I made some exciting progfess towards a more expressive visual language. I costs nothing to color correct and transform the output after its been computed. I'be also tweaked a number of the deepdream make_step parameters. not sure what will stay, still experimenting.
+
+The danger is to get caught in a loop of experimentation though.
+1. how can I save the settings and configurations I come across so I can find them again?
+2. camera 2
+3. what are the controls exposed to participants
+4. program USB pad w ASCII sequenceas for controls
+
+
+2017-03-25 10:28:52
+goals (Saturday)
+- transforming during the cycle
+	- is possibnle? how?
+- color correction beta
+	-	color
+	-	luminance
+- image transformation beta
+	-	scaling (zooming in)
+	-	warping the frame buffer
+
+goals (Sunday)
+-	dual cameras
+-	guide images
+
+
+2017-03-25 10:38:44
+studying image translation
+
+translation basically means that we are shifting the image by adding/subtracting the X and Y coordinates. In order to do this, we need to create a transformation matrix,
+
+rotation matrix
+We can specify the point around which the image would be rotated, the angle of rotation in degrees, and a scaling factor for the image
+
+
+2017-03-25 18:52:56
+
+reading about 2D convolution (in regard to image processing)
+
+What does "frequency" mean in an image? Well, in this context, frequency refers to the rate of change of pixel values. So we can say that the sharp edges would be high frequency content because the pixel values change rapidly in that region. Going by that logic, plain areas would be low frequency content. Going by this definition, a low pass filter would try to smoothen the edges.
+
+
+2017-03-25 20:39:01
+came across a section on how to make a vignette.
+this is probbaly something that should happen at the post rendering stage, similar to the HUD
+
+
+2017-03-25 21:54:54
+came across method for gamma correction
+
+
+2017-03-25 22:52:24
+I've been able to get a kind of color grading happening with what I've learned today. The code is sluggish at the moment as not of what I've added is optimized, and in particular  the vignette that I'm adding is sort of expensive. Also not sure if gamma correction on the input or the output or both is the way to go. I have the computation setup on the camera input, but again, pretty wasteful - is calculating the lookuptable every frame, when it only needs to do so on init and when the gamma value changes.
+
+I'll want to add a control for increasing/decreasing gamma. Interesting to see how it reacts to exposure and brightness set on the Linux camera control utility

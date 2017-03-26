@@ -14,7 +14,7 @@ def preprocess(image):
 
 
 class WebcamVideoStream(object):
-    def __init__(self, src=0, capture_width=1920, capture_height=1080, alignment=False):
+    def __init__(self, src=0, capture_width=1920, capture_height=1080, alignment=False, gamma=1.0):
         # set camera dimensiions before reading frames
         # requested size is rounded to nearest camera size if non-matching
         self.stream = cv2.VideoCapture(src)
@@ -24,6 +24,7 @@ class WebcamVideoStream(object):
         self.height = self.stream.get(4)
         self.stopped = False
         self.alignment = alignment
+        self.gamma = gamma
         (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
         if self.alignment:
             self.frame = cv2.flip(cv2.transpose(self.frame),1)
@@ -44,10 +45,19 @@ class WebcamVideoStream(object):
 
     def read(self):
         print "[Video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
-        return self.frame
+
+        invGamma = 1.0 / self.gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+            for i in np.arange(0, 256)]).astype("uint8")
+
+        # apply gamma correction using the lookup table
+        img_gamma =  cv2.LUT(self.frame, table)
+
+        return img_gamma
 
     def realign(self):
         self.alignment = not self.alignment
+
 
     def stop(self):
         self.stopped = True

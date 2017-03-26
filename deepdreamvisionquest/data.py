@@ -108,7 +108,7 @@ program.append({
 	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.5,
-	'step_mult':0.1,
+	'step_mult':0.0,
 	'model':'places',
 	'layers':[
 		'inception_4d/5x5_reduce',
