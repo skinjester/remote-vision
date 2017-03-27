@@ -155,8 +155,6 @@ class Viewport(object):
 
     def __init__(self, window_name, username, listener):
         self.window_name = window_name
-        self.viewport_w = data.viewport_size[0]
-        self.viewport_h = data.viewport_size[1]
         self.b_show_HUD = False
         self.keypress_mult = 0 # accelerate value changes when key held
         self.b_show_stats = False
@@ -166,18 +164,24 @@ class Viewport(object):
         self.username = username
         self.listener = listener
         self.force_refresh = False
-        self.image = None # current composited image
+        self.image = None # TODO re-evaluate defining it this way | current composited image
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     
     def show(self, image):
         # convert and clip floating point matrix into RGB bounds as integers
-        image = np.uint8(np.clip(image, 0, 224)) # tweaked to get some hilites in output
+        image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
 
         print '[Viewport][show] input size:{}'.format(image.shape)
 
+
         # resize image to fit viewport, skip if already at full size
-        if image.shape[0] != data.viewport_size[0]:
+
+        # data.viewport_size needs to account for WebcamVideoStream.portrait_alignment flag
+        # specifically - the current camera's portrait_alignment
+
+        # image is using NumPy rows,cols,RGB format
+        if image.shape[0] != data.viewport_size[1]:
             image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
             print '[Viewport][show] resized:{}'.format(image.shape)     
         image = Composer.update(image)
@@ -856,12 +860,9 @@ log = {
 
 
 
-# set global camera object to input dimensions
-# Camera[0] = cv2.VideoCapture(0)
-# Camera[0].set(3, data.capture_size[0])
-# Camera[0].set(4, data.capture_size[1])
+
 Camera = []
-Camera.append(WebcamVideoStream(1, 1280, 720, alignment=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
 
 MotionDetector = MotionDetector(16000, Camera[0], update_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)

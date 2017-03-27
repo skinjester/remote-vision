@@ -14,7 +14,11 @@ def preprocess(image):
 
 
 class WebcamVideoStream(object):
-    def __init__(self, src=0, capture_width=1920, capture_height=1080, alignment=False, gamma=1.0):
+
+    # the camera has to be provided with a basic landscape width, height
+    # because the hardware doesn't capture arbitrary window sizes
+    def __init__(self, src, capture_width, capture_height, portrait_alignment, gamma=1.0):
+
         # set camera dimensiions before reading frames
         # requested size is rounded to nearest camera size if non-matching
         self.stream = cv2.VideoCapture(src)
@@ -22,29 +26,37 @@ class WebcamVideoStream(object):
         self.stream.set(4, capture_height)
         self.width = self.stream.get(3)
         self.height = self.stream.get(4)
-        self.stopped = False
-        self.alignment = alignment
+
+        self.portrait_alignment = portrait_alignment
         self.gamma = gamma
-        (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
-        if self.alignment:
+
+        # initial frame to prime the queue
+        # the initial capture is aligned on init
+        # because any alignment correction is applied to the capture only
+        (self.grabbed, self.frame) = self.stream.read()
+        if self.portrait_alignment:
             self.frame = cv2.flip(cv2.transpose(self.frame),1)
+
+        self.stopped = False
 
     def start(self):
         Thread(target=self.update, args=()).start()
         return self
     def update(self):
-        # infinite loop until the thread is stopped
+        # loop until the thread is stopped
         while True:
             if self.stopped:
                 return
-            img = self.stream.read()[1]
-            if self.alignment:
+
+            _,img = self.stream.read()
+            if self.portrait_alignment:
                 img = cv2.flip(cv2.transpose(img),1)
-            print '[Video-queue][capture] {} {}'.format(img.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
+
+            print '[video-queue][capture] {} {}'.format(img.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
             self.frame = img
 
     def read(self):
-        print "[Video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
+        print "[video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
 
         # invGamma = 1.0 / self.gamma
         # table = np.array([((i / 255.0) ** invGamma) * 255
@@ -57,7 +69,7 @@ class WebcamVideoStream(object):
         return self.frame
 
     def realign(self):
-        self.alignment = not self.alignment
+        self.portrait_alignment = not self.portrait_alignment
 
     def stop(self):
         self.stopped = True
@@ -99,7 +111,6 @@ class MotionDetector(object):
         # history 
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count   
-
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus) 
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
         cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)

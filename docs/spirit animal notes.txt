@@ -1114,3 +1114,48 @@ goals:
 easy enough to access the different cameras by indes. a good start :)
 - add a keybind to switch between cameras at runtime
 
+
+2017-03-26 11:16:41
+Just ran it with 2 cameras simultaneously at 1280 x 720. Not wuite sure what the expense was. System seemed responsive - perhaps a bit less fluid than before?
+
+
+2017-03-26 13:15:01
+I'm wanting to replace all the print statements w proper logging
+
+The different levels of logging, from highest urgency to lowest urgency, are:
+
+CRITICAL
+ERROR
+WARNING
+INFO
+DEBUG
+The setLevel() call sets the minimum log level of messages it actually logs. So if you fh.setLevel(logging.ERROR), then WARNING, INFO, and DEBUG log messages will not be written to the log file (since fh is the log handler for the log file, as opposed to ch which is the handler for the console screen.)
+
+To write a log message in one of these five levels, use the following functions:
+
+logger.critical('This is a critical message.')
+logger.error('This is an error message.')
+logger.warning('This is a warning message.')
+logger.info('This is an informative message.')
+logger.debug('This is a low-level debug message.')
+
+
+2017-03-26 14:00:54
+there's a lot more to logging than expected, but I've got a good replacement for all those print statements, now - back to work on that camera!
+
+
+2017-03-26 14:50:46
+realizing that yesterdays tests that I thought were running on a 1920 x 1080 input were actually running on a 1280 x 720 input and scaling up to 1920 (which looked great actually). Those values were hardcoded into the camera instance
+
+
+2017-03-26 14:52:18
+crashes when I set portrait_alignment = False. but why?
+
+
+2017-03-26 20:23:43
+reverted back to the point before I added logging, will continue with print statements as before.
+
+
+2017-03-26 22:56:58
+getting there - able to toggle portrait_alignment without crashing
+
