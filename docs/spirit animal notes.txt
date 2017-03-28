@@ -1248,3 +1248,7 @@ The camera/display issue isnt fully resolved, the frame buffer isnt calling the 
 
 2017-03-28 13:28:56
 Added expandable logging framework to debug the code better and I guess also as a bit of a programming exercise. Was not happy with my  progress yesterday, enough so that I took a day off from work  to  get my momentum back
+
+
+2017-03-28 14:56:16
+replaced all print statements with logging calls. In a much better position to debug efficiently.

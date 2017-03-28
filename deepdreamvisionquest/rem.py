@@ -21,7 +21,7 @@ import inspect
 import logging
 import logging.config
 sys.path.append('../bin') #  point to directory containing LogSettings
-import LogSettings # global log settings templ
+import LogSettings # global log settings template
 
 
 
@@ -424,92 +424,88 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    #print '[listener] key:{}'.format(key)
+    # log.debug('key pressed: {}'.format(key))
 
     # Escape key: Exit
     if key == 27:
-        print '[listener] shutdown'
+        log.info('ESC: shutdown')
         Viewport.shutdown()
 
     # ENTER key: save picture
     elif key==10:
-        print '[listener] save'
+        log.info('ENTER: save')
         Viewport.export()
 
     # `(tilde) key: toggle HUD
     elif key == 96:
         Viewport.b_show_HUD = not Viewport.b_show_HUD
-        print '[listener] HUD'
+        log.info('` (tilde): toggle HUD: {}'.format(Viewport.b_show_HUD))
 
     # + key (numpad): increase motion threshold
     elif key == 171:
         MotionDetector.floor += 1000
-        print '[listener] Viewport.floor ++ {}'.format(MotionDetector.floor)
+        log.info('+ (plus): increase motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
 
-    # - key (numpad) : decrease motion threshold    
-    elif key == 173: 
+    # - key (numpad) : decrease motion threshold
+    elif key == 173:
         MotionDetector.floor -= 1000
         if MotionDetector.floor < 1:
             MotionDetector.floor = 1
-        print '[listener] Viewport.floor -- {}'.format(MotionDetector.floor)
+        log.info('+ (minus): decrease motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
 
-    # , key : previous featuremap    
+    # , key : previous featuremap
     elif key == 44:
-        print '[listener] previous featuremap'
+        log.info(', (comma): previous featuremap')
         Model.prev_feature()
 
-    # . key : next featuremap    
+    # . key : next featuremap
     elif key == 46:
-        print '[listener] next featuremap'
+        log.info('. (period) next featuremap')
         Model.next_feature()
 
     # 1 key : toggle motion detect window
-    elif key == 49: 
+    elif key == 49:
         Viewport.motiondetect_log_enabled = not Viewport.motiondetect_log_enabled
         if Viewport.motiondetect_log_enabled:
             cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
         else:
-            cv2.destroyWindow('delta')   
-        print '[keylistener] motion detect monitor: {}'.format(Viewport.motiondetect_log_enabled)
+            cv2.destroyWindow('delta')
+        log.info('(1): toggle motion detect window {}'.format(Viewport.motiondetect_log_enabled))
 
-    # p key : pause/unpause motion detection    
+    # p key : pause/unpause motion detection
     elif key == 112:
         MotionDetector.is_paused = not MotionDetector.is_paused
-        print '[listener] pause motion detection {}'.format(MotionDetector.is_paused)
-        if MotionDetector.is_paused:
-            print 'paused already?'
-        else:
+        log.info('(p) pause motion detection {}'.format(MotionDetector.is_paused))
+        if not MotionDetector.is_paused:
             MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
 
     # x key: previous network layer
     elif key == 120:
-        print '>>> [listener] next layer'
+        log.info('(x): next network layer')
         Model.next_layer()
 
     # z key: next network layer
     elif key == 122:
-        print '<<< [listener] previous layer'
+        log.info('(z): previous network layer')
         Model.prev_layer()
 
     # right-arrow key: next program
     elif key == 83:
-        print 'next program'
+        log.info('(right-arrow): next program')
         Model.next_program()
 
     # left-arrow key: previous program
     elif key == 81:
-        print 'previous program'
+        log.info('(left-arrow): previous program')
         Model.prev_program()
 
     # F1 key: camera1
     elif key == 190:
-        print '{:.>4} [{}] F1 pressed (CAMERA 1)'.format(inspect.stack()[0][2],inspect.stack()[0][3])
-        #Model.prev_program()
+        log.info('(F1): switch to camera 1')
 
-    # F1 key: camera1
+    # F2 key: camera1
     elif key == 191:
-        print '{:.>4} [{}] F2 pressed (CAMERA 2)'.format(inspect.stack()[0][2],inspect.stack()[0][3])
-        #Model.prev_program()
+        log.info('(F2): switch to camera 2')
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -551,13 +547,13 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     net.forward(end=end)    # make sure we stop on the chosen neural layer
     objective(dst)          # specify the optimization objective
     net.backward(start=end) # backwards propagation
-    g = src.diff[0]         # store the error 
+    g = src.diff[0]         # store the error
 
-    # apply normalized ascent step to the image array 
+    # apply normalized ascent step to the image array
     src.data[:] += step_size / np.abs(g).mean() * g
 
-    # unshift image jitter              
-    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)   
+    # unshift image jitter
+    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)
 
     # subtract image mean and clip our matrix to the values
     bias = net.transformer.mean['data']
@@ -573,19 +569,17 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
 # supports Feature Map activation
-# ------- 
+# -------
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
 
-    print '[make_step] {}:{}:{}'.format(step_size,feature,end)
-    print '-'*20
+    log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
     dst = net.blobs[end]
 
     ox, oy = np.random.randint(-jitter, jitter+1, 2)
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
-            
     net.forward(end=end)
-    
+
     # feature inspection
     if feature == -1:
         dst.diff[:] = dst.data
@@ -600,7 +594,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     src.data[:] += step_size/np.abs(g).mean() * (g*step_size)
 
     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
-            
+
     if clip:
         bias = net.transformer.mean['data']
         src.data[:] = np.clip(src.data, -bias, 200-bias)
@@ -670,7 +664,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 break
 
             # delegate gradient ascent to step function
-            print '[deepdream] {:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
+            log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
             make_step(Model.net, end=end, **step_params)
 
             # write netblob to Composer
@@ -761,7 +755,7 @@ def main():
     Composer.buffer1 = Camera[0].read() # initial camera image for init
 
     while True:
-        print '[main] new cycle'
+        log.info('new cycle')
         Composer.is_new_cycle = True
         Viewport.show(Composer.buffer1)
         MotionDetector.process()
@@ -783,7 +777,7 @@ def main():
             octave_scale += 0.05 * cycle
             if octave_scale > 1.6 or octave_scale < 1.2:
                 cycle = -1 * cycle
-            print '[main] octave_scale {0:5.2f}'.format(octave_scale)
+            log.debug('modified octave_scale: {}'.format(octave_scale))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
@@ -802,9 +796,7 @@ def main():
         difference = later - now
         duration_msg = '{:.2f}s'.format(difference)
         update_HUD_log('rem_cycle',duration_msg) # HUD
-
         log.info('cycle duration: {}\n{}'.format(duration_msg,'-'*80))
-
         #Viewport.save_next_frame = True
         now = time.time() # the new now
 

@@ -9,7 +9,7 @@ LOGGING_CONFIG = {
             'format': '%(relativeCreated)010.2f [%(funcName)-s] %(message)s'
         },
         'showthread': {
-            'format': '%(relativeCreated)010.2f %(levelname)-7s %(threadName)-s %(funcName)s: %(message)s'
+            'format': '%(relativeCreated)010.2f %(threadName)-s [%(funcName)s]: %(message)s'
         }
 
     },
@@ -23,6 +23,11 @@ LOGGING_CONFIG = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'detailed'
+        },
+        'console-thread-detail': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'showthread'
         }
     },
     'loggers': {
@@ -33,6 +38,10 @@ LOGGING_CONFIG = {
         'logtest-debug': {
             'level': 'DEBUG',
             'handlers': ['console-detailed']
+        },
+        'logtest-debug-thread': {
+            'level': 'DEBUG',
+            'handlers': ['console-thread-detail']
         }
     }
 }
