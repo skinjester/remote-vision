@@ -1159,3 +1159,78 @@ reverted back to the point before I added logging, will continue with print stat
 2017-03-26 22:56:58
 getting there - able to toggle portrait_alignment without crashing
 
+
+2017-03-27 11:49:30
+struggling with the viewport.
+Here's the problem.
+
+I want to be able to toggle portrait_alignment on/off
+why?
+so that the viewport shapes itself to match whatever the camera is outputting
+
+
+2017-03-27 17:49:33
+making some progress wi the viewport finally
+
+
+2017-03-27 22:04:44
+It seems that the Composer.buffer array needs to be reshaped as well
+Hunting this down is so much harder than it needs to be. It points out the fallacy of decentralizing these sources.
+
+
+2017-03-27 22:11:59
+Here's the reality. you need to move on. Forget about the idea of generalizing the camera orientation. Just assume it to be oriented properly when the program starts. It doesn't need to switch back and forth at run time.
+
+With that in mind - I can do something like this:
+
+create camera objects
+derive viewport size from camera.width,height
+de
+
+
+2017-03-27 22:37:19
+
+typed in a bunch of stuff maybe it works. 
+basic idea was to pull capture_size from the camera object
+Viewpoert_size has become an instance of the class Display, which exists at the moment only to house a width and height value accessible thrui dot notation. Once I get it working, I'll replace that bit with a dictionary, or movit back to the Data module.
+
+mocing on, I made global substitutions to reference these changes. At a minimum it shpuld crash in the same way as before.
+
+
+2017-03-27 23:18:28
+its hallucinating on either camera in landscape again
+and crashes on portrait just as before - same reasons 
+
+
+2017-03-27 23:40:22
+a bit more detail has it crashing further along. This time it showed the camera output in portrait orientation before crashing. Now that the display size is being adjusted when initialized, the previous conditions I wrote there no lobger applies
+
+
+2017-03-27 23:43:22
+There we go - its working.
+I can switch between portraint and landscape modes when the program initializes
+
+Let me try to sum up:
+
+Create a camera object, specifying:
+- capture_width,
+- capture_height
+- orientation (0=landscape, 1=counter-clockwise, 2=landscape180, 3=clockwise)
+- pass that to the Display object where the display width and height are stored
+	- need to call a function when this object is insitialized
+		- if the orientation is portrait then the specified display width and height have to be swapped
+- the Viewport class relies on knowing the proper Display width, height so:
+	- Viewport.show() can scale lower ocataves in buffer1 proportionally to match the display size
+- the Composer class relies on knowing the proper Display width and height so:
+	- Composer.update() can run inceptionxform on buffer 1
+	- buffer2 can resize itself to match the Display width
+- show_HUD() relies on knowing the proper Display width, height so:
+	-	the function draws HUD updates to a seperate frame buffer that needs to match the DIsplay size
+
+/* I'm noticing that Viewport.show() and Composer.writeBuffer2 basically do the same thing
+Viewport.Show() is actually writeBuffer1() + show() */
+
+
+2017-03-28 00:57:33
+cleaned up the logging (print statements) - got rid of most of it
+The camera/display issue isnt fully resolved, the frame buffer isnt calling the inceptionxform properly, so it just sits on the same image

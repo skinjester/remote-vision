@@ -4,15 +4,6 @@ import datetime
 from threading import Thread
 
 
-def preprocess(image):
-    # check the cam
-    print '[camerautils][preprocess] argument image.shape: {}'.format(image.shape)
-    img = cv2.flip(cv2.transpose(image),1)
-    print '[camerautils][preprocess] return image.shape: {}'.format(img.shape)
-    return img
-    #return image.transpose((1,0,2))[:,::-1,:]
-
-
 class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
@@ -24,8 +15,9 @@ class WebcamVideoStream(object):
         self.stream = cv2.VideoCapture(src)
         self.stream.set(3, capture_width)
         self.stream.set(4, capture_height)
-        self.width = self.stream.get(3)
-        self.height = self.stream.get(4)
+        self.width = int(self.stream.get(3))
+        self.height = int(self.stream.get(4))
+        self.capture_size = [self.height,self.width]
 
         self.portrait_alignment = portrait_alignment
         self.gamma = gamma
@@ -52,11 +44,11 @@ class WebcamVideoStream(object):
             if self.portrait_alignment:
                 img = cv2.flip(cv2.transpose(img),1)
 
-            print '[video-queue][capture] {} {}'.format(img.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
+            # print '[capture] {}'.format(img.shape)
             self.frame = img
 
     def read(self):
-        print "[video-queue][read] {} {}".format(self.frame.shape,datetime.datetime.now().strftime("%H:%M:%S.%f"))
+        # print "[read] {}".format(self.frame.shape)
 
         # invGamma = 1.0 / self.gamma
         # table = np.array([((i / 255.0) ** invGamma) * 255
@@ -106,7 +98,7 @@ class MotionDetector(object):
         if self.is_paused:
             self.wasMotionDetected = False
             return
-        print '-'*20    
+        
         print "[motiondetector][process]"
         # history 
         self.wasMotionDetected_history = self.wasMotionDetected

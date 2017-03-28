@@ -15,11 +15,21 @@ import tweepy
 os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
 from camerautils import MotionDetector
-from camerautils import preprocess
 from camerautils import WebcamVideoStream
 from random import randint
 import inspect
 
+# using this to index some values with dot notation
+# perhaps misguided, but needing expediency at the moment
+class Display(object):
+    def __init__(self, width, height, camera):
+        # transpose width, height when in portrait alignment
+        if camera.portrait_alignment:
+            self.width = height
+            self.height = width
+        else:
+            self.width = width
+            self.height = height
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -101,7 +111,6 @@ class Model(object):
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
-        print '######## [Model] new layer {}/featuremaps={}'.format(end,self.net.blobs[self.end].data.shape[1])
         update_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
 
     def prev_layer(self):
@@ -119,7 +128,6 @@ class Model(object):
     def set_featuremap(self):
         Viewport.force_refresh = True
         featuremap = self.features[self.current_feature]
-        print '######## [Model] new featuremap {}'.format(featuremap)
         update_log('featuremap',featuremap)
 
     def prev_feature(self):
@@ -164,7 +172,7 @@ class Viewport(object):
         self.username = username
         self.listener = listener
         self.force_refresh = False
-        self.image = None # TODO re-evaluate defining it this way | current composited image
+        self.image = None
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     
@@ -172,18 +180,14 @@ class Viewport(object):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
 
-        print '[Viewport][show] input size:{}'.format(image.shape)
-
 
         # resize image to fit viewport, skip if already at full size
+        if image.shape[0] != Display.height:
+            print '*'
+            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+        else:
+            print '***'
 
-        # data.viewport_size needs to account for WebcamVideoStream.portrait_alignment flag
-        # specifically - the current camera's portrait_alignment
-
-        # image is using NumPy rows,cols,RGB format
-        if image.shape[0] != data.viewport_size[1]:
-            image = cv2.resize(image, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
-            print '[Viewport][show] resized:{}'.format(image.shape)     
         image = Composer.update(image)
 
         image = self.postfx(image) # HUD
@@ -203,7 +207,6 @@ class Viewport(object):
         #     self.export(image)
 
     def export(self,image=None):
-        print '[Viewport] export'
         if image is None:
             image = self.image
         make_sure_path_exists(Viewport.username)
@@ -238,43 +241,35 @@ class Viewport(object):
 class Composer(object):
 
 
+    # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
+    # this happens on init 
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        self.buffer1 = np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((data.viewport_size[1], data.viewport_size[0], 3), np.uint8) # uses camera capture dimensions
+        self.buffer1 = np.zeros((Camera[0].height, Camera[0].width ,3), np.uint8) # uses camera capture dimensions
+        self.buffer2 = np.zeros((Display.height, Display.width, 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = 0.001
+        self.xform_scale = 0.02
 
     def update(self, image):
         if self.is_dirty: 
-            print '[Composer] recycle'
-
             if self.is_new_cycle:
-                #pass
-                #print '[Composer] inception'
-                self.buffer1 = inceptionxform(image, self.xform_scale, data.capture_size)
-                #print '[Composer] xform scale {}'.format(self.xform_scale)
+                self.buffer1 = inceptionxform(image, self.xform_scale, Camera[0].capture_size)
 
             self.is_dirty = False
             self.is_compositing_enabled = False
 
-
         else:
-            #print '[Composer] refresh'
             if self.is_new_cycle and MotionDetector.isResting() == False:
-                #print '[Composer] compositing enabled'
                 self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
-                #print '[Composer] compositing buffer1:{} buffer2:{}'.format(image.shape,self.buffer2.shape)
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
                 self.opacity = self.opacity * 0.9
                 if self.opacity <= 0.1:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
-                    #print '[Composer] stopped compositing'
 
         return image
 
@@ -284,18 +279,17 @@ class Composer(object):
             self.buffer2 = np.uint8(np.clip(image, 0, 255))
 
             ### resize buffer 2 to match viewport dimensions
-            if image.shape[1] != data.viewport_size[0]:
-                print '[Composer][write_buffer2] resize buffer2 to viewport'
-                self.buffer2 = cv2.resize(self.buffer2, (data.viewport_size[0], data.viewport_size[1]), interpolation = cv2.INTER_LINEAR)
+            if image.shape[1] != Display.width:
+                self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
         return
 
 
 def inceptionxform(image,scale,capture_size):
+    print 'image.shape:{} scale:{} capture_size:{}'.format(image.shape, scale, capture_size)
     #return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-    return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
+    return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
 def iterationPostProcess(net_data_blob):
-    print 'shape of net_data_blob9 is {}'.format(net_data_blob.shape)
     img = caffe2rgb(Model.net, net_data_blob)
     img = blur(img, 3, 3)
 
@@ -306,8 +300,6 @@ def iterationPostProcess(net_data_blob):
 def blur(img, sigmax, sigmay):
     # if (int(time.time()) % 0.5):
     #     return img
-    print '[blur] {}:{}:{}'.format(img.shape, sigmax, sigmay)
-
     #img = nd.filters.gaussian_filter(img, sigma, order=0)
     img = cv2.medianBlur(img,(sigmax))
     # img1 = cv2.bilateralFilter(img,15,75,75)
@@ -387,7 +379,7 @@ def show_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
-    cv2.rectangle(overlay,(0,0),(data.viewport_size[0], data.viewport_size[1]), (0, 0, 0), -1)
+    cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
@@ -428,7 +420,7 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    print '[listener] key:{}'.format(key)
+    #print '[listener] key:{}'.format(key)
 
     # Escape key: Exit
     if key == 27:
@@ -536,7 +528,7 @@ def objective_guide(dst):
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
 def shiftfunc(n):
-    return int(3* np.sin(0.25*n/3))
+    return int(17 * np.sin(n/17.0))/5
 
 # -------
 # implements forward and backward passes thru the network
@@ -580,7 +572,8 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
 # ------- 
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
 
-    print '--> [step] step_size:{} feature:{} end:{}'.format(step_size,feature,end)
+    print '[make_step] {}:{}:{}'.format(step_size,feature,end)
+    print '-'*20
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
     dst = net.blobs[end]
 
@@ -612,9 +605,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
     src.data[0] = iterationPostProcess(src.data[0])
 
-    # print "what type of data is this?"
-    # print "src.data[0] shape:{}".format(src.data[0].shape)
-    # exit()
+
 
 
 
@@ -635,14 +626,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     if MotionDetector.wasMotionDetected:
         Composer.write_buffer2(Camera[0].read())
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-        print '!!!! [deepdream] abort return camera'
         return Camera[0].read()
-        #print '[deepdream] was.MotionDetected TRUE'
-        #return Camera[0].read()
-        #return np.zeros((data.capture_size[1], data.capture_size[0] ,3), np.uint8)
 
-    # print '[deepdream] base_img shape is: {}'.format(base_img.shape)
-    # exit()
 
     # SETUPOCTAVES---
     Composer.is_new_cycle = False
@@ -674,7 +659,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if Viewport.force_refresh:
                 Composer.write_buffer2(Camera[0].read())
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-                print '[deepdream] FORCE REFRESH'
                 return Camera[0].read()
 
             MotionDetector.process()
@@ -682,7 +666,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 break
 
             # delegate gradient ascent to step function
-            print '-> {:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
+            print '[deepdream] {:02d}:{:03d}:{:03d}'.format(octave,i,iteration_max)
             make_step(Model.net, end=end, **step_params)
 
             # write netblob to Composer
@@ -722,19 +706,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # this turned out to be the last octave calculated in the series
         if octave == Model.octave_cutoff:
             Composer.is_dirty = True
-            print '[deepdream] {:02d}:{:03d}:{:03d} Model cutoff return net blob {}'.format(octave,i,iteration_max,src.data[0].shape)
-            return caffe2rgb(
-                Model.net, src.data[0])
+            return caffe2rgb(Model.net, src.data[0])
 
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if MotionDetector.wasMotionDetected:
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-            print '[deepdream] early exit return camera'
             return Camera[0].read()
-
-
 
         # extract details produced on the current octave
         detail = src.data[0] - (octave_current-(randint(0,9)-5))
@@ -744,7 +723,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         #iteration_max = Model.next_iteration(iteration_max)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    #print '[deepdream] {:02d}:{:03d}:{:03d} return net blob'.format(octave,i,iteration_max)
     Composer.is_dirty = True # yes, we'll be recycling the Composer
 
     # return rendered img
@@ -779,16 +757,13 @@ def main():
     Composer.buffer1 = Camera[0].read() # initial camera image for init
 
     while True:
-        print 'new cycle'
+        print '[main] new cycle'
         Composer.is_new_cycle = True
         Viewport.show(Composer.buffer1)
         MotionDetector.process()
         if MotionDetector.wasMotionDetected:
             Composer.is_dirty = False
 
-
-
-        print '[main] Composer.is_dirty: {}'.format(Composer.is_dirty)
         if Composer.is_dirty == False or Viewport.force_refresh:
 
             Viewport.save_next_frame = True
@@ -804,14 +779,12 @@ def main():
             octave_scale += 0.05 * cycle
             if octave_scale > 1.6 or octave_scale < 1.2:
                 cycle = -1 * cycle
-            print '****** [main] octave_scale {0:5.2f} *******'.format(octave_scale)
+            print '[main] octave_scale {0:5.2f}'.format(octave_scale)
 
-            print 'rem cycle start: shape of Composer.buffer:{}'.format(Composer.buffer1.shape)
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
-                print '[main] FORCED REFRESH'
                 #Viewport.export(Composer.buffer1)
                 Viewport.force_refresh = False
         else:
@@ -823,7 +796,7 @@ def main():
         # a bit later
         later = time.time()
         difference = later - now
-        duration_msg = '{}s'.format(difference)
+        duration_msg = '{:02f}s'.format(difference)
         update_log('rem_cycle',duration_msg)
         now = time.time()
 
@@ -862,7 +835,9 @@ log = {
 
 
 Camera = []
-Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+
+Display = Display(width=1280, height=720, camera=Camera[0])
 
 MotionDetector = MotionDetector(16000, Camera[0], update_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)

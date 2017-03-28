@@ -1,5 +1,5 @@
-capture_size = [1280,720]
-viewport_size = [1280,720]
+# capture_size = [1280,720]
+
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
