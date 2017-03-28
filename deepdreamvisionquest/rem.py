@@ -18,6 +18,13 @@ from camerautils import MotionDetector
 from camerautils import WebcamVideoStream
 from random import randint
 import inspect
+import logging
+import logging.config
+sys.path.append('../bin') #  point to directory containing LogSettings
+import LogSettings # global log settings templ
+
+
+
 
 # using this to index some values with dot notation
 # perhaps misguided, but needing expediency at the moment
@@ -111,7 +118,7 @@ class Model(object):
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
-        update_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
+        update_HUD_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -128,7 +135,7 @@ class Model(object):
     def set_featuremap(self):
         Viewport.force_refresh = True
         featuremap = self.features[self.current_feature]
-        update_log('featuremap',featuremap)
+        update_HUD_log('featuremap',featuremap)
 
     def prev_feature(self):
         max_feature_index = self.net.blobs[self.end].data.shape[1]
@@ -183,10 +190,7 @@ class Viewport(object):
 
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != Display.height:
-            print '*'
             image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
-        else:
-            print '***'
 
         image = Composer.update(image)
 
@@ -366,8 +370,8 @@ def tweet(path_to_image):
     myStatusText = '#deepdreamvisionquest #gdc2016 test'
     api.update_with_media(path_to_image, status=myStatusText )
 
-def update_log(key,new_value):
-    log[key] = '{}'.format(new_value)
+def update_HUD_log(key,new_value):
+    hud_log[key] = '{}'.format(new_value)
 
 def show_stats(image):
     stats_overlay = image.copy()
@@ -686,16 +690,16 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Model.step_mult)
             thresholdmsg = '{:0>6}'.format(MotionDetector.delta_trigger)
             floormsg = '{:0>6}'.format(MotionDetector.floor)
-            update_log('octave',octavemsg)
-            update_log('width',w)
-            update_log('height',h)
-            update_log('guide',guidemsg)
-            update_log('iteration',iterationmsg)
-            update_log('step_size',stepsizemsg)
-            update_log('scale',Model.octave_scale)
-            update_log('program',Model.package_name)
-            update_log('threshold',thresholdmsg)
-            update_log('floor',floormsg)
+            update_HUD_log('octave',octavemsg)
+            update_HUD_log('width',w)
+            update_HUD_log('height',h)
+            update_HUD_log('guide',guidemsg)
+            update_HUD_log('iteration',iterationmsg)
+            update_HUD_log('step_size',stepsizemsg)
+            update_HUD_log('scale',Model.octave_scale)
+            update_HUD_log('program',Model.package_name)
+            update_HUD_log('threshold',thresholdmsg)
+            update_HUD_log('floor',floormsg)
 
         # probably temp? export each completed iteration
         # Viewport.export(Composer.buffer1)
@@ -748,9 +752,9 @@ def main():
     octaves = Model.octaves
     octave_scale = Model.octave_scale
     jitter = 300
-    update_log('model',Model.caffemodel)
-    update_log('username',Viewport.username)
-    update_log('settings',Model.package_name)
+    update_HUD_log('model',Model.caffemodel)
+    update_HUD_log('username',Viewport.username)
+    update_HUD_log('settings',Model.package_name)
 
 
     # the madness begins 
@@ -796,26 +800,24 @@ def main():
         # a bit later
         later = time.time()
         difference = later - now
-        duration_msg = '{:02f}s'.format(difference)
-        update_log('rem_cycle',duration_msg)
-        now = time.time()
+        duration_msg = '{:.2f}s'.format(difference)
+        update_HUD_log('rem_cycle',duration_msg) # HUD
 
-        print '[main] cycle duration:{})'.format(duration_msg)
+        log.info('cycle duration: {}\n{}'.format(duration_msg,'-'*80))
 
         #Viewport.save_next_frame = True
+        now = time.time() # the new now
 
 
-# -------- 
+# --------
 # INIT
 # --------
-net = None
 
-# HUD
-# dictionary contains the key/values we'll be logging
-font = cv2.FONT_HERSHEY_SIMPLEX
-white = (255, 255, 255)
+# setup system logging facilities
+logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
+log = logging.getLogger('logtest-debug')
 
-log = {
+hud_log = {
     'octave': None,
     'width': None,
     'height': None,
@@ -831,15 +833,41 @@ log = {
     'rem_cycle': None
 }
 
+# HUD
+# dictionary contains the key/values we'll be logging
+font = cv2.FONT_HERSHEY_SIMPLEX
+white = (255, 255, 255)
+
+# global reference to the neural network object
+net = None
 
 
-
+# camera setup
 Camera = []
-Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+
+'''
+# setup the webcam video stream
+WebcamVideoStream.config(
+    src=0,
+    request_width=1280,
+    request_height=720
+    )
+
+# create a camera
+Camera.append(
+    WebcamVideoStream.getCamera(
+        orientation=0,
+        gamma=0.5
+        )
+    )
+
+
+'''
 
 Display = Display(width=1280, height=720, camera=Camera[0])
 
-MotionDetector = MotionDetector(16000, Camera[0], update_log)
+MotionDetector = MotionDetector(16000, Camera[0], update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()

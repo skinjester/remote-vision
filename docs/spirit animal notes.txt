@@ -1212,10 +1212,20 @@ I can switch between portraint and landscape modes when the program initializes
 
 Let me try to sum up:
 
+The Display is the onscreen framebuffer.
+The display supports 2 aspect ratios:
+-	landscape (16:9) default
+-	portrait (9:16) transposed counter clockwise
+
+The Camera is the framegrabbing and Queing system
+
 Create a camera object, specifying:
 - capture_width,
 - capture_height
-- orientation (0=landscape, 1=counter-clockwise, 2=landscape180, 3=clockwise)
+- portrait_alignment 
+
+The Display object relies upon the camera object 
+
 - pass that to the Display object where the display width and height are stored
 	- need to call a function when this object is insitialized
 		- if the orientation is portrait then the specified display width and height have to be swapped
@@ -1234,3 +1244,7 @@ Viewport.Show() is actually writeBuffer1() + show() */
 2017-03-28 00:57:33
 cleaned up the logging (print statements) - got rid of most of it
 The camera/display issue isnt fully resolved, the frame buffer isnt calling the inceptionxform properly, so it just sits on the same image
+
+
+2017-03-28 13:28:56
+Added expandable logging framework to debug the code better and I guess also as a bit of a programming exercise. Was not happy with my  progress yesterday, enough so that I took a day off from work  to  get my momentum back
