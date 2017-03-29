@@ -21,7 +21,7 @@ import inspect
 import logging
 import logging.config
 sys.path.append('../bin') #  point to directory containing LogSettings
-import LogSettings # global log settings template
+import LogSettings # global log settings templ
 
 
 
@@ -30,13 +30,14 @@ import LogSettings # global log settings template
 # perhaps misguided, but needing expediency at the moment
 class Display(object):
     def __init__(self, width, height, camera):
-        # transpose width, height when in portrait alignment
+        self.width = width
+        self.height = height
+
+        # swap width, height when in portrait alignment
         if camera.portrait_alignment:
             self.width = height
             self.height = width
-        else:
-            self.width = width
-            self.height = height
+
 
 class Model(object):
     def __init__(self, modelkey='googlenet', current_layer=0):
@@ -289,8 +290,8 @@ class Composer(object):
 
 
 def inceptionxform(image,scale,capture_size):
-    print 'image.shape:{} scale:{} capture_size:{}'.format(image.shape, scale, capture_size)
-    #return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+    log.debug('image.shape:{} scale:{} capture_size:{}'.format(image.shape, scale, capture_size))
+    # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
     return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
 def iterationPostProcess(net_data_blob):
@@ -836,7 +837,7 @@ net = None
 
 # camera setup
 Camera = []
-Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
 
 '''
 # setup the webcam video stream
@@ -858,8 +859,7 @@ Camera.append(
 '''
 
 Display = Display(width=1280, height=720, camera=Camera[0])
-
-MotionDetector = MotionDetector(16000, Camera[0], update_HUD_log)
+MotionDetector = MotionDetector(500000, Camera[0], update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()

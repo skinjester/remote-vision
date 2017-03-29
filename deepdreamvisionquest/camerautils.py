@@ -31,7 +31,7 @@ class WebcamVideoStream(object):
         self.stream.set(4, capture_height)
         self.width = int(self.stream.get(3))
         self.height = int(self.stream.get(4))
-        self.capture_size = [self.height,self.width]
+        self.capture_size = [self.width,self.height]
 
         self.portrait_alignment = portrait_alignment
         self.gamma = gamma
@@ -41,7 +41,8 @@ class WebcamVideoStream(object):
         # because any alignment correction is applied to the capture only
         (self.grabbed, self.frame) = self.stream.read()
         if self.portrait_alignment:
-            self.frame = cv2.flip(cv2.transpose(self.frame),1)
+            # self.frame = cv2.flip(cv2.transpose(self.frame),1)
+            self.frame = cv2.transpose(self.frame)
 
         self.stopped = False
 
@@ -57,7 +58,9 @@ class WebcamVideoStream(object):
 
             _,img = self.stream.read()
             if self.portrait_alignment:
-                img = cv2.flip(cv2.transpose(img),1)
+                #img = cv2.flip(cv2.transpose(img),1)
+                img = cv2.transpose(img)
+
 
             threadlog.debug('capture RGB:{}'.format(img.shape))
             self.frame = img
@@ -101,7 +104,7 @@ class MotionDetector(object):
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
-        self.floor = 2000 # changed to lover value at night
+        self.floor = 30000 # changed to lover value at night
         self.update_hud_log = log
         self.history = []
         self.history_queue_length = 50
@@ -125,6 +128,7 @@ class MotionDetector(object):
 
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
         #print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
+        log.info('delta_trigger:{} delta_count:{} delta_history:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):

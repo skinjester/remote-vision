@@ -1216,6 +1216,7 @@ The Display is the onscreen framebuffer.
 The display supports 2 aspect ratios:
 -	landscape (16:9) default
 -	portrait (9:16) transposed counter clockwise
+-	the display can be flipped horizontally and vertically in any aspect
 
 The Camera is the framegrabbing and Queing system
 
@@ -1225,10 +1226,9 @@ Create a camera object, specifying:
 - portrait_alignment 
 
 The Display object relies upon the camera object 
-
-- pass that to the Display object where the display width and height are stored
-	- need to call a function when this object is insitialized
-		- if the orientation is portrait then the specified display width and height have to be swapped
+-	display width, height are stored here
+-	display width, height are swapped here to match the camera alignment
+	-	if the orientation is portrait then the specified display width and height have to be swapped
 - the Viewport class relies on knowing the proper Display width, height so:
 	- Viewport.show() can scale lower ocataves in buffer1 proportionally to match the display size
 - the Composer class relies on knowing the proper Display width and height so:
@@ -1252,3 +1252,19 @@ Added expandable logging framework to debug the code better and I guess also as 
 
 2017-03-28 14:56:16
 replaced all print statements with logging calls. In a much better position to debug efficiently.
+
+
+2017-03-28 22:28:52
+I have the system up and running on the Monolith. It looks startling. Its amazing. Numerous conclusions to be drawn from the initial test run:
+-	the video4Linux Control Panel is only addressing a single camera. Is there a way to run 2 instances of this program and specify the camera?
+	- as a fallback, is it possible to emulate aspects of the control panel in software?
+
+
+2017-03-29 00:34:41
+Yes, there is a way to run 2 instances of the video4Linux control panel. There's a lot more functionality there than I knew. It also turns out to be trivial to mirror the captured image vertically and horizontally. Vertical mirroring is surprisingly cool, the forms that emerge are a bit disconnected from your movements.
+
+I'm going to implement camera switching next and then camera flipping
+Before getting to that, there's a rendering bug where:
+1. the sine wave transform doesn't get picked up by the next rendered image, so it appears briefly then disappears instead of propogating
+2. the octave size frequency mod isn't working
+3. the inceptionxform funtion isn't calculating the transform correctly
