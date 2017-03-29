@@ -94,12 +94,12 @@ class Model(object):
         model.force_backward = True
 
         # save it to a new file called tmp.prototxt
-        open('tmp.prototxt', 'w').write(str(model))     
+        open('tmp.prototxt', 'w').write(str(model))
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
-  
+
     def set_program(self, index):
         self.package_name = data.program[index]['name']
         self.iterations = data.program[index]['iterations']
@@ -183,7 +183,6 @@ class Viewport(object):
         self.image = None
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
-    
     def show(self, image):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
@@ -191,7 +190,7 @@ class Viewport(object):
 
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != Display.height:
-            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_CUBIC)
 
         image = Composer.update(image)
 
@@ -232,7 +231,7 @@ class Viewport(object):
     def postfx2(self, image):
         image = show_stats(image)
         return image
-    
+
     def monitor(self):
         if self.motiondetect_log_enabled:
             cv2.imshow('delta', MotionDetector.t_delta_framebuffer)
@@ -247,7 +246,7 @@ class Composer(object):
 
 
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
-    # this happens on init 
+    # this happens on init
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
@@ -255,10 +254,10 @@ class Composer(object):
         self.buffer2 = np.zeros((Display.height, Display.width, 3), np.uint8) # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = 0.02
+        self.xform_scale = 0.005
 
     def update(self, image):
-        if self.is_dirty: 
+        if self.is_dirty:
             if self.is_new_cycle:
                 self.buffer1 = inceptionxform(image, self.xform_scale, Camera[0].capture_size)
 
@@ -285,7 +284,7 @@ class Composer(object):
 
             ### resize buffer 2 to match viewport dimensions
             if image.shape[1] != Display.width:
-                self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+                self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_CUBIC)
         return
 
 
@@ -297,8 +296,6 @@ def inceptionxform(image,scale,capture_size):
 def iterationPostProcess(net_data_blob):
     img = caffe2rgb(Model.net, net_data_blob)
     img = blur(img, 3, 3)
-
-
     return rgb2caffe(Model.net, img)
 
 
@@ -529,7 +526,7 @@ def objective_guide(dst):
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
 def shiftfunc(n):
-    return int(17 * np.sin(n/17.0))/5
+    return int(3 * np.sin(n/10))
 
 # -------
 # implements forward and backward passes thru the network
@@ -752,7 +749,7 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
 
-    # the madness begins 
+    # the madness begins
     Composer.buffer1 = Camera[0].read() # initial camera image for init
 
     while True:
@@ -774,14 +771,14 @@ def main():
             for n in range(Composer.buffer1.shape[1]): # number of rows in the image
                 Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], 3*shiftfunc(n))
 
-            #GRB: worth looking into?   
+            #GRB: worth looking into?
             octave_scale += 0.05 * cycle
             if octave_scale > 1.6 or octave_scale < 1.2:
                 cycle = -1 * cycle
-            log.debug('modified octave_scale: {}'.format(octave_scale))
+            log.debug('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ modified octave_scale: {}'.format(octave_scale))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
                 #Viewport.export(Composer.buffer1)
