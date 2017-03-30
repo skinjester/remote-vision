@@ -250,11 +250,13 @@ class Composer(object):
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        self.buffer1 = np.zeros((Camera[0].height, Camera[0].width ,3), np.uint8) # uses camera capture dimensions
-        self.buffer2 = np.zeros((Display.height, Display.width, 3), np.uint8) # uses camera capture dimensions
+        # self.buffer1 = np.zeros((Display.height, Display.width ,3), np.uint8) # uses camera capture dimensions
+        # self.buffer2 = np.zeros((Display.height, Display.width, 3), np.uint8) # uses camera capture dimensions
+        self.buffer1 = Camera[0].read() # uses camera capture dimensions
+        self.buffer2 = Camera[0].read() # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = 0.005
+        self.xform_scale = 0.01
 
     def update(self, image):
         if self.is_dirty:
@@ -302,9 +304,10 @@ def iterationPostProcess(net_data_blob):
 def blur(img, sigmax, sigmay):
     # if (int(time.time()) % 0.5):
     #     return img
-    #img = nd.filters.gaussian_filter(img, sigma, order=0)
-    img = cv2.medianBlur(img,(sigmax))
-    # img1 = cv2.bilateralFilter(img,15,75,75)
+    # img = nd.filters.gaussian_filter(img, 0.5, order=0)
+    img = cv2.medianBlur(img,sigmax)
+    img = cv2.bilateralFilter(img, 7, 20, 40)
+
 
     return img
 
@@ -318,7 +321,7 @@ def vignette(img,param):
     mask = 255 * kernel / np.linalg.norm(kernel)
     output = np.copy(img)
     for i in range(3):
-        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * (mask * 4)), 0, 255)) 
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 255)) 
     return output
 
 '''
@@ -340,11 +343,16 @@ def equalize_histogram(img):
 
 
 def sobel(img):
+    #  expecting image to be in NumPy BGR format actually
+    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     xgrad = nd.filters.sobel(img, 0)
     ygrad = nd.filters.sobel(img, 1)
     combined = np.hypot(xgrad, ygrad)
     sob = 255 * combined / np.max(combined) # normalize
+    log.debug('@@@@@@@@@@ sobel{}'.format(sobel.shape))
     return sob
+    #  convert back to RGB ordering
+    #return cv2.cvtColor(sob, cv2.COLOR_BGR2RGB)
 
 def make_sure_path_exists(directoryname):
     try:
@@ -775,7 +783,7 @@ def main():
             octave_scale += 0.05 * cycle
             if octave_scale > 1.6 or octave_scale < 1.2:
                 cycle = -1 * cycle
-            log.debug('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ modified octave_scale: {}'.format(octave_scale))
+            log.debug('@@@ modified octave_scale: {}'.format(octave_scale))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
@@ -856,7 +864,7 @@ Camera.append(
 '''
 
 Display = Display(width=1280, height=720, camera=Camera[0])
-MotionDetector = MotionDetector(500000, Camera[0], update_HUD_log)
+MotionDetector = MotionDetector(5000, Camera[0], update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
