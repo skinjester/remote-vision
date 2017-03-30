@@ -1284,3 +1284,15 @@ P3	image capture
 HUD is back online. making the text smaller
 am also wondoering if possible to output those values to a MatPlotLib window?
 
+
+2017-03-30 01:19:27
+both cameras are running simultaneously. I'm not seeing any real slowdown or latency as a result
+
+
+2017-03-30 10:24:24
+camera switching is working and its cooler than I thought it would be - except for the initial switch, which seems to rely on motyion being detected instead of the viewport being forced to refresh
+
+
+2017-03-30 11:07:31
+camera switching looks like its working - have not fully tested motion detection
+

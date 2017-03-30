@@ -36,11 +36,11 @@ LOGGING_CONFIG = {
             'handlers': ['console-simple']
         },
         'logtest-debug': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'handlers': ['console-detailed']
         },
         'logtest-debug-thread': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'handlers': ['console-thread-detail']
         }
     }

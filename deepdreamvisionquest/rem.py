@@ -16,6 +16,7 @@ os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caf
 import caffe
 from camerautils import MotionDetector
 from camerautils import WebcamVideoStream
+from camerautils import Cameras
 from random import randint
 import inspect
 import logging
@@ -179,7 +180,7 @@ class Viewport(object):
         self.save_next_frame = False
         self.username = username
         self.listener = listener
-        self.force_refresh = False
+        self.force_refresh = True
         self.image = None
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
@@ -219,6 +220,10 @@ class Viewport(object):
         PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
         # #tweet(export_path)
 
+    # forces new cycle with new camera image
+    def force_refresh(self):
+        self.force_refresh = True
+
     def postfx(self, image):
 
         # this would be a good place for color processing that
@@ -250,8 +255,8 @@ class Composer(object):
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        self.buffer1 = Camera[0].read() # uses camera capture dimensions
-        self.buffer2 = Camera[0].read() # uses camera capture dimensions
+        self.buffer1 = Webcam.get().read() # uses camera capture dimensions
+        self.buffer2 = Webcam.get().read() # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
         self.xform_scale = -0.02
@@ -259,7 +264,7 @@ class Composer(object):
     def update(self, image):
         if self.is_dirty:
             if self.is_new_cycle:
-                self.buffer1 = inceptionxform(image, self.xform_scale, Camera[0].capture_size)
+                self.buffer1 = inceptionxform(image, self.xform_scale, Webcam.get().capture_size)
 
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -530,11 +535,16 @@ def listener():
 
     # F1 key: camera1
     elif key == 190:
-        log.info('(F1): switch to camera 1')
+        log.warning('(F1): switch to front camera')
+        # Viewport.force_refresh = True
+        MotionDetector.camera = Webcam.set(0)
 
     # F2 key: camera1
     elif key == 191:
-        log.info('(F2): switch to camera 2')
+        log.warning('(F2): switch to rear camera')
+        # Webcam.set(1)
+        # Viewport.force_refresh = True
+        MotionDetector.camera = Webcam.set(1)
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -651,9 +661,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # GRB: Not entirely sure why this condition gets triggered 
     # noticing it when the system starts up. does it appear at other times? when?
     if MotionDetector.wasMotionDetected:
-        Composer.write_buffer2(Camera[0].read())
+        Composer.write_buffer2(Webcam.get().read())
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-        return Camera[0].read()
+        return Webcam.get().read()
 
 
     # SETUPOCTAVES---
@@ -684,9 +694,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
             # FORCE REFRESH
             if Viewport.force_refresh:
-                Composer.write_buffer2(Camera[0].read())
+                Composer.write_buffer2(Webcam.get().read())
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-                return Camera[0].read()
+                return Webcam.get().read()
 
             MotionDetector.process()
             if not MotionDetector.isResting():
@@ -740,7 +750,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         if MotionDetector.wasMotionDetected:
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
-            return Camera[0].read()
+            return Webcam.get().read()
 
         # extract details produced on the current octave
         detail = src.data[0] - (octave_current-(randint(0,9)-5))
@@ -781,7 +791,7 @@ def main():
 
 
     # the madness begins
-    Composer.buffer1 = Camera[0].read() # initial camera image for init
+    Composer.buffer1 = Webcam.get().read() # initial camera image for init
 
     while True:
         log.info('new cycle')
@@ -875,7 +885,53 @@ net = None
 
 # camera setup
 Camera = []
+Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
 Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+
+Webcam = Cameras(source=Camera,current=0)
+
+
+# Camera = {
+#     # (current value, old value)
+#     'current': 0,
+#     'webcam':[]
+# }
+
+# Camera['webcam'].append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+# Camera['webcam'].append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+
+# Camera['webcam'][Camera['current']]
+# Camera['current']
+
+# self.buffer1 = Webcam.get().read() # uses camera capture dimensions
+
+# self.buffer2 = Camera.active.read()
+# self.buffer2 = Camera.read()
+
+
+# simplecam1 = WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start()
+# simplecam2 = WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start()
+# simplecam1.read()
+# simplecam2.read()
+
+# simplecam.current.read()
+# simplecam = Cameras.source.append(
+#     WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start()
+#     ) 
+
+# Cameras = []
+
+# Cameras.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+# Cameras.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+
+# which_camera = Camera(source=Cameras,current=0)
+# self.buffer1 = which_camera.current
+
+# # F2 key: camera1
+#     elif key == 191:
+#         which_camera.next()
+#         which_camera.setCurrent(1)
+#         log.warning('(F2): switch to camera 2')
 
 '''
 # setup the webcam video stream
@@ -896,8 +952,8 @@ Camera.append(
 
 '''
 
-Display = Display(width=1280, height=720, camera=Camera[0])
-MotionDetector = MotionDetector(5000, Camera[0], update_HUD_log)
+Display = Display(width=1280, height=720, camera=Webcam.get())
+MotionDetector = MotionDetector(5000, Webcam.get(), update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()

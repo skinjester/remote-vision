@@ -18,6 +18,43 @@ log = logging.getLogger('logtest-debug')
 threadlog = logging.getLogger('logtest-debug-thread')
 
 
+'''
+Camera Manager collects Camera Objects
+'''
+class Cameras(object):
+    def __init__(self, source=[], current=0):
+        self.source = source
+        self.current = current
+
+    def next(self):
+        # returns a pointer to the next available camera object
+        if (self.current + 1 >= len(self.source)):
+            self.current = 0
+        return self.source[self.current]
+
+    def previous(self):
+        # returns a pointer to the previous available camera object
+        if (self.current - 1 < 0):
+            self.current = len(self.source) - 1
+        return self.source[self.current]
+
+    def set(self,camera_index):
+        # returns a pointer to the specified camera object
+        self.current = camera_index
+        return self.source[self.current]
+
+    def get(self):
+        # returns a pointer to the current camera object
+        log.warning('camera:{}'.format(self.source[self.current]))
+        return self.source[self.current]
+
+
+
+
+
+'''
+Camera Object
+'''
 class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
@@ -58,8 +95,11 @@ class WebcamVideoStream(object):
 
             _,img = self.stream.read()
             if self.portrait_alignment:
-                img = cv2.flip(cv2.transpose(img),-1)
-                # img = cv2.transpose(img)
+                # mirror y = 1
+                # mirror x = 0
+
+                #img = cv2.flip(cv2.transpose(img),1)
+                img = cv2.transpose(img)
 
 
             threadlog.debug('capture RGB:{}'.format(img.shape))
@@ -108,6 +148,7 @@ class MotionDetector(object):
         self.update_hud_log = log
         self.history = []
         self.history_queue_length = 50
+        self.forced = False
 
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
@@ -175,6 +216,10 @@ class MotionDetector(object):
         #     value += self.floor
         return value
 
+    def force_detection(self, camera):
+        self.wasMotionDetected = True
+        self.camera = camera
+
 
     def isResting(self):
         return self.wasMotionDetected == self.wasMotionDetected_history
@@ -185,3 +230,7 @@ class MotionDetector(object):
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()
         self.t_plus = cv2.blur(self.t_plus,(20,20))
+
+        if self.forced:
+            self.forced = False
+            return
