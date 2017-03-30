@@ -282,19 +282,28 @@ program.append({
 
 
 program.append({
-	'name':'geo',
+	'name':'wild',
 	'iterations':40,
-	'step_size':4.0,
+	'step_size':1.0,
 	'octaves':8,
-	'octave_cutoff':8,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.02,
+	'octave_cutoff':6,
+	'octave_scale':1.2,
+	'iteration_mult':0.1,
+	'step_mult':0.00,
 	'model':'places',
 	'layers':[
-		'inception_4c/output'
+		'inception_4c/output',
+		'inception_4d/pool',
+		'inception_4e/1x1',
+		'inception_4e/3x3',
+		'inception_4e/3x3_reduce',
+		'inception_4e/5x5',
+		'inception_4e/5x5_reduce',
+		'inception_4e/output',
+		'inception_4e/pool',
+		'inception_4e/pool_proj'
 	],
-	'features':[1]
+	'features':range(-1,96)
 })
 
 program.append({

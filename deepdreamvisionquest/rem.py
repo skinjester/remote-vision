@@ -190,7 +190,7 @@ class Viewport(object):
 
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != Display.height:
-            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_CUBIC)
+            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
         image = Composer.update(image)
 
@@ -250,13 +250,11 @@ class Composer(object):
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        # self.buffer1 = np.zeros((Display.height, Display.width ,3), np.uint8) # uses camera capture dimensions
-        # self.buffer2 = np.zeros((Display.height, Display.width, 3), np.uint8) # uses camera capture dimensions
         self.buffer1 = Camera[0].read() # uses camera capture dimensions
         self.buffer2 = Camera[0].read() # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = 0.01
+        self.xform_scale = -0.02
 
     def update(self, image):
         if self.is_dirty:
@@ -286,7 +284,7 @@ class Composer(object):
 
             ### resize buffer 2 to match viewport dimensions
             if image.shape[1] != Display.width:
-                self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_CUBIC)
+                self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
         return
 
 
@@ -302,18 +300,29 @@ def iterationPostProcess(net_data_blob):
 
 
 def blur(img, sigmax, sigmay):
+    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     # if (int(time.time()) % 0.5):
     #     return img
-    # img = nd.filters.gaussian_filter(img, 0.5, order=0)
+
     #img = cv2.medianBlur(img,sigmax)
-    img = cv2.bilateralFilter(img, 11, 11, 3)
 
+    # A
+    # img = cv2.bilateralFilter(img, 17, 30, 3)
 
-    # cv::adaptiveBilateralFilter(src, dst, cv::Size(11, 11), 50);//kernal size(11) should be an odd value
+    #B
+    # img = cv2.bilateralFilter(img, 3, 90, 70)
 
+    #C
+    # extreme grey cartoon
+    # img = nd.filters.gaussian_filter(img, 0.6, order=0)
+    # img = cv2.bilateralFilter(img, 13, 20, 120)
 
+    #D
+    img = nd.filters.gaussian_filter(img, 0.5, order=0)
+    img = cv2.medianBlur(img,3)
+
+    #return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
-
 
 
 def vignette(img,param):
@@ -380,12 +389,14 @@ def tweet(path_to_image):
     api.update_with_media(path_to_image, status=myStatusText )
 
 def update_HUD_log(key,new_value):
-    hud_log[key] = '{}'.format(new_value)
+    hud_log[key][1] = hud_log[key][0]
+    hud_log[key][0] = new_value
+
 
 def show_stats(image):
     stats_overlay = image.copy()
     opacity = 0.9
-    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 1.0, white)
+    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, green)
     return cv2.addWeighted(stats_overlay, opacity, image, 1-opacity, 0, image)
 
 def show_HUD(image):
@@ -396,20 +407,26 @@ def show_HUD(image):
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
-    x,xoff = 40,240
+    x,xoff = 40,180
     y,yoff = 150,35
 
     data.counter = 0
     def write_Text(key):
+        color = white
         row = y + yoff * data.counter
-        cv2.putText(overlay, key, (x, row), font, 1.0, white)
-        cv2.putText(overlay, hud_log[key], (xoff, row), font, 1.0, white)
+        if hud_log[key][0] != hud_log[key][1]:
+            #  value has changed since last update
+            color = green
+            hud_log[key][1] = hud_log[key][0] #  update history
+        cv2.putText(overlay, key, (x, row), font, 0.5, white)
+        cv2.putText(overlay, '{}'.format(hud_log[key][0]), (xoff, row), font, 1.0, color)
+
         data.counter += 1
 
     # write text to overlay
     # col1
-    cv2.putText(overlay, hud_log['detect'], (x, 40), font, 2.0, (0,255,0))
-    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 2.0, white)
+    cv2.putText(overlay, hud_log['detect'][0], (x, 40), font, 1.0, (0,255,0))
+    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 0.5, white)
     write_Text('program')
     write_Text('floor')
     write_Text('threshold')
@@ -424,6 +441,7 @@ def show_HUD(image):
     write_Text('octave')
     write_Text('iteration')
     write_Text('step_size')
+    write_Text('cycle_time')
 
 
     # add overlay back to source
@@ -450,17 +468,19 @@ def listener():
         Viewport.b_show_HUD = not Viewport.b_show_HUD
         log.info('` (tilde): toggle HUD: {}'.format(Viewport.b_show_HUD))
 
-    # + key (numpad): increase motion threshold
-    elif key == 171:
+    # = key (equals): increase motion threshold
+    elif key == 61:
         MotionDetector.floor += 1000
+        update_HUD_log('floor',MotionDetector.floor)
         log.info('+ (plus): increase motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
 
-    # - key (numpad) : decrease motion threshold
-    elif key == 173:
+    # _ key (underscore) : decrease motion threshold
+    elif key == 45:
         MotionDetector.floor -= 1000
         if MotionDetector.floor < 1:
             MotionDetector.floor = 1
-        log.info('+ (minus): decrease motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
+        update_HUD_log('floor',MotionDetector.floor)
+        log.info('- (minus): decrease motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
 
     # , key : previous featuremap
     elif key == 44:
@@ -537,7 +557,7 @@ def objective_guide(dst):
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
 def shiftfunc(n):
-    return int(3 * np.sin(n/10))
+    return int(3 * np.sin(n/10,))
 
 # -------
 # implements forward and backward passes thru the network
@@ -689,8 +709,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
-            iterationmsg = '{:0>3}/{:0>3}({})'.format(i,iteration_max,Model.iteration_mult)
-            stepsizemsg = '{:02.3f}({:02.3f})'.format(step_params['step_size'],Model.step_mult)
+            iterationmsg = '{:0>3}:{:0>3} x{}'.format(i,iteration_max,Model.iteration_mult)
+            stepsizemsg = '{:02.3f} x{:02.3f}'.format(step_params['step_size'],Model.step_mult)
             thresholdmsg = '{:0>6}'.format(MotionDetector.delta_trigger)
             floormsg = '{:0>6}'.format(MotionDetector.floor)
             update_HUD_log('octave',octavemsg)
@@ -778,17 +798,20 @@ def main():
             # code shouldnt be placed here
             # but why shouldn't function calls for postprocessing be placed here?
 
+            # sine transform on frame buffer each rem cycle
             for n in range(Composer.buffer1.shape[1]): # number of rows in the image
                 Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], 3*shiftfunc(n))
 
-            #GRB: worth looking into?
-            octave_scale += 0.05 * cycle
-            if octave_scale > 1.6 or octave_scale < 1.2:
-                cycle = -1 * cycle
-            log.debug('@@@ modified octave_scale: {}'.format(octave_scale))
+            # octave scaling cycle each rem cycle, maybe
+            if (int(time.time()) % 2):
+                Model.octave_scale += 0.05 * cycle
+                if Model.octave_scale > 1.6 or Model.octave_scale < 1.2:
+                    cycle = -1 * cycle
+                update_HUD_log('scale',Model.octave_scale)
+                log.debug('octave_scale: {}'.format(Model.octave_scale))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
+            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
                 #Viewport.export(Composer.buffer1)
@@ -803,8 +826,8 @@ def main():
         later = time.time()
         difference = later - now
         duration_msg = '{:.2f}s'.format(difference)
-        update_HUD_log('rem_cycle',duration_msg) # HUD
-        log.info('cycle duration: {}\n{}'.format(duration_msg,'-'*80))
+        update_HUD_log('cycle_time',duration_msg) # HUD
+        log.info('cycle time: {}\n{}'.format(duration_msg,'-'*80))
         #Viewport.save_next_frame = True
         now = time.time() # the new now
 
@@ -818,25 +841,33 @@ logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
 
 hud_log = {
-    'octave': None,
-    'width': None,
-    'height': None,
-    'guide': None,
-    'layer': None,
-    'last': None,
-    'now': None,
-    'iteration': None,
-    'step_size': None,
-    'settings': None,
-    'threshold': None,
-    'detect': None,
-    'rem_cycle': None
+    # (current value, old value)
+    'octave': [None,None],
+    'width': [None,None],
+    'height': [None,None],
+    'guide': [None,None],
+    'layer': [None,None],
+    'last': [None,None],
+    'now': [None,None],
+    'iteration': [None,None],
+    'step_size': [None,None],
+    'settings': [None,None],
+    'threshold': [None,None],
+    'detect': [None,None],
+    'cycle_time': [None,None],
+    'featuremap': [None,None],
+    'model': [None,None],
+    'username': [None,None],
+    'scale': [None,None],
+    'program': [None,None],
+    'floor': [None,None]
 }
 
 # HUD
 # dictionary contains the key/values we'll be logging
 font = cv2.FONT_HERSHEY_SIMPLEX
 white = (255, 255, 255)
+green = (0,255,0)
 
 # global reference to the neural network object
 net = None
@@ -844,7 +875,7 @@ net = None
 
 # camera setup
 Camera = []
-Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
 
 '''
 # setup the webcam video stream

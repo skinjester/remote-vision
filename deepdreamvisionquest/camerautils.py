@@ -58,8 +58,8 @@ class WebcamVideoStream(object):
 
             _,img = self.stream.read()
             if self.portrait_alignment:
-                #img = cv2.flip(cv2.transpose(img),1)
-                img = cv2.transpose(img)
+                img = cv2.flip(cv2.transpose(img),-1)
+                # img = cv2.transpose(img)
 
 
             threadlog.debug('capture RGB:{}'.format(img.shape))
