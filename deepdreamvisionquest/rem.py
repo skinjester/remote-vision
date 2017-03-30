@@ -305,8 +305,11 @@ def blur(img, sigmax, sigmay):
     # if (int(time.time()) % 0.5):
     #     return img
     # img = nd.filters.gaussian_filter(img, 0.5, order=0)
-    img = cv2.medianBlur(img,sigmax)
-    img = cv2.bilateralFilter(img, 7, 20, 40)
+    #img = cv2.medianBlur(img,sigmax)
+    img = cv2.bilateralFilter(img, 11, 11, 3)
+
+
+    # cv::adaptiveBilateralFilter(src, dst, cv::Size(11, 11), 50);//kernal size(11) should be an odd value
 
 
     return img
@@ -400,12 +403,12 @@ def show_HUD(image):
     def write_Text(key):
         row = y + yoff * data.counter
         cv2.putText(overlay, key, (x, row), font, 1.0, white)
-        cv2.putText(overlay, log[key], (xoff, row), font, 1.0, white)
+        cv2.putText(overlay, hud_log[key], (xoff, row), font, 1.0, white)
         data.counter += 1
 
     # write text to overlay
     # col1
-    cv2.putText(overlay, log['detect'], (x, 40), font, 2.0, (0,255,0))
+    cv2.putText(overlay, hud_log['detect'], (x, 40), font, 2.0, (0,255,0))
     cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 2.0, white)
     write_Text('program')
     write_Text('floor')
@@ -769,7 +772,6 @@ def main():
             Composer.is_dirty = False
 
         if Composer.is_dirty == False or Viewport.force_refresh:
-
             Viewport.save_next_frame = True
 
             # applies transform to frame buffer each cycle

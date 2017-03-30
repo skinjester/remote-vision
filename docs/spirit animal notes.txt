@@ -1265,6 +1265,22 @@ Yes, there is a way to run 2 instances of the video4Linux control panel. There's
 
 I'm going to implement camera switching next and then camera flipping
 Before getting to that, there's a rendering bug where:
-1. the sine wave transform doesn't get picked up by the next rendered image, so it appears briefly then disappears instead of propogating
-2. the octave size frequency mod isn't working
-3. the inceptionxform funtion isn't calculating the transform correctly
+x the sine wave transform doesn't get picked up by the next rendered image, so it appears briefly then disappears instead of propogating
+x the octave size frequency mod isn't working
+x the inceptionxform funtion isn't calculating the transform correctly
+
+
+2017-03-29 20:52:59
+P1	camera switching by pressing F1 / F2
+P1 	refine motion detect to allow getting close
+P1	sequencing - motion between programs
+P1	parameters - what are they - create a list
+P2	saving good values - how?
+P2	guide images
+P3	image capture
+
+
+2017-03-29 21:18:56
+HUD is back online. making the text smaller
+am also wondoering if possible to output those values to a MatPlotLib window?
+
