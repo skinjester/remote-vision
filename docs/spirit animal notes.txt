@@ -1271,7 +1271,7 @@ x the inceptionxform funtion isn't calculating the transform correctly
 
 
 2017-03-29 20:52:59
-P1	camera switching by pressing F1 / F2
+x	camera switching by pressing F1 / F2
 P1 	refine motion detect to allow getting close
 P1	sequencing - motion between programs
 P1	parameters - what are they - create a list
@@ -1294,5 +1294,5 @@ camera switching is working and its cooler than I thought it would be - except f
 
 
 2017-03-30 11:07:31
-camera switching looks like its working - have not fully tested motion detection
+camera switching looks like its working - have not fully tested motion detection. looking at that next
 

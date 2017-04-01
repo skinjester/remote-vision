@@ -13,8 +13,8 @@ detail				# an image array created to draw network produced detail
 octave_base			# the image contained in the octave currently computed
 dst					# the neural layer identified as the end layer
 dst.diff[:]			# assumed to be the 2D neural weights & structure of the end layer (?)
-dst.data	
-octave_base			# the current image stage (octave) being dreamed upon		
+dst.data
+octave_base			# the current image stage (octave) being dreamed upon
 
 
 
@@ -1282,7 +1282,7 @@ P3	image capture
 
 2017-03-29 21:18:56
 HUD is back online. making the text smaller
-am also wondoering if possible to output those values to a MatPlotLib window?
+am also wondering if possible to output those values to a MatPlotLib window?
 
 
 2017-03-30 01:19:27
@@ -1296,3 +1296,25 @@ camera switching is working and its cooler than I thought it would be - except f
 2017-03-30 11:07:31
 camera switching looks like its working - have not fully tested motion detection. looking at that next
 
+
+2017-03-30 22:26:37
+some problems re-addressing camera by index when I switched the USB ports prior to rebooting. Still trying to remember how I brought up the control panels for the cameras
+
+2017-03-31 00:05:32
+P1 	refine motion detect to allow getting close
+P1	sequencing - motion between programs
+P1	parameters - what are they - create a list
+P2	saving good values - how?
+P2	guide images
+P3	image capture
+P2	duration based time-out from dreams
+	-	forces end of cycle based on how long its been running
+P1	transition from end of cycle to beginning of next so the progression is not quite so abrupt
+
+
+2017-03-31 13:47:00
+taking a look at MatplotLib for analyzing what the motion detector is doing .
+Keep in mind that there are 2 other areas needing momentum.
+P1 	refine motion detect to allow getting close
+P1	sequencing - motion between programs
+P1	parameters - what are they - create a list

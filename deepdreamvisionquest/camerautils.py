@@ -8,6 +8,8 @@ import logging
 import logging.config
 import LogSettings # global log settings template
 
+
+
 # --------
 # INIT
 # --------
@@ -16,7 +18,6 @@ import LogSettings # global log settings template
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
 threadlog = logging.getLogger('logtest-debug-thread')
-
 
 '''
 Camera Manager collects Camera Objects
@@ -59,7 +60,7 @@ class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
     # because the hardware doesn't capture arbitrary window sizes
-    def __init__(self, src, capture_width, capture_height, portrait_alignment, gamma=1.0):
+    def __init__(self, src, capture_width, capture_height, portrait_alignment, flip_h=False, flip_v=False, gamma=1.0):
 
         # set camera dimensiions before reading frames
         # requested size is rounded to nearest camera size if non-matching
@@ -71,22 +72,24 @@ class WebcamVideoStream(object):
         self.capture_size = [self.width,self.height]
 
         self.portrait_alignment = portrait_alignment
+        self.flip_h = flip_h
+        self.flip_v = flip_v
         self.gamma = gamma
+        self.stopped = False
+
 
         # initial frame to prime the queue
         # the initial capture is aligned on init
-        # because any alignment correction is applied to the capture only
+        # alignment correction is applied to the capture only
         (self.grabbed, self.frame) = self.stream.read()
-        if self.portrait_alignment:
-            # self.frame = cv2.flip(cv2.transpose(self.frame),1)
-            self.frame = cv2.transpose(self.frame)
+        self.frame = self.transpose(self.frame)
 
-        self.stopped = False
 
     def start(self):
         Thread(target=self.update, args=()).start()
         threadlog.debug('started new thread')
         return self
+
     def update(self):
         # loop until the thread is stopped
         while True:
@@ -94,16 +97,8 @@ class WebcamVideoStream(object):
                 return
 
             _,img = self.stream.read()
-            if self.portrait_alignment:
-                # mirror y = 1
-                # mirror x = 0
-
-                #img = cv2.flip(cv2.transpose(img),1)
-                img = cv2.transpose(img)
-
-
-            threadlog.debug('capture RGB:{}'.format(img.shape))
-            self.frame = img
+            self.frame = self.transpose(img)
+            threadlog.debug('capture RGB:{}'.format(self.frame))
 
     def read(self):
         # print "[read] {}".format(self.frame.shape)
@@ -118,8 +113,14 @@ class WebcamVideoStream(object):
         # return img_gamma
         return self.frame
 
-    def realign(self):
-        self.portrait_alignment = not self.portrait_alignment
+    def transpose(self, img):
+        if self.portrait_alignment:
+            img = cv2.transpose(img)
+        if self.flip_v:
+            img = cv2.flip(img, 0)
+        if self.flip_h:
+            img = cv2.flip(img, 1)
+        return img
 
     def stop(self):
         self.stopped = True
@@ -149,6 +150,9 @@ class MotionDetector(object):
         self.history = []
         self.history_queue_length = 50
         self.forced = False
+
+        # temp
+        self._counter_ = 0
 
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
@@ -193,6 +197,11 @@ class MotionDetector(object):
             #print "[motiondetector] beneath threshold."
 
         # logging
+        # plt.plot(self._counter_, self.delta_count)
+        # plt.ion()
+        # plt.show()
+        self._counter_ += 1
+
         lastmsg = '{:0>6}'.format(self.delta_count_history)
         if self.delta_count_history > self.delta_trigger:
             ratio = 1.0 * self.delta_count_history/self.delta_trigger
@@ -234,3 +243,4 @@ class MotionDetector(object):
         if self.forced:
             self.forced = False
             return
+

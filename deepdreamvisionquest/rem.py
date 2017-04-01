@@ -24,6 +24,9 @@ import logging.config
 sys.path.append('../bin') #  point to directory containing LogSettings
 import LogSettings # global log settings templ
 
+import math
+from collections import deque
+
 
 
 
@@ -259,7 +262,7 @@ class Composer(object):
         self.buffer2 = Webcam.get().read() # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
-        self.xform_scale = -0.02
+        self.xform_scale = 0.03
 
     def update(self, image):
         if self.is_dirty:
@@ -292,6 +295,29 @@ class Composer(object):
                 self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
         return
 
+class RealtimePlot:
+    def __init__(self, axes, max_entries = 100):
+        self.axis_x = deque(maxlen=max_entries)
+        self.axis_y = deque(maxlen=max_entries)
+        self.axes = axes
+        self.max_entries = max_entries
+        self.lineplot, = axes.plot([], [], "ro-")
+        self.axes.set_autoscaley_on(True)
+
+    def add(self, x, y):
+        self.axis_x.append(x)
+        self.axis_y.append(y)
+        self.lineplot.set_data(self.axis_x, self.axis_y)
+        self.axes.set_xlim(self.axis_x[0], self.axis_x[-1] + 1e-15)
+        self.axes.relim(); self.axes.autoscale_view() # rescale the y-axis
+
+    def animate(self, figure, callback, interval = 50):
+        import matplotlib.animation as animation
+        def wrapper(frame_index):
+            self.add(*callback(frame_index))
+            self.axes.relim(); self.axes.autoscale_view() # rescale the y-axis
+            return self.lineplot
+        animation.FuncAnimation(figure, wrapper, interval=interval)
 
 def inceptionxform(image,scale,capture_size):
     log.debug('image.shape:{} scale:{} capture_size:{}'.format(image.shape, scale, capture_size))
@@ -309,25 +335,36 @@ def blur(img, sigmax, sigmay):
     # if (int(time.time()) % 0.5):
     #     return img
 
-    #img = cv2.medianBlur(img,sigmax)
+    # img = cv2.medianBlur(img,sigmax)
 
     # A
     # img = cv2.bilateralFilter(img, 17, 30, 3)
+    # img = cv2.bilateralFilter(img, 10, 30, 30)
 
     #B
-    # img = cv2.bilateralFilter(img, 3, 90, 70)
+    # img = cv2.bilateralFilter(img, 7, 50, 3)
+    # img = cv2.medianBlur(img,3)
 
     #C
     # extreme grey cartoon
     # img = nd.filters.gaussian_filter(img, 0.6, order=0)
     # img = cv2.bilateralFilter(img, 13, 20, 120)
 
-    #D
+    # eurogoth (work-in-progress)
+    # img = nd.filters.gaussian_filter(img, 0.7, order=0)
+    # img = cv2.bilateralFilter(img, 3, 70, 50)
+
+    #D monoworld
     img = nd.filters.gaussian_filter(img, 0.5, order=0)
     img = cv2.medianBlur(img,3)
 
-    #return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # simplified
+    # works best with high iteration counts
+    # img = cv2.medianBlur(img,5)
+
+
     return img
+    # return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
 
 
 def vignette(img,param):
@@ -338,38 +375,17 @@ def vignette(img,param):
     mask = 255 * kernel / np.linalg.norm(kernel)
     output = np.copy(img)
     for i in range(3):
-        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 255)) 
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 255))
     return output
 
-'''
-# generating vignette mask using Gaussian kernels
-kernel_x = cv2.getGaussianKernel(cols,200)
-kernel_y = cv2.getGaussianKernel(rows,200)
-kernel = kernel_y * kernel_x.T
-mask = 255 * kernel / np.linalg.norm(kernel)
-output = np.copy(img)
-
-# applying the mask to each channel in the input image
-for i in range(3):
-    output[:,:,i] = output[:,:,i] * mask
-'''
-
-def equalize_histogram(img):
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    return clahe.apply(img)
-
-
 def sobel(img):
-    #  expecting image to be in NumPy BGR format actually
-    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     xgrad = nd.filters.sobel(img, 0)
     ygrad = nd.filters.sobel(img, 1)
     combined = np.hypot(xgrad, ygrad)
     sob = 255 * combined / np.max(combined) # normalize
     log.debug('@@@@@@@@@@ sobel{}'.format(sobel.shape))
     return sob
-    #  convert back to RGB ordering
-    #return cv2.cvtColor(sob, cv2.COLOR_BGR2RGB)
+
 
 def make_sure_path_exists(directoryname):
     try:
@@ -535,16 +551,16 @@ def listener():
 
     # F1 key: camera1
     elif key == 190:
-        log.warning('(F1): switch to front camera')
+        log.warning('(F1): switch to front camera, Device:{}'.format(Device[1]))
         # Viewport.force_refresh = True
-        MotionDetector.camera = Webcam.set(0)
+        MotionDetector.camera = Webcam.set(Device[1])
 
     # F2 key: camera1
     elif key == 191:
-        log.warning('(F2): switch to rear camera')
+        log.warning('(F2): switch to rear camera, Device:{}'.format(Device[0]))
         # Webcam.set(1)
         # Viewport.force_refresh = True
-        MotionDetector.camera = Webcam.set(1)
+        MotionDetector.camera = Webcam.set(Device[0])
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -885,73 +901,18 @@ net = None
 
 # camera setup
 Camera = []
-Camera.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
-Camera.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
 
-Webcam = Cameras(source=Camera,current=0)
-
-
-# Camera = {
-#     # (current value, old value)
-#     'current': 0,
-#     'webcam':[]
-# }
-
-# Camera['webcam'].append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
-# Camera['webcam'].append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
-
-# Camera['webcam'][Camera['current']]
-# Camera['current']
-
-# self.buffer1 = Webcam.get().read() # uses camera capture dimensions
-
-# self.buffer2 = Camera.active.read()
-# self.buffer2 = Camera.read()
+# note that camera index changes if a webcam is unplugged
+# default values are  [0,1]
+Device = [0,1] # debug
 
 
-# simplecam1 = WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start()
-# simplecam2 = WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start()
-# simplecam1.read()
-# simplecam2.read()
+Camera.append(WebcamVideoStream(Device[0], 1280, 720, portrait_alignment=True,
+    flip_h=False, flip_v=True, gamma=0.5).start())
+Camera.append(WebcamVideoStream(Device[1], 1280, 720, portrait_alignment=True,
+    flip_h=False, flip_v=False, gamma=0.5).start())
 
-# simplecam.current.read()
-# simplecam = Cameras.source.append(
-#     WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start()
-#     ) 
-
-# Cameras = []
-
-# Cameras.append(WebcamVideoStream(1, 1280, 720, portrait_alignment=True, gamma=0.5).start())
-# Cameras.append(WebcamVideoStream(0, 1280, 720, portrait_alignment=True, gamma=0.5).start())
-
-# which_camera = Camera(source=Cameras,current=0)
-# self.buffer1 = which_camera.current
-
-# # F2 key: camera1
-#     elif key == 191:
-#         which_camera.next()
-#         which_camera.setCurrent(1)
-#         log.warning('(F2): switch to camera 2')
-
-'''
-# setup the webcam video stream
-WebcamVideoStream.config(
-    src=0,
-    request_width=1280,
-    request_height=720
-    )
-
-# create a camera
-Camera.append(
-    WebcamVideoStream.getCamera(
-        orientation=0,
-        gamma=0.5
-        )
-    )
-
-
-'''
-
+Webcam = Cameras(source=Camera,current=Device[1])
 Display = Display(width=1280, height=720, camera=Webcam.get())
 MotionDetector = MotionDetector(5000, Webcam.get(), update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
@@ -973,4 +934,3 @@ if __name__ == "__main__":
     if args.username:
         Viewport.username = '@{}'.format(args.username)
     main()
-
