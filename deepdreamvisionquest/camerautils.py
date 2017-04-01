@@ -46,7 +46,7 @@ class Cameras(object):
 
     def get(self):
         # returns a pointer to the current camera object
-        log.warning('camera:{}'.format(self.source[self.current]))
+        log.critical('')
         return self.source[self.current]
 
 
@@ -77,6 +77,9 @@ class WebcamVideoStream(object):
         self.gamma = gamma
         self.stopped = False
 
+        self.table = np.array([((i / 255.0) ** (1.0 / self.gamma)) * 255
+        for i in np.arange(0, 256)]).astype("uint8")
+
 
         # initial frame to prime the queue
         # the initial capture is aligned on init
@@ -97,18 +100,12 @@ class WebcamVideoStream(object):
                 return
 
             _,img = self.stream.read()
-            self.frame = self.transpose(img)
+            self.frame = self.gamma_correct(self.transpose(img))
             threadlog.debug('capture RGB:{}'.format(self.frame))
 
     def read(self):
         # print "[read] {}".format(self.frame.shape)
         log.info('camera buffer RGB:{}'.format(self.frame.shape))
-        # invGamma = 1.0 / self.gamma
-        # table = np.array([((i / 255.0) ** invGamma) * 255
-        #     for i in np.arange(0, 256)]).astype("uint8")
-
-        # # apply gamma correction using the lookup table
-        # img_gamma =  cv2.LUT(self.frame, table)
 
         # return img_gamma
         return self.frame
@@ -122,12 +119,19 @@ class WebcamVideoStream(object):
             img = cv2.flip(img, 1)
         return img
 
+    def gamma_correct(self, img):
+        # # apply gamma correction using the lookup table defined on init
+        if self.gamma == 1.0:
+            return img
+        log.warning('gamma correction enabled')
+        return cv2.LUT(img, self.table)
+
     def stop(self):
         self.stopped = True
 
 class MotionDetector(object):
 
-    def __init__(self, delta_trigger, camera, log):
+    def __init__(self, delta_trigger, floor, camera, log):
         self.delta_trigger = delta_trigger
         self.delta_trigger_history = delta_trigger
         self.delta_count = 0
@@ -145,11 +149,12 @@ class MotionDetector(object):
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
-        self.floor = 30000 # changed to lover value at night
+        self.floor = floor
         self.update_hud_log = log
         self.history = []
         self.history_queue_length = 50
         self.forced = False
+        self.monitor_msg = None
 
         # temp
         self._counter_ = 0
@@ -157,11 +162,12 @@ class MotionDetector(object):
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
     def process(self):
+        ratio = 0
         if self.is_paused:
             self.wasMotionDetected = False
             return
 
-        log.info('detect motion')
+        log.critical('detect motion')
         # history
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count
@@ -172,25 +178,31 @@ class MotionDetector(object):
         self.delta_count = cv2.countNonZero(img_count_view)
 
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
-        #print 'avg:raw {}:{}'.format(self.delta_trigger, self.delta_count)
-        log.info('delta_trigger:{} delta_count:{} delta_history:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history))
+
+        self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
+        log.critical(self.monitor_msg)
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
-            log.info('detection overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history))
+            self.monitor_msg += 'overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
+            log.critical(self.monitor_msg)
+
+
             self.delta_count = 0
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.delta_count -= int(self.delta_count/2)
             self.update_hud_log('detect','*')
             self.wasMotionDetected = True
-            log.info('movement started')
+            self.monitor_msg += ' movement started'
+            log.critical('movement started')
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.update_hud_log('detect','-')
-            log.info('movement ended')
+            log.critical('movement ended')
+            self.monitor_msg += ' movement ended'
         else:
             self.update_hud_log('detect','-')
             self.wasMotionDetected = False
@@ -211,6 +223,8 @@ class MotionDetector(object):
         if self.delta_count > self.delta_trigger:
             ratio = 1.0 * self.delta_count/self.delta_trigger
             nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
+
+        self.monitor_msg += str(ratio)
 
         self.update_hud_log('last',lastmsg)
         self.update_hud_log('now',nowmsg)

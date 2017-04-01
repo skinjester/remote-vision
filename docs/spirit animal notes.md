@@ -1318,3 +1318,33 @@ Keep in mind that there are 2 other areas needing momentum.
 P1 	refine motion detect to allow getting close
 P1	sequencing - motion between programs
 P1	parameters - what are they - create a list
+
+
+
+2017-03-31 15:03:21
+I found some code to do realtime plotting w matplotlib, looking at it running now. Is pretty CPU intensive. 
+
+
+2017-03-31 23:18:05
+added support for flipping camera input horizontally or vertically
+
+
+2017-03-31 23:20:49
+taking a second look at gamma cprrection
+
+
+2017-04-01 02:38:11
+I put some rough  monitoring in place on teh motion detection viewer, but all it showed me was that the behavior is  more fluid and complicated than I thought. The previous concept of an "overflow" when the current sample and next sample are both over the threshold, doesn't seem to happen any more becaus the threshold is raised by the average value of the last 50 samples
+
+or something like that. In any case its hard to quantify the conditions that result from large motions near the camera. To solve this problem further, I need to look at the data that gets generated.
+
+For tomorrow - put this aside, and work on program settings
+- need an explorer setting (which allows me to navigate the space)
+- need a way to toggle back and forthe between explorer mode and automated mode
+	+  for demonstration
+	+  for identifying settings
+- need categories for program settings
+- need a timer to switch between programs
+- need a way to switch network models from within a program
+	+ what else needs to be captured within a program?
+		* brightness cycle

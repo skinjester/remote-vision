@@ -242,7 +242,23 @@ class Viewport(object):
 
     def monitor(self):
         if self.motiondetect_log_enabled:
-            cv2.imshow('delta', MotionDetector.t_delta_framebuffer)
+            img = MotionDetector.t_delta_framebuffer
+
+            # composite motion stats here
+
+            # rectangle
+            overlay = MotionDetector.t_delta_framebuffer.copy()
+            opacity = 1.0
+            #cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
+
+
+            cv2.putText(overlay, MotionDetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
+
+
+            # add overlay back to source
+            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img)
+            cv2.imshow('delta', img)
+
 
     def shutdown(self):
         cv2.destroyAllWindows()
@@ -417,8 +433,9 @@ def update_HUD_log(key,new_value):
 def show_stats(image):
     stats_overlay = image.copy()
     opacity = 0.9
-    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, green)
+    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, GREEN)
     return cv2.addWeighted(stats_overlay, opacity, image, 1-opacity, 0, image)
+
 
 def show_HUD(image):
     # rectangle
@@ -433,21 +450,21 @@ def show_HUD(image):
 
     data.counter = 0
     def write_Text(key):
-        color = white
+        color = WHITE
         row = y + yoff * data.counter
         if hud_log[key][0] != hud_log[key][1]:
             #  value has changed since last update
-            color = green
+            color = GREEN
             hud_log[key][1] = hud_log[key][0] #  update history
-        cv2.putText(overlay, key, (x, row), font, 0.5, white)
-        cv2.putText(overlay, '{}'.format(hud_log[key][0]), (xoff, row), font, 1.0, color)
+        cv2.putText(overlay, key, (x, row), FONT, 0.5, WHITE)
+        cv2.putText(overlay, '{}'.format(hud_log[key][0]), (xoff, row), FONT, 1.0, color)
 
         data.counter += 1
 
     # write text to overlay
     # col1
-    cv2.putText(overlay, hud_log['detect'][0], (x, 40), font, 1.0, (0,255,0))
-    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), font, 0.5, white)
+    cv2.putText(overlay, hud_log['detect'][0], (x, 40), FONT, 1.0, (0,255,0))
+    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), FONT, 0.5, WHITE)
     write_Text('program')
     write_Text('floor')
     write_Text('threshold')
@@ -891,9 +908,9 @@ hud_log = {
 
 # HUD
 # dictionary contains the key/values we'll be logging
-font = cv2.FONT_HERSHEY_SIMPLEX
-white = (255, 255, 255)
-green = (0,255,0)
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+WHITE = (255, 255, 255)
+GREEN = (0,255,0)
 
 # global reference to the neural network object
 net = None
@@ -906,15 +923,16 @@ Camera = []
 # default values are  [0,1]
 Device = [0,1] # debug
 
-
-Camera.append(WebcamVideoStream(Device[0], 1280, 720, portrait_alignment=True,
-    flip_h=False, flip_v=True, gamma=0.5).start())
-Camera.append(WebcamVideoStream(Device[1], 1280, 720, portrait_alignment=True,
-    flip_h=False, flip_v=False, gamma=0.5).start())
+w = data.capture_w
+h = data.capture_h
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
+    flip_h=False, flip_v=True, gamma=1.0).start())
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
+    flip_h=False, flip_v=False, gamma=1.0).start())
 
 Webcam = Cameras(source=Camera,current=Device[1])
-Display = Display(width=1280, height=720, camera=Webcam.get())
-MotionDetector = MotionDetector(5000, Webcam.get(), update_HUD_log)
+Display = Display(width=w, height=h, camera=Webcam.get())
+MotionDetector = MotionDetector(delta_trigger=2000, floor=2000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
