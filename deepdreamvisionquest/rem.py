@@ -80,6 +80,7 @@ class Model(object):
         self.choose_model(modelkey)
         #self.set_endlayer(self.layers[self.current_layer])
         #self.set_featuremap()
+        self.cyclefx = []
 
 
     def choose_model(self, key):
@@ -118,6 +119,9 @@ class Model(object):
         self.current_feature = 0;
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
+        self.cyclefx = data.program[index]['cyclefx']
+
+
 
 
     def set_endlayer(self,end):
@@ -343,6 +347,11 @@ def inceptionxform(image,scale,capture_size):
 def iterationPostProcess(net_data_blob):
     img = caffe2rgb(Model.net, net_data_blob)
     img = blur(img, 3, 3)
+
+    # cycle fx here
+    
+    # Viewport.shutdown()
+
     return rgb2caffe(Model.net, img)
 
 
@@ -599,9 +608,6 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
-def shiftfunc(n):
-    return int(3 * np.sin(n/10,))
-
 # -------
 # implements forward and backward passes thru the network
 # apply normalized ascent step upon the image in the networks data blob
@@ -634,8 +640,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True
     # postprocess (blur) this iteration
     src.data[0] = iterationPostProcess(src.data[0])
 '''
-
-
 
 # -------
 # implements forward and backward passes thru the network
@@ -674,10 +678,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     # postprocess (blur) this iteration
     # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
     src.data[0] = iterationPostProcess(src.data[0])
-
-
-
-
 
 # -------
 # REM CYCLE
@@ -798,6 +798,43 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # return rendered img
     return caffe2rgb(Model.net, src.data[0])
 
+
+
+
+class FX(object):
+    def __init__(self):
+        self.direction = 1
+
+
+    # img = Composer.buffer1
+    def xform_array(self, img, amplitude, wavelength):
+        def shiftfunc(n):
+            return int(amplitude*np.sin(n/wavelength))
+        for n in range(img.shape[1]): # number of rows in the image
+            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+        print 'img: ', img
+        print 'amplitude: ', amplitude
+        print 'wavelength: ', wavelength
+        return img
+
+    # img = Composer.buffer1
+    def test_args(self, img, amplitude, wavelength):
+        print 'img: ', img
+        print 'amplitude: ', amplitude
+        print 'wavelength: ', wavelength
+
+    def octave_scaler(self, model=Model):
+        # octave scaling cycle each rem cycle, maybe
+        # if (int(time.time()) % 2):
+        model.octave_scale += 0.05 * self.direction
+        if model.octave_scale > 1.6 or model.octave_scale < 1.2:
+            self.direction = -1 * self.direction
+        update_HUD_log('scale',model.octave_scale)
+        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
+
+
+
+
 # -------
 # MAIN
 # ------- 
@@ -805,7 +842,6 @@ def main():
 
     # start timer
     now = time.time()
-    cycle = 1
 
     # set GPU mode
     caffe.set_device(0)
@@ -842,16 +878,22 @@ def main():
             # but why shouldn't function calls for postprocessing be placed here?
 
             # sine transform on frame buffer each rem cycle
-            for n in range(Composer.buffer1.shape[1]): # number of rows in the image
-                Composer.buffer1[:, n] = np.roll(Composer.buffer1[:, n], 3*shiftfunc(n))
+            # fx(list_of_cyclefx_functions)
 
-            # octave scaling cycle each rem cycle, maybe
-            if (int(time.time()) % 2):
-                Model.octave_scale += 0.05 * cycle
-                if Model.octave_scale > 1.6 or Model.octave_scale < 1.2:
-                    cycle = -1 * cycle
-                update_HUD_log('scale',Model.octave_scale)
-                log.debug('octave_scale: {}'.format(Model.octave_scale))
+            fx_name = Model.cyclefx[0]['name']
+            fx_params = Model.cyclefx[0]['params']
+
+            if fx_name == 'xform_array':
+                FX.xform_array(Composer.buffer1, **fx_params)
+
+            #Composer.buffer1 = FX.xform_array(Composer.buffer1,**args)
+            # FX.xform_array(Composer.buffer1)
+
+
+            # for i in fx:
+            # img = fx[0]['func'](**fx[0]['params'])
+            FX.octave_scaler(model=Model)
+
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
@@ -926,16 +968,21 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
-    flip_h=False, flip_v=True, gamma=1.0).start())
+    flip_h=False, flip_v=True, gamma=0.85).start())
 Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
     flip_h=False, flip_v=False, gamma=1.0).start())
 
-Webcam = Cameras(source=Camera,current=Device[1])
+Webcam = Cameras(source=Camera, current=Device[1])
 Display = Display(width=w, height=h, camera=Webcam.get())
-MotionDetector = MotionDetector(delta_trigger=2000, floor=2000, camera=Webcam.get(), log=update_HUD_log)
+MotionDetector = MotionDetector(delta_trigger=2000, floor=4000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()
+FX = FX() #  yeah, no, maybe. not in use now though
+
+# point these things to the data.py module so it can run scripts using values defined here
+data.data_img = Composer.buffer1
+
 
 # model is googlenet unless specified otherwise
 #Model.choose_model('places')

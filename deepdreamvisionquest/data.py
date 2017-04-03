@@ -1,3 +1,6 @@
+import numpy as np
+import cv2
+
 capture_w = 1280
 capture_h = 720
 
@@ -16,6 +19,10 @@ guides.append('./img/sax2.jpg')
 guides.append('./img/bono.jpg')
 guides.append('./img/rabbit2.jpg')
 guides.append('./img/eyeballs.jpg')
+
+# this is written to by rem.py at runtime so that it points to Composer.buffer1
+# I'm using it like a scratchpad, but initializes to None
+data_img = None 
 
 
 models = {}
@@ -80,6 +87,22 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
+
+def function1(param1='<empty>', param2=0):
+	print 'param1:{} param2:{}'.format(param1,param2)
+
+
+def function2(blur=3, radius=3):
+	print 'blur:{} radius:{}'.format(blur,radius)
+
+# img = Composer.buffer1
+def xform_array(amount):
+    def shiftfunc(n):
+        return int(3 * np.sin(n/10,))
+    for n in range(data_img.shape[1]): # number of rows in the image
+        data_img[:, n] = np.roll(data_img[:, n], 3*shiftfunc(n))
+    return data_img
+
 # a list of programs
 program = []
 
@@ -97,8 +120,19 @@ program.append({
 	'layers':[
 		'inception_3b/5x5',
 	],
-	'features':[-1,0,1]
+	'features':[-1,0,1],
+	'cyclefx':[
+		{
+			'name': 'xform_array',
+			'params': {'amplitude':10, 'wavelength':100}
+		}
+		# {
+		# 	'func': function2,
+		# 	'params': {'blur':3.2, 'radius':15}
+		# }
+	]
 })
+
 
 program.append({
 	'name':'lofi-featuremap-superstep',
@@ -157,7 +191,17 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':[
+		{
+			'name': 'xform_array',
+			'params': {'amplitude':100, 'wavelength':10}
+		}
+		# {
+		# 	'func': function2,
+		# 	'params': {'blur':3.2, 'radius':15}
+		# }
+	]
 })
 
 program.append({

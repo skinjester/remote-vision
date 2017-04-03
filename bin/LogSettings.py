@@ -20,27 +20,24 @@ LOGGING_CONFIG = {
             'formatter': 'simple'
         },
         'console-detailed': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'detailed'
         },
         'console-thread-detail': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'showthread'
         }
     },
     'loggers': {
         'logtest-simple': {
-            'level': 'INFO',
             'handlers': ['console-simple']
         },
         'logtest-debug': {
-            'level': 'WARNING',
             'handlers': ['console-detailed']
         },
         'logtest-debug-thread': {
-            'level': 'WARNING',
             'handlers': ['console-thread-detail']
         }
     }

@@ -46,7 +46,7 @@ class Cameras(object):
 
     def get(self):
         # returns a pointer to the current camera object
-        log.critical('')
+        log.warning('')
         return self.source[self.current]
 
 
@@ -167,7 +167,7 @@ class MotionDetector(object):
             self.wasMotionDetected = False
             return
 
-        log.critical('detect motion')
+        log.warning('detect motion')
         # history
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count
@@ -180,13 +180,13 @@ class MotionDetector(object):
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
 
         self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
-        log.critical(self.monitor_msg)
+        log.warning(self.monitor_msg)
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.monitor_msg += 'overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
-            log.critical(self.monitor_msg)
+            log.warning(self.monitor_msg)
 
 
             self.delta_count = 0
@@ -196,12 +196,12 @@ class MotionDetector(object):
             self.update_hud_log('detect','*')
             self.wasMotionDetected = True
             self.monitor_msg += ' movement started'
-            log.critical('movement started')
+            log.warning('movement started')
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.update_hud_log('detect','-')
-            log.critical('movement ended')
+            log.warning('movement ended')
             self.monitor_msg += ' movement ended'
         else:
             self.update_hud_log('detect','-')

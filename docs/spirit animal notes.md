@@ -1348,3 +1348,157 @@ For tomorrow - put this aside, and work on program settings
 - need a way to switch network models from within a program
 	+ what else needs to be captured within a program?
 		* brightness cycle
+
+
+2017-04-01 14:27:41
+reading up on file handling in preparation for saving out program settings.
+
+WHAT ARE PROGRAM SETTINGS?
+
+Currently:
+
+	name:
+	iterations:
+	step_size:
+	octaves:
+	octave_cutoff:
+	octave_scale:
+	iteration_mult:
+	step_mult:
+	model:
+	layers: []
+	features: []
+
+new parameters:
+capturefx: [] 	# ordered list of image processors called each capture
+stepfx: [] 		# ordered list of image processors called each step
+cyclefx: [] 	# ordered list of image processors called each cycle
+
+
+2017-04-01 17:09:30
+status:
+I've created an FX class
+inside are 2 functions - xformarray and octave_scaler
+I'm instantiating an FX object  and manipulating that
+currently as explicit commands:
+FX.xform_array(Composer.buffer1)
+FX.octave_scaler(model=Model)
+
+how would I pass these in from a list, or dictionary?
+
+# xform_array, Composer, octave_scaler, Model are all global references available to the FX class
+cyclefx = []
+cyclefx.append({
+	which_func: xform_array,
+	which_params: Composer.buffer1
+})
+cyclefx.append({
+	which_func: octave_scaler,
+	which_params: Model
+})
+
+
+
+
+
+
+
+FX = FX(composer=Composer, model=Model, fxlist={function1, function2} )
+
+class FX(object):
+    def __init__(self, composer, model, fxlist):
+    	self.composer = composer
+    	self.model = model
+    	self.fxlist = fxlist
+        self.direction = 1
+
+        cyclefx = []
+        cyclefx.append({
+        	which_func: xform_array,
+        	which_params: [Composer.buffer1, 10]
+        })
+        cyclefx.append({
+        	which_func: octave_scaler,
+        	which_params: [self.model, 0.1, [1.2, 1.6]]
+        })
+
+    def process(self):
+    '''
+	iterate thru the functions in fxlist here. where do the parameters come from?
+	1. xform_array needs:
+		- reference to relevant image, assumed to be from Composer.buffer1
+		- multiplier value for step function
+
+	2. octave_scaler needs:
+		- pointer to Model where the deep dream params are stored
+		- scaling factor
+		- upper and lower limits
+    '''
+[self.composer.buffer1, shift_amount]
+[self.model, scaling_factor,[1.2,1.6]]
+FX.process(cyclefx)
+
+
+2017-04-01 23:04:48
+taking a different approach after some futher thought. Added a cyclefx dictionary containing pointers to functions within an existing program dictionary. Its working as expected. Experimenting with placement of the funtions that get dispatched. These functions are cufrrently defined in the same Data module as the program definitions themselves.
+
+
+2017-04-02 00:02:37
+closer to working now. successfully calling the function specified if the program with the arguments specified. Messy looking. Seeing where I can cleanup.
+
+
+2017-04-02 01:39:15
+cleaned up the data structure of the program a bit so that the fx block is structures like this:
+
+'cyclefx':[
+	{
+		'func': function1,
+		'params': {'param1':'dogs', 'param2':99}
+	},
+
+	{
+		'func': function2,
+		'params': [1,2,3,4]
+	}
+]
+
+cyclefx is a list containing dictionaries which store function pointers and parameters to be called upon with each cycle
+
+fxlist = Model.program[Model.current_program]['cyclefx']
+do_fx = fxlist[index]['func']
+params = fxlist['params']
+do_fx(**params)
+
+
+2017-04-02 10:03:22
+This syntax is so tortured, it can't be right, but uit's working.  Needing excpert advice (Spoto?)  to take a look through this.  What I'm doing feels well intentioned, but is so messy it must be a haCK?
+
+
+2017-04-02 10:07:23
+Those parameters could come from anywhere, and might superficially cleanup the code to do som, but doesn't make sense that the function parameters would be seperated from the function pointers
+
+
+2017-04-02 15:17:10
+note to self before I forget. Anyone who's ever wanted to "learn to code" needs to experience this moment to truly get it. The stakes seem so high to me right now, and looking backl I've put so much of myslef into understandingthis idea and how to realize it. Learning python has been a big part of that. I didn't realize how beautiful the language is. Truly, its like Elvish. But right now - thinking through the trial and error of passing functions and parameters as part of a "program" that drives my artwork is the most challenging computer science ever. Its bitter to know that you could have done it differently, that you didnt understand something the way you thought, or that  you are almost certainly missing out on a basic concept, knowledge of which would make this current impasse invisible. Still - I'm hacking my waty to the solution, and its happening right now!
+
+
+2017-04-02 15:57:00
+Fantastic - just demonstrated solution to storing functions and function parameters in pre-programmed definitions
+
+
+2017-04-02 17:41:33
+Still not there. What if I'd been making the wrong assumptions entirely. The functions in question could be  written to the Model class, just like the rest of the current mocel parameters, such as step)size and so forth.
+
+
+2017-04-02 18:18:49
+working implementation now. Demonstrated switching between 2 different programs with different params for the xform_array cyclefx.
+- implement same for octave scaler
+- iterate thru the list stored in Model.cyclefx
+- implement feature for stepfx
+
+
+
+
+
+
+
