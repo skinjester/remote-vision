@@ -1519,6 +1519,27 @@ cleaned up program deginitions somewhat
 2017-04-03 01:47:34
 added median filter and an opacity function to stepfx. Median Blur behaving oddly though, disallowing kernel sizes > 5 Otherwise working as expedted
 
+- bilateral filter
+- gaussian filter
+- duration_cutoff (early exit to rem cycle based on timer)
+
+[not sure if these are stepfx or cyclefx]
+P1 program switcher (chooses another program based on timer)
+
+P1 Vision Quest
+	- explore program settings
+	- write out textfile w current settings on demand 
+
+P! Controls
+	- new keybindings
+		+ Toggle Camera
+		+ Reset to default program
+	- verify functionality w external USB keypad
+		+  can Thea help with key labels?
+
+P1 Exporting Images & Video
+
+
 
 
 
