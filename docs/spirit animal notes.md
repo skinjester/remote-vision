@@ -1516,6 +1516,10 @@ added inception_xform to cyclefx list
 cleaned up program deginitions somewhat
 
 
+2017-04-03 01:47:34
+added median filter and an opacity function to stepfx. Median Blur behaving oddly though, disallowing kernel sizes > 5 Otherwise working as expedted
+
+
 
 
 

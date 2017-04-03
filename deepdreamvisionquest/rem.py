@@ -81,7 +81,7 @@ class Model(object):
         #self.set_endlayer(self.layers[self.current_layer])
         #self.set_featuremap()
         self.cyclefx = None # contains cyclefx list for current program
-        # self.stepfx = None # contains stepfx list for current program
+        self.stepfx = None # contains stepfx list for current program
 
 
     def choose_model(self, key):
@@ -121,7 +121,7 @@ class Model(object):
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
         self.cyclefx = data.program[index]['cyclefx']
-        # self.stepfx = data.program[index]['stepfx']
+        self.stepfx = data.program[index]['stepfx']
 
     def set_endlayer(self,end):
         self.end = end
@@ -264,38 +264,6 @@ class Viewport(object):
             cam.stop()
         sys.exit()
 
-
-class FX(object):
-    def __init__(self):
-        self.direction = 1
-
-    def xform_array(self, img, amplitude, wavelength):
-        def shiftfunc(n):
-            return int(amplitude*np.sin(n/wavelength))
-        for n in range(img.shape[1]): # number of rows in the image
-            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
-        return img
-
-    def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
-        print 'model: ', model
-        print 'step: ', step
-        print 'min_scale: ', min_scale
-        print 'max_scale: ', max_scale
-
-    def octave_scaler(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
-        # octave scaling cycle each rem cycle, maybe
-        # if (int(time.time()) % 2):
-        model.octave_scale += step * self.direction
-        if model.octave_scale > max_scale or model.octave_scale < min_scale:
-            self.direction = -1 * self.direction
-        update_HUD_log('scale',model.octave_scale)
-        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
-
-    def inception_xform(self, image, capture_size, scale):
-        log.critical('image.shape:{} capture_size:{} scale:{}'.format(image.shape, capture_size, scale))
-        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
-
 class Composer(object):
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
@@ -341,20 +309,73 @@ class Composer(object):
                 self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
         return
 
+class FX(object):
+    def __init__(self):
+        self.direction = 1
+        self.stepfx_opacity = 1.0
+
+    def xform_array(self, img, amplitude, wavelength):
+        def shiftfunc(n):
+            return int(amplitude*np.sin(n/wavelength))
+        for n in range(img.shape[1]): # number of rows in the image
+            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+        return img
+
+    def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
+        print 'model: ', model
+        print 'step: ', step
+        print 'min_scale: ', min_scale
+        print 'max_scale: ', max_scale
+
+    def octave_scaler(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
+        # octave scaling cycle each rem cycle, maybe
+        # if (int(time.time()) % 2):
+        model.octave_scale += step * self.direction
+        if model.octave_scale > max_scale or model.octave_scale < min_scale:
+            self.direction = -1 * self.direction
+        update_HUD_log('scale',model.octave_scale)
+        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
+
+    def inception_xform(self, image, capture_size, scale):
+        log.critical('image.shape:{} capture_size:{} scale:{}'.format(image.shape, capture_size, scale))
+        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+
+    def median_blur(self, image, kernel_shape):
+        return cv2.medianBlur(image, kernel_shape)
+
+    def bilateral_filter(self, image, kernel_shape):
+        return image
+
+    def gaussian_filter(self, image):
+        return image
+
+    def step_mixer(self,opacity):
+        self.stepfx_opacity = opacity
 
 
-def iterationPostProcess(net_data_blob):
-    img = caffe2rgb(Model.net, net_data_blob)
-    img = blur(img, 3, 3)
+# stepfx wrapper takes neural net data blob and converts to caffe image
+# then after processing, takes the caffe image and converts back to caffe
+def iterationPostProcess(net, net_data_blob):
+    img = caffe2rgb(net, net_data_blob)
+    img2 = img.copy()
 
     # cycle fx here
+    #  apply cyclefx, assuming they've been defined
+    if Model.stepfx is not None:
+        for fx in Model.stepfx:
+            if fx['name'] == 'median_blur':
+                img2 = FX.median_blur(img2, **fx['params'])
 
-    # Viewport.shutdown()
+            if fx['name'] == 'step_opacity':
+                FX.step_mixer(**fx['params'])
 
+    img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
     return rgb2caffe(Model.net, img)
 
 
 def blur(img, sigmax, sigmay):
+    img2 = img.copy()
     #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     # if (int(time.time()) % 0.5):
     #     return img
@@ -379,16 +400,15 @@ def blur(img, sigmax, sigmay):
     # img = cv2.bilateralFilter(img, 3, 70, 50)
 
     #D monoworld
-    img = nd.filters.gaussian_filter(img, 0.5, order=0)
-    img = cv2.medianBlur(img,3)
+    # img2 = nd.filters.gaussian_filter(img2, 0.5, order=0)
+    # img2 = cv2.medianBlur(img2,3)
 
     # simplified
     # works best with high iteration counts
     # img = cv2.medianBlur(img,5)
 
-
-    return img
-    # return cv2.addWeighted(img2, 0.5, img, 1-0.5, 0, img)
+    # return img2
+    return cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
 
 
 def vignette(img,param):
@@ -644,7 +664,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
 
     # postprocess (blur) this iteration
     # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
-    src.data[0] = iterationPostProcess(src.data[0])
+    src.data[0] = iterationPostProcess(net, src.data[0])
 
 # -------
 # REM CYCLE
@@ -764,12 +784,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     # return rendered img
     return caffe2rgb(Model.net, src.data[0])
-
-
-
-
-
-
 
 
 # -------

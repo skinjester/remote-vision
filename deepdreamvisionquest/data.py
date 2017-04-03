@@ -128,6 +128,21 @@ cyclefx_default = [
 	inception_xform_default,
 ]
 
+median_blur_default = {
+	'name': 'median_blur',
+	'params': {'kernel_shape':3}
+}
+
+step_opacity_default = {
+	'name': 'step_opacity',
+	'params': {'opacity':1.0}
+}
+
+stepfx_default = [
+	median_blur_default,
+	step_opacity_default
+]
+
 program.append({
 	'name':'geo',
 	'iterations':10,
@@ -143,10 +158,7 @@ program.append({
 	],
 	'features':[-1,0,1],
 	'cyclefx':cyclefx_default,
-	'stepfx':[
-		inception_xform_default,
-		octave_scaler_default
-	]
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -217,7 +229,8 @@ program.append({
 			'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.8}
 		},
 		inception_xform_default
-	]
+	],
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -278,7 +291,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 
@@ -340,7 +354,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -401,7 +416,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -462,7 +478,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 
@@ -490,7 +507,8 @@ program.append({
 		'inception_4e/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -558,7 +576,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -626,7 +645,8 @@ program.append({
 		'inception_5b/pool_proj'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -645,7 +665,8 @@ program.append({
 		'inception_5a/5x5'
 	],
 	'features':range(-1,96),
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -662,7 +683,8 @@ program.append({
 		'inception_3b/output',
 	],
 	'features':[27],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 
@@ -680,7 +702,8 @@ program.append({
 		'inception_3a/3x3',
 	],
 	'features':[21],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -697,7 +720,8 @@ program.append({
 		'inception_3b/5x5',
 	],
 	'features':[21],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -714,7 +738,8 @@ program.append({
 		'inception_4e/output',
 	],
 	'features':[24],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -731,7 +756,8 @@ program.append({
 		'inception_4a/3x3',
 	],
 	'features':[15],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -748,7 +774,8 @@ program.append({
 		'inception_4a/3x3',
 	],
 	'features':[12],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -765,7 +792,8 @@ program.append({
 		'inception_3b/output',
 	],
 	'features':[11],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -782,7 +810,8 @@ program.append({
 		'inception_4d/5x5_reduce',
 	],
 	'features':[11],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -799,7 +828,8 @@ program.append({
 		'inception_4d/5x5_reduce',
 	],
 	'features':[15],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -816,7 +846,8 @@ program.append({
 		'inception_4d/5x5_reduce',
 	],
 	'features':[17],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -833,7 +864,8 @@ program.append({
 		'inception_4d/5x5_reduce',
 	],
 	'features':[2],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 program.append({
@@ -850,7 +882,8 @@ program.append({
 		'inception_4d/5x5_reduce',
 	],
 	'features':[11],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
 
 
@@ -869,5 +902,6 @@ program.append({
 		'inception_4c/output'
 	],
 	'features':[1],
-	'cyclefx':cyclefx_default
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
 })
