@@ -1,1 +1,1 @@
-This script produces silence
+.
