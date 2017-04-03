@@ -122,14 +122,14 @@ program.append({
 	],
 	'features':[-1,0,1],
 	'cyclefx':[
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':10, 'wavelength':100}
-		}
 		# {
-		# 	'func': function2,
-		# 	'params': {'blur':3.2, 'radius':15}
-		# }
+		# 	'name': 'xform_array',
+		# 	'params': {'amplitude':10, 'wavelength':100}
+		# },
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+		}
 	]
 })
 
@@ -193,14 +193,14 @@ program.append({
 	],
 	'features':range(-1,96),
 	'cyclefx':[
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':100, 'wavelength':10}
-		}
 		# {
-		# 	'func': function2,
-		# 	'params': {'blur':3.2, 'radius':15}
-		# }
+		# 	'name': 'xform_array',
+		# 	'params': {'amplitude':100, 'wavelength':10}
+		# },
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+		}
 	]
 })
 

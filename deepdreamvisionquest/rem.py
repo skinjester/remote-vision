@@ -818,16 +818,17 @@ class FX(object):
         return img
 
     # img = Composer.buffer1
-    def test_args(self, img, amplitude, wavelength):
-        print 'img: ', img
-        print 'amplitude: ', amplitude
-        print 'wavelength: ', wavelength
+    def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
+        print 'model: ', model
+        print 'step: ', step
+        print 'min_scale: ', min_scale
+        print 'max_scale: ', max_scale
 
-    def octave_scaler(self, model=Model):
+    def octave_scaler(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
         # octave scaling cycle each rem cycle, maybe
         # if (int(time.time()) % 2):
-        model.octave_scale += 0.05 * self.direction
-        if model.octave_scale > 1.6 or model.octave_scale < 1.2:
+        model.octave_scale += step * self.direction
+        if model.octave_scale > max_scale or model.octave_scale < min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
         log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
@@ -874,26 +875,18 @@ def main():
             Viewport.save_next_frame = True
 
             # applies transform to frame buffer each cycle
-            # code shouldnt be placed here
-            # but why shouldn't function calls for postprocessing be placed here?
-
-            # sine transform on frame buffer each rem cycle
-            # fx(list_of_cyclefx_functions)
-
             fx_name = Model.cyclefx[0]['name']
             fx_params = Model.cyclefx[0]['params']
+            print Model.cyclefx
 
-            if fx_name == 'xform_array':
-                FX.xform_array(Composer.buffer1, **fx_params)
+            # if fx_name == 'xform_array':
+                # FX.xform_array(Composer.buffer1, **fx_params)
 
-            #Composer.buffer1 = FX.xform_array(Composer.buffer1,**args)
-            # FX.xform_array(Composer.buffer1)
+            if fx_name == 'octave_scaler':
+                print '@@@@@@@@@@@@@@@@'
+                FX.test_args(model=Model, **fx_params)
 
-
-            # for i in fx:
-            # img = fx[0]['func'](**fx[0]['params'])
-            FX.octave_scaler(model=Model)
-
+            Viewport.shutdown()
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
