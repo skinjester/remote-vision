@@ -13,3 +13,13 @@ ARTEX/
 deepdreamvisionquest/dev/
 
 *.sublime-workspace
+
+bin/dict1\.py
+
+bin/files1\.py
+
+bin/files2\.py
+
+bin/testfile\.txt
+
+bin/testfile1\.txt
