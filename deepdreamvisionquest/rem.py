@@ -80,7 +80,7 @@ class Model(object):
         self.choose_model(modelkey)
         #self.set_endlayer(self.layers[self.current_layer])
         #self.set_featuremap()
-        self.cyclefx = []
+        self.cyclefx = [] # contains cyclefx list for current model
 
 
     def choose_model(self, key):
@@ -120,9 +120,6 @@ class Model(object):
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
         self.cyclefx = data.program[index]['cyclefx']
-
-
-
 
     def set_endlayer(self,end):
         self.end = end
@@ -249,16 +246,11 @@ class Viewport(object):
             img = MotionDetector.t_delta_framebuffer
 
             # composite motion stats here
-
             # rectangle
             overlay = MotionDetector.t_delta_framebuffer.copy()
             opacity = 1.0
             #cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
-
-
             cv2.putText(overlay, MotionDetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
-
-
             # add overlay back to source
             img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img)
             cv2.imshow('delta', img)
@@ -271,8 +263,6 @@ class Viewport(object):
         sys.exit()
 
 class Composer(object):
-
-
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
     def __init__(self):
@@ -812,9 +802,6 @@ class FX(object):
             return int(amplitude*np.sin(n/wavelength))
         for n in range(img.shape[1]): # number of rows in the image
             img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
-        print 'img: ', img
-        print 'amplitude: ', amplitude
-        print 'wavelength: ', wavelength
         return img
 
     # img = Composer.buffer1
@@ -832,7 +819,6 @@ class FX(object):
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
         log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
-
 
 
 
@@ -874,19 +860,16 @@ def main():
         if Composer.is_dirty == False or Viewport.force_refresh:
             Viewport.save_next_frame = True
 
-            # applies transform to frame buffer each cycle
-            fx_name = Model.cyclefx[0]['name']
-            fx_params = Model.cyclefx[0]['params']
-            print Model.cyclefx
+            #  apply cyclefx, assuming they've been defined
+            if Model.cyclefx is not None:
+                for fx in Model.cyclefx:
+                    if fx['name'] == 'xform_array':
+                        FX.xform_array(Composer.buffer1, **fx['params'])
 
-            # if fx_name == 'xform_array':
-                # FX.xform_array(Composer.buffer1, **fx_params)
-
-            if fx_name == 'octave_scaler':
-                print '@@@@@@@@@@@@@@@@'
-                FX.test_args(model=Model, **fx_params)
-
-            Viewport.shutdown()
+                    if fx['name'] == 'octave_scaler':
+                        FX.octave_scaler(model=Model, **fx['params'])
+            else:
+                log.warning('no cycle fx defined in model:{}'.format(Model))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])

@@ -106,6 +106,27 @@ def xform_array(amount):
 # a list of programs
 program = []
 
+# override these in each program as as necessary
+cyclefx_default = [
+	{
+		'name': 'xform_array',
+		'params': {'amplitude':10, 'wavelength':100}
+	},
+	{
+		'name': 'octave_scaler',
+		'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+	}
+]
+
+xform_array_default = {
+	'name': 'xform_array',
+	'params': {'amplitude':10, 'wavelength':100}
+}
+
+octave_scaler_default = {
+	'name': 'octave_scaler',
+	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+}
 
 program.append({
 	'name':'geo',
@@ -122,17 +143,10 @@ program.append({
 	],
 	'features':[-1,0,1],
 	'cyclefx':[
-		# {
-		# 	'name': 'xform_array',
-		# 	'params': {'amplitude':10, 'wavelength':100}
-		# },
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
-		}
+		xform_array_default,
+		octave_scaler_default
 	]
 })
-
 
 program.append({
 	'name':'lofi-featuremap-superstep',
@@ -140,7 +154,7 @@ program.append({
 	'step_size':3,
 	'octaves':5,
 	'octave_cutoff':4,
-	'octave_scale':1.5,
+	'octave_scale':1.7,
 	'iteration_mult':0.25,
 	'step_mult':0.01,
 	'model':'places',
@@ -193,13 +207,13 @@ program.append({
 	],
 	'features':range(-1,96),
 	'cyclefx':[
-		# {
-		# 	'name': 'xform_array',
-		# 	'params': {'amplitude':100, 'wavelength':10}
-		# },
+		{
+			'name': 'xform_array',
+			'params': {'amplitude':50, 'wavelength':50}
+		},
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+			'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.8}
 		}
 	]
 })
