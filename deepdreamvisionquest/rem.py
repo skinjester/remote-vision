@@ -80,7 +80,8 @@ class Model(object):
         self.choose_model(modelkey)
         #self.set_endlayer(self.layers[self.current_layer])
         #self.set_featuremap()
-        self.cyclefx = [] # contains cyclefx list for current model
+        self.cyclefx = None # contains cyclefx list for current program
+        # self.stepfx = None # contains stepfx list for current program
 
 
     def choose_model(self, key):
@@ -120,6 +121,7 @@ class Model(object):
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
         self.cyclefx = data.program[index]['cyclefx']
+        # self.stepfx = data.program[index]['stepfx']
 
     def set_endlayer(self,end):
         self.end = end
@@ -262,6 +264,38 @@ class Viewport(object):
             cam.stop()
         sys.exit()
 
+
+class FX(object):
+    def __init__(self):
+        self.direction = 1
+
+    def xform_array(self, img, amplitude, wavelength):
+        def shiftfunc(n):
+            return int(amplitude*np.sin(n/wavelength))
+        for n in range(img.shape[1]): # number of rows in the image
+            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+        return img
+
+    def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
+        print 'model: ', model
+        print 'step: ', step
+        print 'min_scale: ', min_scale
+        print 'max_scale: ', max_scale
+
+    def octave_scaler(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
+        # octave scaling cycle each rem cycle, maybe
+        # if (int(time.time()) % 2):
+        model.octave_scale += step * self.direction
+        if model.octave_scale > max_scale or model.octave_scale < min_scale:
+            self.direction = -1 * self.direction
+        update_HUD_log('scale',model.octave_scale)
+        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
+
+    def inception_xform(self, image, capture_size, scale):
+        log.critical('image.shape:{} capture_size:{} scale:{}'.format(image.shape, capture_size, scale))
+        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+
 class Composer(object):
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
@@ -277,7 +311,9 @@ class Composer(object):
     def update(self, image):
         if self.is_dirty:
             if self.is_new_cycle:
-                self.buffer1 = inceptionxform(image, self.xform_scale, Webcam.get().capture_size)
+                for fx in Model.cyclefx:
+                    if fx['name'] == 'inception_xform':
+                        self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
 
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -305,41 +341,14 @@ class Composer(object):
                 self.buffer2 = cv2.resize(self.buffer2, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
         return
 
-class RealtimePlot:
-    def __init__(self, axes, max_entries = 100):
-        self.axis_x = deque(maxlen=max_entries)
-        self.axis_y = deque(maxlen=max_entries)
-        self.axes = axes
-        self.max_entries = max_entries
-        self.lineplot, = axes.plot([], [], "ro-")
-        self.axes.set_autoscaley_on(True)
 
-    def add(self, x, y):
-        self.axis_x.append(x)
-        self.axis_y.append(y)
-        self.lineplot.set_data(self.axis_x, self.axis_y)
-        self.axes.set_xlim(self.axis_x[0], self.axis_x[-1] + 1e-15)
-        self.axes.relim(); self.axes.autoscale_view() # rescale the y-axis
-
-    def animate(self, figure, callback, interval = 50):
-        import matplotlib.animation as animation
-        def wrapper(frame_index):
-            self.add(*callback(frame_index))
-            self.axes.relim(); self.axes.autoscale_view() # rescale the y-axis
-            return self.lineplot
-        animation.FuncAnimation(figure, wrapper, interval=interval)
-
-def inceptionxform(image,scale,capture_size):
-    log.debug('image.shape:{} scale:{} capture_size:{}'.format(image.shape, scale, capture_size))
-    # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-    return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
 def iterationPostProcess(net_data_blob):
     img = caffe2rgb(Model.net, net_data_blob)
     img = blur(img, 3, 3)
 
     # cycle fx here
-    
+
     # Viewport.shutdown()
 
     return rgb2caffe(Model.net, img)
@@ -598,38 +607,6 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
 
-# -------
-# implements forward and backward passes thru the network
-# apply normalized ascent step upon the image in the networks data blob
-# ------- 
-'''
-def make_step(net, step_size=1.5, end='inception_4c/output',jitter=32, clip=True, objective=objective_L2, feature=1):
-    print '[make_step] wasMotionDetected {}'.format(MotionDetector.wasMotionDetected)
-    src = net.blobs['data'] # input image is stored in Net's 'data' blob
-    dst = net.blobs[end] # destination is the end layer specified by argument
-
-    ox, oy = np.random.randint(-jitter, jitter + 1, 2)          # calculate jitter
-    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # apply jitter shift
-
-    # this bit is where the neural net runs the hallucination
-    net.forward(end=end)    # make sure we stop on the chosen neural layer
-    objective(dst)          # specify the optimization objective
-    net.backward(start=end) # backwards propagation
-    g = src.diff[0]         # store the error
-
-    # apply normalized ascent step to the image array
-    src.data[:] += step_size / np.abs(g).mean() * g
-
-    # unshift image jitter
-    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)
-
-    # subtract image mean and clip our matrix to the values
-    bias = net.transformer.mean['data']
-    src.data[:] = np.clip(src.data, -bias, 255-bias)
-
-    # postprocess (blur) this iteration
-    src.data[0] = iterationPostProcess(src.data[0])
-'''
 
 # -------
 # implements forward and backward passes thru the network
@@ -791,34 +768,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
 
 
-class FX(object):
-    def __init__(self):
-        self.direction = 1
 
-
-    # img = Composer.buffer1
-    def xform_array(self, img, amplitude, wavelength):
-        def shiftfunc(n):
-            return int(amplitude*np.sin(n/wavelength))
-        for n in range(img.shape[1]): # number of rows in the image
-            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
-        return img
-
-    # img = Composer.buffer1
-    def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
-        print 'model: ', model
-        print 'step: ', step
-        print 'min_scale: ', min_scale
-        print 'max_scale: ', max_scale
-
-    def octave_scaler(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
-        # octave scaling cycle each rem cycle, maybe
-        # if (int(time.time()) % 2):
-        model.octave_scale += step * self.direction
-        if model.octave_scale > max_scale or model.octave_scale < min_scale:
-            self.direction = -1 * self.direction
-        update_HUD_log('scale',model.octave_scale)
-        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
 
 
 
@@ -858,7 +808,7 @@ def main():
             Composer.is_dirty = False
 
         if Composer.is_dirty == False or Viewport.force_refresh:
-            Viewport.save_next_frame = True
+            # Viewport.save_next_frame = True
 
             #  apply cyclefx, assuming they've been defined
             if Model.cyclefx is not None:
@@ -868,8 +818,6 @@ def main():
 
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
-            else:
-                log.warning('no cycle fx defined in model:{}'.format(Model))
 
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
@@ -943,9 +891,9 @@ Device = [0,1] # debug
 
 w = data.capture_w
 h = data.capture_h
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False,
     flip_h=False, flip_v=True, gamma=0.85).start())
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=False,
     flip_h=False, flip_v=False, gamma=1.0).start())
 
 Webcam = Cameras(source=Camera, current=Device[1])

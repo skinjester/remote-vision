@@ -1492,9 +1492,28 @@ Still not there. What if I'd been making the wrong assumptions entirely. The fun
 
 2017-04-02 18:18:49
 working implementation now. Demonstrated switching between 2 different programs with different params for the xform_array cyclefx.
-- implement same for octave scaler
-- iterate thru the list stored in Model.cyclefx
+x implement same for octave scaler
+x iterate thru the list stored in Model.cyclefx
 - implement feature for stepfx
+
+
+2017-04-02 21:24:32
+until now it wasn't really obvious to me that a higher octave_scale led to a faster cycle time. not just by a little, either
+
+
+2017-04-02 21:40:17
+Fantastic news! its working as designed. NMot quite the way I thought it would, but ended up cleaner than prior work sessions suggested. A smuch as I want to pass in a "job list" of functions to each of these programs, I don't know how to setup the system to make that happen. The problem is that the Program data structure is just attached to its module luike a filing system. Its difficult to reach into and pass pointers to dynamic quantities, such as Composer.buffer1. I found it difficultr to do while also passing in specific values - parameters that I wanted top pass to a function, such as blur=3
+
+Maybe after a day and half of hacking it, if I were to readress the probglem, I'd know how to solve it better. Already some ideas, such as turning the Program data structure into its own class. Not sure why I previously didn't.
+
+
+2017-04-02 22:50:44
+adding stepfx now
+
+
+2017-04-03 00:35:17
+added inception_xform to cyclefx list
+cleaned up program deginitions somewhat
 
 
 

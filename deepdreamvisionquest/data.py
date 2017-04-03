@@ -106,18 +106,7 @@ def xform_array(amount):
 # a list of programs
 program = []
 
-# override these in each program as as necessary
-cyclefx_default = [
-	{
-		'name': 'xform_array',
-		'params': {'amplitude':10, 'wavelength':100}
-	},
-	{
-		'name': 'octave_scaler',
-		'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
-	}
-]
-
+# defaults provided as a convenience
 xform_array_default = {
 	'name': 'xform_array',
 	'params': {'amplitude':10, 'wavelength':100}
@@ -127,6 +116,17 @@ octave_scaler_default = {
 	'name': 'octave_scaler',
 	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
 }
+
+inception_xform_default = {
+	'name': 'inception_xform',
+	'params': {'scale':0.03}
+}
+
+cyclefx_default = [
+	xform_array_default,
+	octave_scaler_default,
+	inception_xform_default,
+]
 
 program.append({
 	'name':'geo',
@@ -142,8 +142,9 @@ program.append({
 		'inception_3b/5x5',
 	],
 	'features':[-1,0,1],
-	'cyclefx':[
-		xform_array_default,
+	'cyclefx':cyclefx_default,
+	'stepfx':[
+		inception_xform_default,
 		octave_scaler_default
 	]
 })
@@ -214,7 +215,8 @@ program.append({
 		{
 			'name': 'octave_scaler',
 			'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.8}
-		}
+		},
+		inception_xform_default
 	]
 })
 
@@ -275,7 +277,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 
@@ -336,7 +339,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -396,7 +400,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -456,7 +461,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 
@@ -483,7 +489,8 @@ program.append({
 		'inception_4e/pool',
 		'inception_4e/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -550,7 +557,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -617,7 +625,8 @@ program.append({
 		'inception_5b/pool',
 		'inception_5b/pool_proj'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -635,7 +644,8 @@ program.append({
 		'inception_5a/3x3_reduce',
 		'inception_5a/5x5'
 	],
-	'features':range(-1,96)
+	'features':range(-1,96),
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -651,7 +661,8 @@ program.append({
 	'layers':[
 		'inception_3b/output',
 	],
-	'features':[27]
+	'features':[27],
+	'cyclefx':cyclefx_default
 })
 
 
@@ -668,7 +679,8 @@ program.append({
 	'layers':[
 		'inception_3a/3x3',
 	],
-	'features':[21]
+	'features':[21],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -684,7 +696,8 @@ program.append({
 	'layers':[
 		'inception_3b/5x5',
 	],
-	'features':[21]
+	'features':[21],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -700,7 +713,8 @@ program.append({
 	'layers':[
 		'inception_4e/output',
 	],
-	'features':[24]
+	'features':[24],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -716,7 +730,8 @@ program.append({
 	'layers':[
 		'inception_4a/3x3',
 	],
-	'features':[15]
+	'features':[15],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -732,7 +747,8 @@ program.append({
 	'layers':[
 		'inception_4a/3x3',
 	],
-	'features':[12]
+	'features':[12],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -748,7 +764,8 @@ program.append({
 	'layers':[
 		'inception_3b/output',
 	],
-	'features':[11]
+	'features':[11],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -764,7 +781,8 @@ program.append({
 	'layers':[
 		'inception_4d/5x5_reduce',
 	],
-	'features':[11]
+	'features':[11],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -780,7 +798,8 @@ program.append({
 	'layers':[
 		'inception_4d/5x5_reduce',
 	],
-	'features':[15]
+	'features':[15],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -796,7 +815,8 @@ program.append({
 	'layers':[
 		'inception_4d/5x5_reduce',
 	],
-	'features':[17]
+	'features':[17],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -812,7 +832,8 @@ program.append({
 	'layers':[
 		'inception_4d/5x5_reduce',
 	],
-	'features':[2]
+	'features':[2],
+	'cyclefx':cyclefx_default
 })
 
 program.append({
@@ -828,7 +849,8 @@ program.append({
 	'layers':[
 		'inception_4d/5x5_reduce',
 	],
-	'features':[11]
+	'features':[11],
+	'cyclefx':cyclefx_default
 })
 
 
@@ -846,16 +868,6 @@ program.append({
 	'layers':[
 		'inception_4c/output'
 	],
-	'features':[1]
+	'features':[1],
+	'cyclefx':cyclefx_default
 })
-
-# print '*' * 8
-# #print program['ghost']['layers'][0]
-
-# print program[0]['name']
-
-
-# print '*' * 8
-# quit()
-
-
