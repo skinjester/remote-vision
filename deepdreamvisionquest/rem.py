@@ -344,8 +344,9 @@ class FX(object):
     def median_blur(self, image, kernel_shape):
         return cv2.medianBlur(image, kernel_shape)
 
-    def bilateral_filter(self, image, kernel_shape):
-        return image
+    def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
+        print "&&&"
+        return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
     def gaussian_filter(self, image):
         return image
@@ -366,6 +367,9 @@ def iterationPostProcess(net, net_data_blob):
         for fx in Model.stepfx:
             if fx['name'] == 'median_blur':
                 img2 = FX.median_blur(img2, **fx['params'])
+
+            if fx['name'] == 'bilateral_filter':
+                img2 = FX.bilateral_filter(img2, **fx['params'])
 
             if fx['name'] == 'step_opacity':
                 FX.step_mixer(**fx['params'])

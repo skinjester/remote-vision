@@ -133,13 +133,19 @@ median_blur_default = {
 	'params': {'kernel_shape':3}
 }
 
+bilateral_filter_default = {
+	'name': 'bilateral_filter',
+	'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 30}
+}
+
 step_opacity_default = {
 	'name': 'step_opacity',
 	'params': {'opacity':1.0}
 }
 
 stepfx_default = [
-	median_blur_default,
+	# median_blur_default,
+	bilateral_filter_default,
 	step_opacity_default
 ]
 
