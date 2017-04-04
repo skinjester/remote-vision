@@ -154,10 +154,10 @@ duration_cutoff_default = {
 }
 
 stepfx_default = [
-	# median_blur_default,
-	# bilateral_filter_default,
-	# nd_gaussian_filter_default,
-	# step_opacity_default,
+	median_blur_default,
+	bilateral_filter_default,
+	nd_gaussian_filter_default,
+	step_opacity_default,
 	duration_cutoff_default
 ]
 
@@ -238,10 +238,6 @@ program.append({
 	],
 	'features':range(-1,96),
 	'cyclefx':[
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':50, 'wavelength':50}
-		},
 		{
 			'name': 'octave_scaler',
 			'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.8}

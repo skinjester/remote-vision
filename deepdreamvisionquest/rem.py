@@ -293,8 +293,8 @@ class Composer(object):
             if self.is_compositing_enabled:
                 log.critical('compositing buffer 1 & 2')
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.9
-                if self.opacity <= 0.1:
+                self.opacity = self.opacity * 0.98
+                if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
 
@@ -359,7 +359,7 @@ class FX(object):
         elapsed = time.time() - self.cycle_start_time
         if elapsed >= duration:
             MotionDetector.force_detection()
-            Viewport.refresh()
+            # Viewport.refresh()
         log.debug('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
 
     # called by main() at start of each cycle

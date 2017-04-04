@@ -1611,6 +1611,8 @@ Picking up work on the Sequencer control next. This is a stepfx almost identical
 
 -
 
+2017-04-03 23:41:46
+removed Viewport.refresh() from the duration_cutoff() function. Its more interesting now that it doesn't re-do the whole screen.
 
 
 
