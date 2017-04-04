@@ -1568,6 +1568,51 @@ I have the basic timer function setup, and verified registering time on the FX.c
 The cutoff function is working and can also be used as the basis for the program timer, but its's rough. calling Viewport.refresh() immediately refreshes the viewport, but would be much more fluid if the new cycle and the old dissolved - exactly the way it happens during motion detection and Composer.is_compositing_enabled = True. SO how does that work?
 
 
+2017-04-03 22:04:37
+the transitional behavior I'm describing takes place during the normal course of things when
+	- we've entered a new cycle, AND the MotionDetector is NOT in a 'resting' state
+	- what does 'resting' mean? just that the readings have stabilized enough that the current reading matches the previous reading
+		+ so when the MotionDetector isn't resting it just means that the current value was different than the previous one. Which must happen often enough.
+		+ From what I can tell, the resting state can only refer to a condition where there is stillness (of course). 
+			* the  pixel count values must be zero or beneath the floor, , and so are reported as zero.
+		- this period of stillness corresponds to the hallucinating state -. In other words, 'it can only see you when you're moving'
+
+2017-04-03 22:58:30
+did a bit of invetigation into how motion detection works. Calculating a "ratio" based on pixels_detected/total_pixels. This shows a percentage of how much of the screen is in motion. One of the areas I wanted to enhance was relaxing motion detection when subjects are close to the camera. This is the basis for that determination
+
+
+2017-04-03 23:02:33
+The reason I'm getting an immediate "cut" instead of a dissolve for the duration_cutoff function is because I'm only refreshing the Viewport to force a new cycle. I also need to override the MotionDetection resting state.
+
+
+2017-04-03 23:13:57
+That worked. FInished implementing the duration_cutoff stepfx. Playing around with it , I;m not sure how much value it has. Its definitely a different experience. It feels closer to realtime, especially when the duration is set low,  which effectively delivers a consistent (although low) frame rate. Thing is, the images generated are incomplete and in some case, pretty low resolution. Maybe not si attractive. Will have to test this feature out to see the valdity.
+
+
+2017-04-03 23:16:20
+Picking up work on the Sequencer control next. This is a stepfx almost identical to duration_cutoff
+
+- specify a duration
+	+ where?
+		* attached to each program?
+		* specified by the function call (so all programs are of the same duration)
+- make note of the time when each program starts
+	+ where?
+		* The FX object
+- with each call to the sequencer() function, get the elapsed time by subtracting the current time from the start time
+- if the elapsed time is greater than the specified duration then
+	+ select another program
+		* how?
+			- step thru program list indices, just like prev/next controls already do
+			- 
+		* force MotionDetector.wasMotionDetected = True ???
+		* use the descriptively named Viewport.force_refresh flag?
+			- yes, this. I created a refresh() function to wrap that
+
+-
+
+
+
 
 
 

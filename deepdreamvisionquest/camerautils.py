@@ -1,3 +1,4 @@
+from __future__ import division # so division works like you expect it to
 import numpy as np
 import cv2
 import datetime
@@ -131,9 +132,9 @@ class WebcamVideoStream(object):
 
 class MotionDetector(object):
 
-    def __init__(self, delta_trigger, floor, camera, log):
-        self.delta_trigger = delta_trigger
-        self.delta_trigger_history = delta_trigger
+    def __init__(self, floor, camera, log):
+        self.delta_trigger = 0
+        self.delta_trigger_history = 0
         self.delta_count = 0
         self.delta_count_history = 0
         self.camera = camera
@@ -162,12 +163,11 @@ class MotionDetector(object):
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
     def process(self):
-        ratio = 0
         if self.is_paused:
             self.wasMotionDetected = False
             return
 
-        log.warning('detect motion')
+        log.critical('detect motion')
         # history
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count
@@ -180,48 +180,52 @@ class MotionDetector(object):
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
 
         self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
-        log.warning(self.monitor_msg)
+        log.critical(self.monitor_msg)
+
+        # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
+        ratio = self.delta_count
+        ratio = float(ratio/921600)
+        log.critical('ratio:{:02.3f}'.format(ratio))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.monitor_msg += 'overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
-            log.warning(self.monitor_msg)
+            log.critical(self.monitor_msg)
 
 
-            self.delta_count = 0
+            self.delta_count = 0 # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
-            self.delta_count -= int(self.delta_count/2)
+            self.delta_count -= int(self.delta_count/2) 
             self.update_hud_log('detect','*')
             self.wasMotionDetected = True
             self.monitor_msg += ' movement started'
-            log.warning('movement started')
+            log.critical('movement started')
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.update_hud_log('detect','-')
-            log.warning('movement ended')
+            log.critical('movement ended')
             self.monitor_msg += ' movement ended'
         else:
+            # is this the resting condition?
             self.update_hud_log('detect','-')
             self.wasMotionDetected = False
-            #print "[motiondetector] beneath threshold."
+            log.critical('all motion is beneath threshold:{}'.format(self.floor))
 
-        # logging
-        # plt.plot(self._counter_, self.delta_count)
-        # plt.ion()
-        # plt.show()
-        self._counter_ += 1
+
+        self._counter_ += 1 # used to index delta_count_history
+
 
         lastmsg = '{:0>6}'.format(self.delta_count_history)
         if self.delta_count_history > self.delta_trigger:
-            ratio = 1.0 * self.delta_count_history/self.delta_trigger
+            # ratio = 1.0 * self.delta_count_history/self.delta_trigger
             lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_history,ratio)
 
         nowmsg = '{:0>6}'.format(self.delta_count)
         if self.delta_count > self.delta_trigger:
-            ratio = 1.0 * self.delta_count/self.delta_trigger
+            # ratio = 1.0 * self.delta_count/self.delta_trigger
             nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
 
         self.monitor_msg += str(ratio)
@@ -239,22 +243,21 @@ class MotionDetector(object):
         #     value += self.floor
         return value
 
-    def force_detection(self, camera):
+    def force_detection(self):
         self.wasMotionDetected = True
-        self.camera = camera
-
 
     def isResting(self):
+        log.critical('resting...')
         return self.wasMotionDetected == self.wasMotionDetected_history
 
     def refresh_queue(self):
-        #print "---- [motiondetector] refresh queue"
+        log.critical('.')
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()
         self.t_plus = cv2.blur(self.t_plus,(20,20))
 
-        if self.forced:
-            self.forced = False
-            return
+        # if self.forced:
+        #     self.forced = False
+        #     return
 

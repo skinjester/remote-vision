@@ -287,9 +287,11 @@ class Composer(object):
 
         else:
             if self.is_new_cycle and MotionDetector.isResting() == False:
+                log.critical('not resting...')
                 self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
+                log.critical('compositing buffer 1 & 2')
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
                 self.opacity = self.opacity * 0.9
                 if self.opacity <= 0.1:
@@ -356,8 +358,9 @@ class FX(object):
     def duration_cutoff(self, duration):
         elapsed = time.time() - self.cycle_start_time
         if elapsed >= duration:
+            MotionDetector.force_detection()
             Viewport.refresh()
-        log.critical('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
+        log.debug('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
 
     # called by main() at start of each cycle
     def set_cycle_start_time(self, start_time):
@@ -536,7 +539,7 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    # log.critical('key pressed: {}'.format(key))
+    # log.debug('key pressed: {}'.format(key))
 
     # Escape key: Exit
     if key == 27:
@@ -932,14 +935,14 @@ Device = [0,1] # debug
 
 w = data.capture_w
 h = data.capture_h
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False,
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
     flip_h=False, flip_v=True, gamma=0.85).start())
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=False,
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
     flip_h=False, flip_v=False, gamma=1.0).start())
 
 Webcam = Cameras(source=Camera, current=Device[1])
 Display = Display(width=w, height=h, camera=Webcam.get())
-MotionDetector = MotionDetector(delta_trigger=2000, floor=4000, camera=Webcam.get(), log=update_HUD_log)
+MotionDetector = MotionDetector(floor=2000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
 Model = Model()

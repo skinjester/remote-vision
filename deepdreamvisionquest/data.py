@@ -150,7 +150,7 @@ step_opacity_default = {
 
 duration_cutoff_default = {
 	'name': 'duration_cutoff',
-	'params': {'duration':2}
+	'params': {'duration':0.5}
 }
 
 stepfx_default = [
