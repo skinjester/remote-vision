@@ -125,7 +125,7 @@ class Model(object):
         self.cyclefx = data.program[index]['cyclefx']
         self.stepfx = data.program[index]['stepfx']
         self.program_start_time = time.time()
-        log.critical('program started:{}'.format(self.program_start_time))
+        log.critical('program:{} started:{}'.format(self.program[self.current_program]['name'], self.program_start_time))
 
 
 
@@ -293,7 +293,6 @@ class Composer(object):
 
         else:
             if self.is_new_cycle and MotionDetector.isResting() == False:
-                log.critical('not resting...')
                 self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:

@@ -185,7 +185,7 @@ class MotionDetector(object):
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
         ratio = float(ratio/(self.camera.width * self.camera.height))
-        log.warning('ratio:{:02.3f}'.format(ratio))
+        log.critical('ratio:{:02.3f}'.format(ratio))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
