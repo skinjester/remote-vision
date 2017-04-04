@@ -1547,6 +1547,27 @@ x gaussian filter
 - duration_cutoff (early exit to rem cycle based on timer)
 
 
+2017-04-03 19:28:45
+How does the duration cutoff stepfx work?
+- specify a duration
+- make note of the time when each cycle starts
+	+ where?
+		* The FX object?
+- with each call to the duration_cutoff() function, get the elapsed time by subtracting the current time from the start time
+- if the elapsed time is greater than the specified duration then
+	+ how to force a new cycle to start?
+		* force MotionDetector.wasMotionDetected = True ???
+		* use the descriptively named Viewport.force_refresh flag?
+			- yes, this. I created a refresh() function to wrap that
+
+2017-04-03 21:32:53
+I have the basic timer function setup, and verified registering time on the FX.cycle_start_time property each cycle. It's getting the data passed to it from the program declatration as well.
+
+
+2017-04-03 21:43:43
+The cutoff function is working and can also be used as the basis for the program timer, but its's rough. calling Viewport.refresh() immediately refreshes the viewport, but would be much more fluid if the new cycle and the old dissolved - exactly the way it happens during motion detection and Composer.is_compositing_enabled = True. SO how does that work?
+
+
 
 
 

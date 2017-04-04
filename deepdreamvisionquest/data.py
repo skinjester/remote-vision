@@ -148,11 +148,17 @@ step_opacity_default = {
 	'params': {'opacity':1.0}
 }
 
+duration_cutoff_default = {
+	'name': 'duration_cutoff',
+	'params': {'duration':2}
+}
+
 stepfx_default = [
 	# median_blur_default,
 	# bilateral_filter_default,
-	nd_gaussian_filter_default,
-	step_opacity_default
+	# nd_gaussian_filter_default,
+	# step_opacity_default,
+	duration_cutoff_default
 ]
 
 program.append({
@@ -246,7 +252,8 @@ program.append({
 		{
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.9, 'order':0}
-		}
+		},
+		duration_cutoff_default
 	]
 })
 

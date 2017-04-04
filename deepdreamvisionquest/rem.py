@@ -194,7 +194,6 @@ class Viewport(object):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
 
-
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != Display.height:
             image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
@@ -227,7 +226,7 @@ class Viewport(object):
         # #tweet(export_path)
 
     # forces new cycle with new camera image
-    def force_refresh(self):
+    def refresh(self):
         self.force_refresh = True
 
     def postfx(self, image):
@@ -313,6 +312,7 @@ class FX(object):
     def __init__(self):
         self.direction = 1
         self.stepfx_opacity = 1.0
+        self.cycle_start_time = 0
 
     def xform_array(self, img, amplitude, wavelength):
         def shiftfunc(n):
@@ -337,7 +337,6 @@ class FX(object):
         log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
-        log.critical('image.shape:{} capture_size:{} scale:{}'.format(image.shape, capture_size, scale))
         # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
         return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
@@ -353,6 +352,16 @@ class FX(object):
 
     def step_mixer(self,opacity):
         self.stepfx_opacity = opacity
+
+    def duration_cutoff(self, duration):
+        elapsed = time.time() - self.cycle_start_time
+        if elapsed >= duration:
+            Viewport.refresh()
+        log.critical('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
+
+    # called by main() at start of each cycle
+    def set_cycle_start_time(self, start_time):
+        self.cycle_start_time = start_time
 
 
 # stepfx wrapper takes neural net data blob and converts to caffe image
@@ -376,6 +385,9 @@ def iterationPostProcess(net, net_data_blob):
 
             if fx['name'] == 'step_opacity':
                 FX.step_mixer(**fx['params'])
+
+            if fx['name'] == 'duration_cutoff':
+                FX.duration_cutoff(**fx['params'])
 
     img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
     return rgb2caffe(Model.net, img)
@@ -524,7 +536,7 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    # log.debug('key pressed: {}'.format(key))
+    # log.critical('key pressed: {}'.format(key))
 
     # Escape key: Exit
     if key == 27:
@@ -613,6 +625,13 @@ def listener():
         # Webcam.set(1)
         # Viewport.force_refresh = True
         MotionDetector.camera = Webcam.set(Device[0])
+
+    # F3 key: test Viewport.force_refresh
+    elif key == 192:
+        log.warning('(F3): Viewport.force_refresh()')
+        # Webcam.set(1)
+        # Viewport.force_refresh = True
+        Viewport.refresh()
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout
@@ -822,6 +841,7 @@ def main():
 
     while True:
         log.info('new cycle')
+        FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         Composer.is_new_cycle = True
         Viewport.show(Composer.buffer1)
         MotionDetector.process()
