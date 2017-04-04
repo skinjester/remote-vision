@@ -1590,7 +1590,19 @@ That worked. FInished implementing the duration_cutoff stepfx. Playing around wi
 
 
 2017-04-03 23:16:20
-Picking up work on the Sequencer control next. This is a stepfx almost identical to duration_cutoff
+Picking up work on the Sequencer control next. This is a stepfx almost identical to duration_cutoff.
+
+What does the sequencer need to know?
+- index of next program
+- time remaining until start next program
+
+Does the sequencer need to be specified in program declaration?
+- no
+
+Where is the program duration stored?
+- let's assume that all program's run for the same durayion
+- when a program starts, it registers its start time in the FX class
+- actually, no - its more self contained if all that info is kept in the Model class, with all the other program params
 
 - specify a duration
 	+ where?
@@ -1613,6 +1625,51 @@ Picking up work on the Sequencer control next. This is a stepfx almost identical
 
 2017-04-03 23:41:46
 removed Viewport.refresh() from the duration_cutoff() function. Its more interesting now that it doesn't re-do the whole screen.
+
+
+2017-04-04 07:23:04
+implemented basic program sequencer. It just cycles through the program list by calling Model.next_program() 
+- what about "themed" programs? For example, "afternoon" and "evening"?
+The program list is 1 dimensional at the moment, but could do something like this:
+
+program = {
+	
+}
+
+program = [1,2,3,4]
+
+program = [
+	[1,2,3,4],
+	[1,2,3,4]
+]
+
+This would be the basic structure allowing  me to access programs banks
+program = {
+	'am': [1,2,3,4],
+	'pm': [1,2,3,4]
+}
+
+This is how the program declaration would look
+program['am'].append({
+	'name':'geo',
+	'iterations':10,
+	'step_size':3.0,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.0,
+	'model':'places',
+	'layers':[
+		'inception_3b/5x5',
+	],
+	'features':[-1,0,1],
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
+})
+
+
+
 
 
 

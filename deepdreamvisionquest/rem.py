@@ -44,7 +44,7 @@ class Display(object):
 
 
 class Model(object):
-    def __init__(self, modelkey='googlenet', current_layer=0):
+    def __init__(self, modelkey='googlenet', current_layer=0, program_duration=10):
         self.guide_features = None
         self.net = None
         self.net_fn = None
@@ -64,6 +64,8 @@ class Model(object):
 
         self.program = data.program
         self.current_program = 0
+        self.program_duration = program_duration
+        self.program_start_time = time.time()
 
         # amplification
         self.iterations = None
@@ -122,6 +124,10 @@ class Model(object):
         self.set_featuremap()
         self.cyclefx = data.program[index]['cyclefx']
         self.stepfx = data.program[index]['stepfx']
+        self.program_start_time = time.time()
+        log.critical('program started:{}'.format(self.program_start_time))
+
+
 
     def set_endlayer(self,end):
         self.end = end
@@ -291,9 +297,8 @@ class Composer(object):
                 self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
-                log.critical('compositing buffer 1 & 2')
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.98
+                self.opacity = self.opacity * 0.5
                 if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -315,6 +320,7 @@ class FX(object):
         self.direction = 1
         self.stepfx_opacity = 1.0
         self.cycle_start_time = 0
+        self.program_start_time = 0
 
     def xform_array(self, img, amplitude, wavelength):
         def shiftfunc(n):
@@ -346,7 +352,6 @@ class FX(object):
         return cv2.medianBlur(image, kernel_shape)
 
     def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
-        print "&&&"
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
     def nd_gaussian(self, image, sigma, order):
@@ -373,8 +378,7 @@ def iterationPostProcess(net, net_data_blob):
     img = caffe2rgb(net, net_data_blob)
     img2 = img.copy()
 
-    # cycle fx here
-    #  apply cyclefx, assuming they've been defined
+    #  apply stepfx, assuming they've been defined
     if Model.stepfx is not None:
         for fx in Model.stepfx:
             if fx['name'] == 'median_blur':
@@ -691,9 +695,20 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
         bias = net.transformer.mean['data']
         src.data[:] = np.clip(src.data, -bias, 200-bias)
 
-    # postprocess (blur) this iteration
-    # what type of data is this?  Caffe data blob, used by neural net ((r,g,b),x,y)
+    # postprocessor
     src.data[0] = iterationPostProcess(net, src.data[0])
+
+    # sequencer
+    program_elapsed_time = time.time() - Model.program_start_time
+    if program_elapsed_time > Model.program_duration:
+        Model.next_program()
+
+
+    # for fx in Model.stepfx:
+    #     if fx['name'] == 'median_blur':
+    #         img2 = FX.median_blur(img2, **fx['params'])
+
+
 
 # -------
 # REM CYCLE
@@ -945,7 +960,7 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=2000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
-Model = Model()
+Model = Model(program_duration=5)
 FX = FX() #  yeah, no, maybe. not in use now though
 
 # point these things to the data.py module so it can run scripts using values defined here

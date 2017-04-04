@@ -167,7 +167,7 @@ class MotionDetector(object):
             self.wasMotionDetected = False
             return
 
-        log.critical('detect motion')
+        log.debug('detect motion')
         # history
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count
@@ -180,18 +180,18 @@ class MotionDetector(object):
         self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
 
         self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
-        log.critical(self.monitor_msg)
+        log.debug(self.monitor_msg)
 
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
         ratio = float(ratio/(self.camera.width * self.camera.height))
-        log.critical('ratio:{:02.3f}'.format(ratio))
+        log.warning('ratio:{:02.3f}'.format(ratio))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.monitor_msg += ' overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
-            log.critical(self.monitor_msg)
+            log.debug(self.monitor_msg)
 
 
             self.delta_count = 0 # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
@@ -201,18 +201,18 @@ class MotionDetector(object):
             self.update_hud_log('detect','*')
             self.wasMotionDetected = True
             self.monitor_msg += ' movement started'
-            log.critical('movement started')
+            log.debug('movement started')
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.update_hud_log('detect','-')
-            log.critical('movement ended')
+            log.debug('movement ended')
             self.monitor_msg += ' movement ended'
         else:
             # is this the resting condition?
             self.update_hud_log('detect','-')
             self.wasMotionDetected = False
-            log.critical('all motion is beneath threshold:{}'.format(self.floor))
+            log.debug('all motion is beneath threshold:{}'.format(self.floor))
 
 
         self._counter_ += 1 # used to index delta_count_history
@@ -247,11 +247,11 @@ class MotionDetector(object):
         self.wasMotionDetected = True
 
     def isResting(self):
-        log.critical('resting...')
+        log.debug('resting...')
         return self.wasMotionDetected == self.wasMotionDetected_history
 
     def refresh_queue(self):
-        log.critical('.')
+        log.debug('.')
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()

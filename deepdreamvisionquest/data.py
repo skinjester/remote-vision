@@ -150,14 +150,16 @@ step_opacity_default = {
 
 duration_cutoff_default = {
 	'name': 'duration_cutoff',
-	'params': {'duration':0.5}
+	'params': {'duration':2.0}
 }
 
+
+
 stepfx_default = [
-	median_blur_default,
+	# median_blur_default,
 	bilateral_filter_default,
-	nd_gaussian_filter_default,
-	step_opacity_default,
+	# nd_gaussian_filter_default,
+	# step_opacity_default,
 	duration_cutoff_default
 ]
 
@@ -666,7 +668,12 @@ program.append({
 	],
 	'features':range(-1,96),
 	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
+	'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 13, 'sigma_color':30, 'sigma_xy': 100}
+		},
+	]
 })
 
 program.append({
