@@ -348,8 +348,8 @@ class FX(object):
         print "&&&"
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
-    def gaussian_filter(self, image):
-        return image
+    def nd_gaussian(self, image, sigma, order):
+        return nd.filters.gaussian_filter(image, sigma, order)
 
     def step_mixer(self,opacity):
         self.stepfx_opacity = opacity
@@ -370,6 +370,9 @@ def iterationPostProcess(net, net_data_blob):
 
             if fx['name'] == 'bilateral_filter':
                 img2 = FX.bilateral_filter(img2, **fx['params'])
+
+            if fx['name'] == 'nd_gaussian':
+                img2 = FX.nd_gaussian(img2, **fx['params'])
 
             if fx['name'] == 'step_opacity':
                 FX.step_mixer(**fx['params'])

@@ -138,6 +138,11 @@ bilateral_filter_default = {
 	'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 30}
 }
 
+nd_gaussian_filter_default = {
+	'name': 'nd_gaussian',
+	'params': {'sigma': 0.6, 'order':0}
+}
+
 step_opacity_default = {
 	'name': 'step_opacity',
 	'params': {'opacity':1.0}
@@ -145,7 +150,8 @@ step_opacity_default = {
 
 stepfx_default = [
 	# median_blur_default,
-	bilateral_filter_default,
+	# bilateral_filter_default,
+	nd_gaussian_filter_default,
 	step_opacity_default
 ]
 
@@ -236,7 +242,12 @@ program.append({
 		},
 		inception_xform_default
 	],
-	'stepfx':stepfx_default
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.9, 'order':0}
+		}
+	]
 })
 
 program.append({

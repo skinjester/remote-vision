@@ -1540,6 +1540,11 @@ P! Controls
 P1 Exporting Images & Video
 
 
+2017-04-03 18:31:44
+added bilateral filter to stepfx list
+x bilateral filter
+x gaussian filter
+- duration_cutoff (early exit to rem cycle based on timer)
 
 
 
