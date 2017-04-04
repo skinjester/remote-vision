@@ -184,13 +184,13 @@ class MotionDetector(object):
 
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
-        ratio = float(ratio/921600)
+        ratio = float(ratio/(self.camera.width * self.camera.height))
         log.critical('ratio:{:02.3f}'.format(ratio))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
-            self.monitor_msg += 'overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
+            self.monitor_msg += ' overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
             log.critical(self.monitor_msg)
 
 
