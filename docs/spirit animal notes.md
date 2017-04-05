@@ -1709,6 +1709,8 @@ What's left?
 P1 Implement Program Bank system
 P1 Prev/Next Program Bank
 P1 Pause Seqeuncer - for demoing or live exploration through  layers or featuremap without the program change interrupting
+	- can create a dedicated bacnk for a program(s) that support this behavior
+	- 
 P1 Exporting images
 	- every octave?
 	- every new cycle?
@@ -1716,7 +1718,7 @@ P1 Exporting images
 		+ is there a way to identify completed frames in the filename?
 		+ Is it possible to export buffer2 as well?
 P1 Create and curate programs
-P1 Toggle Camera
+x Toggle Camera
 	P4 what would it take to combine the camera views? Where would that be done? How?
 P1 Reset All
 P2 Add listener definitions for unused keys
@@ -1742,6 +1744,25 @@ Webcam.set(index) will return a pointer to the current camera and update the Web
 
 2017-04-05 16:11:23
 implemented toggle camera
+
+
+2017-04-05 16:27:42
+testing what's working with image export before diving further into the program bank system
+
+
+2017-04-05 16:38:39
+getting too many chaff frames, what if I just wanted to see fully rendered frames
+or what I wanted to see only composited frames?
+
+
+2017-04-05 16:44:59
+Best place to export frames is from the same  cyclefx case that runs inception_xform. What if  thet fx hadn't been used for a program  though? Where would rendered images appear from?
+
+
+2017-04-05 16:53:16
+completed export pipeline.
+- add a control to enable/disable to finalize
+
 
 
 

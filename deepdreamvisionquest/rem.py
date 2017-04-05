@@ -291,6 +291,7 @@ class Composer(object):
                 for fx in Model.cyclefx:
                     if fx['name'] == 'inception_xform':
                         self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
+                        Viewport.export(self.buffer1)
 
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -305,6 +306,7 @@ class Composer(object):
                 if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
+
 
         return image
 
@@ -747,18 +749,13 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     # sequencer
     program_elapsed_time = time.time() - Model.program_start_time
     if program_elapsed_time > Model.program_duration:
+        # if Model.program_bank
         Model.next_program()
-
-
-    # for fx in Model.stepfx:
-    #     if fx['name'] == 'median_blur':
-    #         img2 = FX.median_blur(img2, **fx['params'])
-
 
 
 # -------
 # REM CYCLE
-# ------- 
+# -------
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
     # COOLDOWN
     # returns the camera on the first update of a new cycle 
@@ -925,11 +922,15 @@ def main():
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
 
+            # save a frame each cycle
+            # Viewport.export(Composer.buffer1)
+
+
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
             if Viewport.force_refresh:
-                #Viewport.export(Composer.buffer1)
+                Viewport.export(Composer.buffer1)
                 Viewport.force_refresh = False
         else:
             # if Viewport.save_next_frame:
