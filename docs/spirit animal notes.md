@@ -1723,6 +1723,26 @@ P2 Add listener definitions for unused keys
 P3 Take another look at motion detection. Is it possible to gate the detection behavior when the ratio is above a certain threshold?
 
 
+2017-04-05 14:06:42
+working on Toggle Camera
+
+
+2017-04-05 15:22:12
+reorganized listener function and logging. verified keypad input
+
+
+2017-04-05 15:30:15
+How do we know which camera is the current one?
+Webcam.current is the index in the camera list
+Webcam.get() return s a pointer to the current camera
+
+How do we set the current camera by index?
+Webcam.set(index) will return a pointer to the current camera and update the Webcam.current value
+
+
+2017-04-05 16:11:23
+implemented toggle camera
+
 
 
 

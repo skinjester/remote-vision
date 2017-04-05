@@ -652,30 +652,25 @@ def listener():
     # Row F
     # --------------------------------
 
-
-    # F1 key: camera1
-    if key == 190:
-        # MotionDetector.camera = Webcam.set(Device[1])
-        # MotionDetector.camera = Webcam.set(Device[0])
+    if key == 190: # F1 key: Toggle Camera
+        index = (Webcam.current + 1) % 2 # hardcoded for 2 cameras
+        MotionDetector.camera = Webcam.set(Device[index])
         log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
         return
 
-    # p key : pause/unpause motion detection
-    if key == 19:
+    if key == 19: # p key : pause/unpause motion detection
         MotionDetector.is_paused = not MotionDetector.is_paused
         if not MotionDetector.is_paused:
             MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
         log.critical('{}:{} {} {}'.format('F2',key,'P','TOGGLE MOTION'))
         return
 
-    # `(tilde) key: toggle HUD
-    if key == 96:
+    if key == 96: # `(tilde) key: toggle HUD
         Viewport.b_show_HUD = not Viewport.b_show_HUD
         log.critical('{}:{} {} {}'.format('F3',key,'`','TOGGLE HUD'))
         return
 
-    # 1 key : toggle motion detect window
-    if key == 49:
+    if key == 49: # 1 key : toggle motion detect window
         Viewport.motiondetect_log_enabled = not Viewport.motiondetect_log_enabled
         if Viewport.motiondetect_log_enabled:
             cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
@@ -686,8 +681,7 @@ def listener():
 
     # --------------------------------
 
-    # ESC: Exit
-    if key == 27:
+    if key == 27: # ESC: Exit
         log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
         Viewport.shutdown()
         return
