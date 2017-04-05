@@ -22,14 +22,15 @@ guides.append('./img/eyeballs.jpg')
 
 # this is written to by rem.py at runtime so that it points to Composer.buffer1
 # I'm using it like a scratchpad, but initializes to None
-data_img = None 
+data_img = None
 
 
-models = {}
-models['path'] = '../models'
-models['cars'] = ('cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel')
-models['googlenet'] = ('bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel')
-models['places'] = ('googlenet_places205','deploy.prototxt','places205_train_iter_2400000.caffemodel')
+models = {
+	'path': '../models',
+	'cars': ('cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'),
+	'googlenet': ('bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'),
+	'places': ('googlenet_places205','deploy.prototxt','places205_train_iter_2400000.caffemodel')
+}
 
 
 layers = [
@@ -87,22 +88,6 @@ layers = [
 	'inception_5b/pool_proj'
 ]
 
-
-def function1(param1='<empty>', param2=0):
-	print 'param1:{} param2:{}'.format(param1,param2)
-
-
-def function2(blur=3, radius=3):
-	print 'blur:{} radius:{}'.format(blur,radius)
-
-# img = Composer.buffer1
-def xform_array(amount):
-    def shiftfunc(n):
-        return int(3 * np.sin(n/10,))
-    for n in range(data_img.shape[1]): # number of rows in the image
-        data_img[:, n] = np.roll(data_img[:, n], 3*shiftfunc(n))
-    return data_img
-
 # a list of programs
 program = []
 
@@ -153,8 +138,6 @@ duration_cutoff_default = {
 	'params': {'duration':2.0}
 }
 
-
-
 stepfx_default = [
 	# median_blur_default,
 	bilateral_filter_default,
@@ -172,7 +155,7 @@ program.append({
 	'octave_scale':1.4,
 	'iteration_mult':0.5,
 	'step_mult':0.0,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_3b/5x5',
 	],
@@ -264,7 +247,7 @@ program.append({
 	'octave_scale':1.5,
 	'iteration_mult':0.1,
 	'step_mult':0.0,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_4d/5x5_reduce',
 		'inception_3b/pool',
@@ -389,7 +372,7 @@ program.append({
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
 	'step_mult':0.0,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_4d/5x5_reduce',
 		'inception_3b/pool',
@@ -515,7 +498,7 @@ program.append({
 	'octave_scale':1.2,
 	'iteration_mult':0.1,
 	'step_mult':0.00,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_4c/output',
 		'inception_4d/pool',
@@ -611,7 +594,7 @@ program.append({
 	'octave_scale':1.2,
 	'iteration_mult':0.0,
 	'step_mult':0.00,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_4d/5x5_reduce',
 		'conv2/3x3',
@@ -705,7 +688,7 @@ program.append({
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_3b/output',
 	],
@@ -742,7 +725,7 @@ program.append({
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
-	'model':'places',
+	'model':'googlenet',
 	'layers':[
 		'inception_3b/5x5',
 	],

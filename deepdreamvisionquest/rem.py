@@ -79,7 +79,7 @@ class Model(object):
         self.jitter = 320
         self.package_name = None
 
-        self.choose_model(modelkey)
+        self.choose_model(data.program[self.current_program]['model'])
         #self.set_endlayer(self.layers[self.current_layer])
         #self.set_featuremap()
         self.cyclefx = None # contains cyclefx list for current program
@@ -120,6 +120,8 @@ class Model(object):
         self.layers = data.program[index]['layers']
         self.features = data.program[index]['features']
         self.current_feature = 0;
+        self.model = data.program[index]['model']
+        self.choose_model(self.model)
         self.set_endlayer(self.layers[0])
         self.set_featuremap()
         self.cyclefx = data.program[index]['cyclefx']
@@ -542,7 +544,7 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    # log.debug('key pressed: {}'.format(key))
+    log.critical('key pressed: {}'.format(key))
 
     # Escape key: Exit
     if key == 27:
@@ -959,17 +961,12 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=2000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
-Model = Model(program_duration=5)
+Model = Model(modelkey='places', program_duration=15)
 FX = FX() #  yeah, no, maybe. not in use now though
 
 # point these things to the data.py module so it can run scripts using values defined here
 data.data_img = Composer.buffer1
 
-
-# model is googlenet unless specified otherwise
-#Model.choose_model('places')
-#Model.choose_model('cars')
-#Model.set_endlayer(data.layers[0])
 
 Model.set_program(0)
 

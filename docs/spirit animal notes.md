@@ -1637,7 +1637,7 @@ program = {
 }
 
 program = [1,2,3,4]
-
+kb
 program = [
 	[1,2,3,4],
 	[1,2,3,4]
@@ -1667,6 +1667,41 @@ program['am'].append({
 	'cyclefx':cyclefx_default,
 	'stepfx':stepfx_default
 })
+
+
+2017-04-05 00:06:19
+Programmed the USB keypad with some keyboad macros and am validating on Linux
+
+
+2017-04-05 00:30:13
+I've validated the input from the USB keypad. It works! Need to change a few function assignments to match though.
+- Toggle Camera
+- Reset All
+- Prev/Next Program Bank
+- stub in listener definitions for unassigned keys
+
+Think about the kind of logging that is most useful in realtime - in the terminal
+Motion detection status:
+floor
+delta_threshold
+current value
+Ratio
+program change
+layer change
+featuremap change
+
+How are images being saved?
+Have you tried the other network model? Is it possible to switch between them  in a program? What happens when you try?
+
+
+2017-04-05 01:11:01
+taking a quick look at how the network model is imported. It seems that its is assigned to the model instance with a keyvalue when the object is created.
+
+the choose_model() function is only called when the class is initialized
+
+
+2017-04-05 01:25:18
+Uh... wow . Swapping the model as part of aprogram change seems to work just fine. That's great! The Model class is a bit of a mess. I knew a lot less then. What will my code look like  6 months from now?
 
 
 

@@ -185,7 +185,7 @@ class MotionDetector(object):
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
         ratio = float(ratio/(self.camera.width * self.camera.height))
-        log.critical('ratio:{:02.3f}'.format(ratio))
+        log.warning('ratio:{:02.3f}'.format(ratio))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
@@ -197,7 +197,7 @@ class MotionDetector(object):
             self.delta_count = 0 # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
-            self.delta_count -= int(self.delta_count/2) 
+            self.delta_count -= int(self.delta_count/2)
             self.update_hud_log('detect','*')
             self.wasMotionDetected = True
             self.monitor_msg += ' movement started'
