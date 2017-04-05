@@ -546,102 +546,151 @@ def show_HUD(image):
 # keyboard event handler
 def listener():
     key = cv2.waitKey(1) & 0xFF
-    log.critical('key pressed: {}'.format(key))
+    # log.critical('key pressed: {}'.format(key))
 
-    # Escape key: Exit
-    if key == 27:
-        log.info('ESC: shutdown')
-        Viewport.shutdown()
+    # Row A
+    # --------------------------------
 
-    # ENTER key: save picture
-    elif key==10:
-        log.info('ENTER: save')
+    if key==10: # ENTER key: save picture
+        log.critical('{}:{} {} {}'.format('A1',key,'ENTER','SAVE IMAGE'))
         Viewport.export()
+        return
 
-    # `(tilde) key: toggle HUD
-    elif key == 96:
-        Viewport.b_show_HUD = not Viewport.b_show_HUD
-        log.info('` (tilde): toggle HUD: {}'.format(Viewport.b_show_HUD))
+    if key==32: # SPACE
+        log.critical('{}:{} {} {}'.format('A2',key,'SPACE','***'))
 
-    # = key (equals): increase motion threshold
-    elif key == 61:
-        MotionDetector.floor += 1000
-        update_HUD_log('floor',MotionDetector.floor)
-        log.info('+ (plus): increase motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
+    if key==80: # HOME
+        log.critical('{}:{} {} {}'.format('A3',key,'HOME','***'))
+        return
 
-    # _ key (underscore) : decrease motion threshold
-    elif key == 45:
+    if key==87: # HOME
+        log.critical('{}:{} {} {}'.format('A4',key,'END','RESET'))
+        return
+
+    # Row B
+    # --------------------------------
+
+    if key==85: # PAGE UP: Previous Bank
+        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-'))
+        return
+
+    if key==86: # PAGE DOWN: NEXT Bank
+        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','BANK+'))
+        return
+
+    if key == 81: # left-arrow key: previous program
+        log.critical('{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
+        Model.prev_program()
+        return
+
+    if key == 83: # right-arrow key: next program
+        log.critical('{}:{} {} {}'.format('B4',key,'ARROWR','PROGRAM+'))
+        Model.next_program()
+        return
+
+    # Row C
+    # --------------------------------
+    if key==194: # F5
+        log.critical('{}:{} {} {}'.format('C1',key,'F5','***'))
+        return
+
+    if key==195: # F6
+        log.critical('{}:{} {} {}'.format('C2',key,'F6','***'))
+        return
+
+    if key == 122: # z key: next network layer
+        log.critical('{}:{} {} {}'.format('C3',key,'Z','LAYER-'))
+        Model.prev_layer()
+        return
+
+    if key == 120: # x key: previous network layer
+        log.critical('{}:{} {} {}'.format('C4',key,'X','LAYER+'))
+        Model.next_layer()
+        return
+
+    # Row D
+    # --------------------------------
+
+    elif key==196: # F7
+        log.critical('{}:{} {} {}'.format('D1',key,'F7','***'))
+
+    elif key==197: # F8
+        log.critical('{}:{} {} {}'.format('D2',key,'F8','***'))
+
+
+    elif key == 44: # , key : previous featuremap
+        log.critical('{}:{} {} {}'.format('D3',key,',','Feature-'))
+        Model.prev_feature()
+
+    elif key == 46: # . key : next featuremap
+        log.critical('{}:{} {} {}'.format('D4',key,'.','Feature+'))
+        Model.next_feature()
+
+    # Row E
+    # --------------------------------
+
+    if key==91: # [
+        log.critical('{}:{} {} {}'.format('E1',key,'[','***'))
+
+    if key==93: # ]
+        log.critical('{}:{} {} {}'.format('E2',key,']','***'))
+
+    if key == 45: # _ key (underscore) : decrease motion threshold
         MotionDetector.floor -= 1000
         if MotionDetector.floor < 1:
             MotionDetector.floor = 1
         update_HUD_log('floor',MotionDetector.floor)
-        log.info('- (minus): decrease motion threshold MotionDetector.floor:{}'.format(MotionDetector.floor))
+        log.critical('{}:{} {} {}'.format('E3',key,'-','FLOOR-'))
+        return
 
-    # , key : previous featuremap
-    elif key == 44:
-        log.info(', (comma): previous featuremap')
-        Model.prev_feature()
+    if key == 61: # = key (equals): increase motion threshold
+        MotionDetector.floor += 1000
+        update_HUD_log('floor',MotionDetector.floor)
+        log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
+        return
 
-    # . key : next featuremap
-    elif key == 46:
-        log.info('. (period) next featuremap')
-        Model.next_feature()
+    # Row F
+    # --------------------------------
+
+
+    # F1 key: camera1
+    if key == 190:
+        # MotionDetector.camera = Webcam.set(Device[1])
+        # MotionDetector.camera = Webcam.set(Device[0])
+        log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
+        return
+
+    # p key : pause/unpause motion detection
+    if key == 19:
+        MotionDetector.is_paused = not MotionDetector.is_paused
+        if not MotionDetector.is_paused:
+            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+        log.critical('{}:{} {} {}'.format('F2',key,'P','TOGGLE MOTION'))
+        return
+
+    # `(tilde) key: toggle HUD
+    if key == 96:
+        Viewport.b_show_HUD = not Viewport.b_show_HUD
+        log.critical('{}:{} {} {}'.format('F3',key,'`','TOGGLE HUD'))
+        return
 
     # 1 key : toggle motion detect window
-    elif key == 49:
+    if key == 49:
         Viewport.motiondetect_log_enabled = not Viewport.motiondetect_log_enabled
         if Viewport.motiondetect_log_enabled:
             cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
         else:
             cv2.destroyWindow('delta')
-        log.info('(1): toggle motion detect window {}'.format(Viewport.motiondetect_log_enabled))
+        log.critical('{}:{} {} {}'.format('F4',key,'1','MOTION MONITOR'))
+        return
 
-    # p key : pause/unpause motion detection
-    elif key == 112:
-        MotionDetector.is_paused = not MotionDetector.is_paused
-        log.info('(p) pause motion detection {}'.format(MotionDetector.is_paused))
-        if not MotionDetector.is_paused:
-            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+    # --------------------------------
 
-    # x key: previous network layer
-    elif key == 120:
-        log.info('(x): next network layer')
-        Model.next_layer()
-
-    # z key: next network layer
-    elif key == 122:
-        log.info('(z): previous network layer')
-        Model.prev_layer()
-
-    # right-arrow key: next program
-    elif key == 83:
-        log.info('(right-arrow): next program')
-        Model.next_program()
-
-    # left-arrow key: previous program
-    elif key == 81:
-        log.info('(left-arrow): previous program')
-        Model.prev_program()
-
-    # F1 key: camera1
-    elif key == 190:
-        log.warning('(F1): switch to front camera, Device:{}'.format(Device[1]))
-        # Viewport.force_refresh = True
-        MotionDetector.camera = Webcam.set(Device[1])
-
-    # F2 key: camera1
-    elif key == 191:
-        log.warning('(F2): switch to rear camera, Device:{}'.format(Device[0]))
-        # Webcam.set(1)
-        # Viewport.force_refresh = True
-        MotionDetector.camera = Webcam.set(Device[0])
-
-    # F3 key: test Viewport.force_refresh
-    elif key == 192:
-        log.warning('(F3): Viewport.force_refresh()')
-        # Webcam.set(1)
-        # Viewport.force_refresh = True
-        Viewport.refresh()
+    # ESC: Exit
+    if key == 27:
+        log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
+        Viewport.shutdown()
+        return
 
 
 # a couple of utility functions for converting to and from Caffe's input image layout

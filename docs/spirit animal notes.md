@@ -1544,7 +1544,7 @@ P1 Exporting Images & Video
 added bilateral filter to stepfx list
 x bilateral filter
 x gaussian filter
-- duration_cutoff (early exit to rem cycle based on timer)
+x duration_cutoff (early exit to rem cycle based on timer)
 
 
 2017-04-03 19:28:45
@@ -1702,6 +1702,26 @@ the choose_model() function is only called when the class is initialized
 
 2017-04-05 01:25:18
 Uh... wow . Swapping the model as part of aprogram change seems to work just fine. That's great! The Model class is a bit of a mess. I knew a lot less then. What will my code look like  6 months from now?
+
+
+2017-04-05 01:56:48
+What's left?
+P1 Implement Program Bank system
+P1 Prev/Next Program Bank
+P1 Pause Seqeuncer - for demoing or live exploration through  layers or featuremap without the program change interrupting
+P1 Exporting images
+	- every octave?
+	- every new cycle?
+	- every completed frame?
+		+ is there a way to identify completed frames in the filename?
+		+ Is it possible to export buffer2 as well?
+P1 Create and curate programs
+P1 Toggle Camera
+	P4 what would it take to combine the camera views? Where would that be done? How?
+P1 Reset All
+P2 Add listener definitions for unused keys
+P3 Take another look at motion detection. Is it possible to gate the detection behavior when the ratio is above a certain threshold?
+
 
 
 
