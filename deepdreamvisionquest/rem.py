@@ -44,7 +44,7 @@ class Display(object):
 
 
 class Model(object):
-    def __init__(self, modelkey='googlenet', current_layer=0, program_duration=10):
+    def __init__(self, current_layer=0, program_duration=10):
         self.guide_features = None
         self.net = None
         self.net_fn = None
@@ -107,6 +107,8 @@ class Model(object):
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+
+        update_HUD_log('model',self.caffemodel)
 
     def set_program(self, index):
         self.package_name = data.program[index]['name']
@@ -799,6 +801,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('threshold',thresholdmsg)
             update_HUD_log('floor',floormsg)
 
+
         # probably temp? export each completed iteration
         # Viewport.export(Composer.buffer1)
 
@@ -961,8 +964,8 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=2000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
-Model = Model(modelkey='places', program_duration=15)
-FX = FX() #  yeah, no, maybe. not in use now though
+Model = Model(program_duration=15)
+FX = FX()
 
 # point these things to the data.py module so it can run scripts using values defined here
 data.data_img = Composer.buffer1
