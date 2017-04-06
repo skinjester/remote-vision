@@ -227,14 +227,14 @@ class Viewport(object):
         #     self.export(image)
 
     def export(self,image=None):
-        return
-        # if image is None:
-        #     image = self.image
-        # make_sure_path_exists(Viewport.username)
-        # export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
-        # savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
-        # #tweet(export_path)
+        # return
+        if image is None:
+            image = self.image
+        make_sure_path_exists(Viewport.username)
+        export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
+        savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+        #tweet(export_path)
 
     # forces new cycle with new camera image
     def refresh(self):
@@ -1002,7 +1002,7 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=7000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
-Model = Model(program_duration=5000)
+Model = Model(program_duration=30)
 FX = FX()
 
 Model.set_program(0)

@@ -146,6 +146,494 @@ stepfx_default = [
 	# duration_cutoff_default
 ]
 
+# ___ Initial program ___
+
+program.append({
+	'name':'geo',
+	'iterations':10,
+	'step_size':3.0,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'model':'googlenet',
+	'layers':[
+		'inception_3b/5x5',
+	],
+	'features':[-1],
+	'cyclefx':cyclefx_default,
+	'stepfx':[
+		bilateral_filter_default,
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':2.0}
+		}
+	]
+})
+
+
+program.append({
+	'name':'world of aspiration',
+	'iterations':50,
+	'step_size':3,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.1,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4e/5x5_reduce',
+	],
+	'features':[30],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.02, 'min_scale':1.2, 'max_scale':1.6}
+		},
+		{
+			'name': 'inception_xform',
+			'params': {'scale':0.05}
+		},
+		xform_array_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.5, 'order':0}
+		# },
+		{
+			'name': 'median_blur',
+			'params': {'kernel_shape':5}
+		},
+		# {
+		# 	'name': 'bilateral_filter',
+		# 	'params': {'radius': 10, 'sigma_color':30, 'sigma_xy': 30}
+		# }
+	]
+})
+
+
+program.append({
+	'name':'spiderman',
+	'iterations':10,
+	'step_size':2.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.1,
+	'step_mult':0.02,
+	'model':'places',
+	'layers':[
+		'inception_4a/3x3',
+	],
+	'features':[12],
+	'cyclefx':cyclefx_default,
+	'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 30}
+		},
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+	]
+})
+
+program.append({
+	'name':'Bridges',
+	'iterations':10,
+	'step_size':2.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'places',
+	'layers':[
+		'inception_4d/5x5_reduce',
+	],
+	'features':[15],
+	'cyclefx':cyclefx_default,
+	'stepfx':stepfx_default
+})
+
+program.append({
+	'name':'Cars',
+	'iterations':10,
+	'step_size':2.0,
+	'octaves':5,
+	'octave_cutoff':4,
+	'octave_scale':1.3,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':['inception_4c/3x3_reduce'],
+	'features':[11],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.05, 'min_scale':1.3, 'max_scale':1.7}
+		},
+		inception_xform_default,
+		{
+			'name': 'xform_array',
+			'params': {'amplitude':10, 'wavelength':100}
+		}
+
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.5, 'order':0}
+		},
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':10, 'sigma_xy': 10}
+		},
+	]
+})
+
+
+program.append({
+	'name':'sphere',
+	'iterations':60,
+	'step_size':1.0,
+	'octaves':5,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/3x3_reduce',
+	],
+	'features':[8],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':10, 'sigma_xy': 10}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		},
+	]
+})
+
+
+program.append({
+	'name':'Flowers on Mars`',
+	'iterations':10,
+	'step_size':2.0,
+	'octaves':6,
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.05,
+	'model':'googlenet',
+	'layers':[
+		'inception_3b/pool',
+	],
+	'features':[16],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',`
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 17, 'sigma_color':30, 'sigma_xy': 60}
+		},
+	]
+})
+
+program.append({
+	'name':'dysonspherel',
+	'iterations':30,
+	'step_size':2.0,
+	'octaves':5,
+	'octave_cutoff':4,
+	'octave_scale':1.6,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'places',
+	'layers':[
+		'inception_5a/5x5_reduce',
+	],
+	'features':[8],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',`
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		},
+		{
+			'name': 'step_opacity',
+			'params': {'opacity':0.5}
+		}
+
+	]
+})
+
+program.append({
+	'name':'hifi-featuremap',
+	'iterations':20,
+	'step_size':1.5,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'model':'places',
+	'layers':[
+		'inception_4b/3x3_reduce'
+	],
+	'features':[-1],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
+program.append({
+	'name':'City Lights',
+	'iterations':0,
+	'step_size':1.5,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'model':'places',
+	'layers':[
+		'inception_4a/3x3',
+	],
+	'features':[-1],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
+program.append({
+	'name':'Pelicane',
+	'iterations':20,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_5b/1x1',
+	],
+	'features':[55],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
+
+program.append({
+	'name':'superglam',
+	'iterations':10,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.02,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/1x1',
+	],
+	'features':[88],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		},
+		median_blur_default
+	]
+})
+
+program.append({
+	'name':'Pelorat',
+	'iterations':20,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/1x1',
+	],
+	'features':[105],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.4, 'order':0}
+		# },
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
+program.append({
+	'name':'Sailing Into The West',
+	'iterations':20,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.7,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/1x1'
+	],
+	'features':[10],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.01, 'min_scale':1.5, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
 
 program.append({
 	'name':'Gnomicon',
@@ -157,8 +645,10 @@ program.append({
 	'iteration_mult':0.0,
 	'step_mult':0.01,
 	'model':'googlenet',
-	'layers':layers,
-	'features':range(-1,32),
+	'layers':[
+		'inception_4d/5x5_reduce'
+	],
+	'features':[31],
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
@@ -261,29 +751,4 @@ program.append({
 	]
 })
 
-# ___ Initial program ___
-
-program.append({
-	'name':'geo',
-	'iterations':10,
-	'step_size':3.0,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/5x5',
-	],
-	'features':[-1],
-	'cyclefx':cyclefx_default,
-	'stepfx':[
-		bilateral_filter_default,
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':2.0}
-		}
-	]
-})
 
