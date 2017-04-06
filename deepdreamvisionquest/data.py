@@ -447,42 +447,6 @@ program.append({
 	]
 })
 
-program.append({
-	'name':'City Lights',
-	'iterations':0,
-	'step_size':1.5,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'model':'places',
-	'layers':[
-		'inception_4a/3x3',
-	],
-	'features':[-1],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		# {
-		# 	'name': 'nd_gaussian',
-		# 	'params': {'sigma': 0.4, 'order':0}
-		# },
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
-		},
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
-		}
-	]
-})
 
 program.append({
 	'name':'Pelicane',
