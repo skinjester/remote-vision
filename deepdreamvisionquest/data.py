@@ -94,12 +94,12 @@ program = []
 # defaults provided as a convenience
 xform_array_default = {
 	'name': 'xform_array',
-	'params': {'amplitude':10, 'wavelength':100}
+	'params': {'amplitude':20, 'wavelength':100}
 }
 
 octave_scaler_default = {
 	'name': 'octave_scaler',
-	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.6}
+	'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.7}
 }
 
 inception_xform_default = {
@@ -143,8 +143,51 @@ stepfx_default = [
 	bilateral_filter_default,
 	# nd_gaussian_filter_default,
 	# step_opacity_default,
-	duration_cutoff_default
+	# duration_cutoff_default
 ]
+
+program.append({
+	'name':'pastel mushroom world',
+	'iterations':50,
+	'step_size':3,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.1,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4e/5x5_reduce',
+	],
+	'features':[30],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.02, 'min_scale':1.2, 'max_scale':1.6}
+		},
+		{
+			'name': 'inception_xform',
+			'params': {'scale':0.05}
+		},
+		xform_array_default
+	],
+	'stepfx':[
+		# {
+		# 	'name': 'nd_gaussian',
+		# 	'params': {'sigma': 0.5, 'order':0}
+		# },
+		{
+			'name': 'median_blur',
+			'params': {'kernel_shape':5}
+		},
+		# {
+		# 	'name': 'bilateral_filter',
+		# 	'params': {'radius': 10, 'sigma_color':30, 'sigma_xy': 30}
+		# }
+	]
+})
+
+# ___ Initial program ___
 
 program.append({
 	'name':'geo',
@@ -153,765 +196,20 @@ program.append({
 	'octaves':4,
 	'octave_cutoff':4,
 	'octave_scale':1.4,
-	'iteration_mult':0.5,
+	'iteration_mult':0.0,
 	'step_mult':0.0,
 	'model':'googlenet',
 	'layers':[
 		'inception_3b/5x5',
 	],
-	'features':[-1,0,1],
+	'features':[-1],
 	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'lofi-featuremap-superstep',
-	'iterations':20,
-	'step_size':3,
-	'octaves':5,
-	'octave_cutoff':4,
-	'octave_scale':1.7,
-	'iteration_mult':0.25,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.6, 'max_scale':1.8}
-		},
-		inception_xform_default
-	],
 	'stepfx':[
+		bilateral_filter_default,
 		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.9, 'order':0}
-		},
-		duration_cutoff_default
+			'name': 'duration_cutoff',
+			'params': {'duration':2.0}
+		}
 	]
 })
 
-program.append({
-	'name':'lofi-featuremap-wider',
-	'iterations':10,
-	'step_size':2,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.1,
-	'step_mult':0.0,
-	'model':'googlenet',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-
-program.append({
-	'name':'lofi-featuremap',
-	'iterations':10,
-	'step_size':2,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.5,
-	'step_mult':0.0,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'hifi-featuremap',
-	'iterations':20,
-	'step_size':1.5,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'model':'googlenet',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'hifi-featuremap-iter-high',
-	'iterations':100,
-	'step_size':1.5,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-
-
-program.append({
-	'name':'wild',
-	'iterations':40,
-	'step_size':1.0,
-	'octaves':8,
-	'octave_cutoff':6,
-	'octave_scale':1.2,
-	'iteration_mult':0.1,
-	'step_mult':0.00,
-	'model':'googlenet',
-	'layers':[
-		'inception_4c/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'libraryofbabel',
-	'iterations':30,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'conv2/3x3',
-		'conv2/3x3_reduce',
-		'conv2/norm2',
-		'inception_3a/1x1',
-		'inception_3a/3x3',
-		'inception_3b/5x5',
-		'inception_3b/output',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'smallerlibraryofbabel',
-	'iterations':50,
-	'step_size':4.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.2,
-	'iteration_mult':0.0,
-	'step_mult':0.00,
-	'model':'googlenet',
-	'layers':[
-		'inception_4d/5x5_reduce',
-		'conv2/3x3',
-		'conv2/3x3_reduce',
-		'conv2/norm2',
-		'inception_3a/1x1',
-		'inception_3a/3x3',
-		'inception_3b/5x5',
-		'inception_3b/output',
-		'inception_3b/pool',
-		'inception_4a/1x1',
-		'inception_4a/3x3',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5',
-		'inception_4d/5x5_reduce',
-		'inception_4d/output',
-		'inception_4d/pool',
-		'inception_4e/1x1',
-		'inception_4e/3x3',
-		'inception_4e/3x3_reduce',
-		'inception_4e/5x5',
-		'inception_4e/5x5_reduce',
-		'inception_4e/output',
-		'inception_4e/pool',
-		'inception_4e/pool_proj',
-		'inception_5a/1x1',
-		'inception_5a/3x3',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5',
-		'inception_5a/5x5_reduce',
-		'inception_5a/output',
-		'inception_5a/pool',
-		'inception_5b/1x1',
-		'inception_5b/3x3',
-		'inception_5b/3x3_reduce',
-		'inception_5b/5x5',
-		'inception_5b/5x5_reduce',
-		'inception_5b/output',
-		'inception_5b/pool',
-		'inception_5b/pool_proj'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':[
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 13, 'sigma_color':30, 'sigma_xy': 100}
-		},
-	]
-})
-
-program.append({
-	'name':'ghost1',
-	'iterations':10,
-	'step_size':4.0,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.05,
-	'model':'places',
-	'layers':[
-		'inception_3b/pool',
-		'inception_5a/3x3_reduce',
-		'inception_5a/5x5'
-	],
-	'features':range(-1,96),
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost2',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/output',
-	],
-	'features':[27],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-
-program.append({
-	'name':'ghost3',
-	'iterations':20,
-	'step_size':2.0,
-	'octaves':8,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_3a/3x3',
-	],
-	'features':[21],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost4',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/5x5',
-	],
-	'features':[21],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost5',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4e/output',
-	],
-	'features':[24],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost6',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4a/3x3',
-	],
-	'features':[15],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost7',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4a/3x3',
-	],
-	'features':[12],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost8',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_3b/output',
-	],
-	'features':[11],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost9',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-	],
-	'features':[11],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost10',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-	],
-	'features':[15],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost11',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-	],
-	'features':[17],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost12',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-	],
-	'features':[2],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-program.append({
-	'name':'ghost13',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4d/5x5_reduce',
-	],
-	'features':[11],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})
-
-
-
-program.append({
-	'name':'lofi',
-	'iterations':10,
-	'step_size':8.0,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.4,
-	'iteration_mult':0.5,
-	'step_mult':0.0,
-	'model':'places',
-	'layers':[
-		'inception_4c/output'
-	],
-	'features':[1],
-	'cyclefx':cyclefx_default,
-	'stepfx':stepfx_default
-})

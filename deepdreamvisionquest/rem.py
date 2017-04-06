@@ -153,6 +153,7 @@ class Model(object):
     def set_featuremap(self):
         Viewport.force_refresh = True
         featuremap = self.features[self.current_feature]
+        log.critical('featuremap:{}'.format(featuremap))
         update_HUD_log('featuremap',featuremap)
 
     def prev_feature(self):
@@ -189,11 +190,10 @@ class Viewport(object):
     def __init__(self, window_name, username, listener):
         self.window_name = window_name
         self.b_show_HUD = False
-        self.keypress_mult = 0 # accelerate value changes when key held
+        self.keypress_mult = 3 # accelerate value changes when key held
         self.b_show_stats = False
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
-        self.save_next_frame = False
         self.username = username
         self.listener = listener
         self.force_refresh = True
@@ -227,12 +227,13 @@ class Viewport(object):
         #     self.export(image)
 
     def export(self,image=None):
-        if image is None:
-            image = self.image
-        make_sure_path_exists(Viewport.username)
-        export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
-        savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
+        return
+        # if image is None:
+        #     image = self.image
+        # make_sure_path_exists(Viewport.username)
+        # export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
+        # savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
         # #tweet(export_path)
 
     # forces new cycle with new camera image
@@ -302,7 +303,7 @@ class Composer(object):
 
             if self.is_compositing_enabled:
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.5
+                self.opacity = self.opacity * 0.8
                 if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -344,7 +345,12 @@ class FX(object):
         # octave scaling cycle each rem cycle, maybe
         # if (int(time.time()) % 2):
         model.octave_scale += step * self.direction
-        if model.octave_scale > max_scale or model.octave_scale < min_scale:
+        # hackish, but prevents values from getting stuck above or beneath min/max
+        if model.octave_scale < min_scale:
+            model.octave_scale = min_scale
+        if model.octave_scale > max_scale:
+            model.octave_scale = max_scale
+        if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
         log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
@@ -638,7 +644,7 @@ def listener():
         log.critical('{}:{} {} {}'.format('E2',key,']','***'))
 
     if key == 45: # _ key (underscore) : decrease motion threshold
-        MotionDetector.floor -= 1000
+        MotionDetector.floor -= 1000 * Viewport.keypress_mult
         if MotionDetector.floor < 1:
             MotionDetector.floor = 1
         update_HUD_log('floor',MotionDetector.floor)
@@ -646,7 +652,7 @@ def listener():
         return
 
     if key == 61: # = key (equals): increase motion threshold
-        MotionDetector.floor += 1000
+        MotionDetector.floor += 1000 * Viewport.keypress_mult
         update_HUD_log('floor',MotionDetector.floor)
         log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
         return
@@ -922,20 +928,13 @@ def main():
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
 
-            # save a frame each cycle
-            # Viewport.export(Composer.buffer1)
-
-
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
+            # commenting out this block allows unfiltered signal only
             if Viewport.force_refresh:
                 Viewport.export(Composer.buffer1)
                 Viewport.force_refresh = False
-        else:
-            # if Viewport.save_next_frame:
-            #     Viewport.export()
-            Viewport.save_next_frame = False
 
 
         # a bit later
@@ -944,7 +943,6 @@ def main():
         duration_msg = '{:.2f}s'.format(difference)
         update_HUD_log('cycle_time',duration_msg) # HUD
         log.info('cycle time: {}\n{}'.format(duration_msg,'-'*80))
-        #Viewport.save_next_frame = True
         now = time.time() # the new now
 
 
@@ -1005,15 +1003,11 @@ Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
 
 Webcam = Cameras(source=Camera, current=Device[1])
 Display = Display(width=w, height=h, camera=Webcam.get())
-MotionDetector = MotionDetector(floor=2000, camera=Webcam.get(), log=update_HUD_log)
+MotionDetector = MotionDetector(floor=7000, camera=Webcam.get(), log=update_HUD_log)
 Viewport = Viewport('deepdreamvisionquest','dev', listener)
 Composer = Composer()
-Model = Model(program_duration=15)
+Model = Model(program_duration=5000)
 FX = FX()
-
-# point these things to the data.py module so it can run scripts using values defined here
-data.data_img = Composer.buffer1
-
 
 Model.set_program(0)
 

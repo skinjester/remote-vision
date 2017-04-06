@@ -1761,8 +1761,32 @@ Best place to export frames is from the same  cyclefx case that runs inception_x
 
 2017-04-05 16:53:16
 completed export pipeline.
-- add a control to enable/disable to finalize
+- add a control to enable/disable feature to finalize
+- add HUD label for "exported: [filename]"
 
+2017-04-06 00:08:18
+It's close. You need to think about simplifying and finishing. Great beta test earlier this evening w Scott Storrs and Aileen. Some kind words, but more importantly - the chanc eto see how the current system behave in a public situation. Some outcomes
+
+1. Dont expose anything but camera selection on the control panel
+	Maybe also the HUD
+	And pause motion detect
+	The rest of the controls stay assigned to the keyboard, which is easily accessible
+	Doing so requires me to repogram the USB keypad
+
+2. Keep every program in bounds of current parameters
+	Reset parameters when switching programs (pretty suire this is already happening)
+
+
+2017-04-06 01:14:40
+Disabled image export for the moment. Dont forget to re-enable it
+
+
+2017-04-06 01:33:31
+interesting that I can make some changes to the placement of the  the inception xform effect within the Composer update function. 
+
+
+2017-04-06 01:35:46
+I've moved the inceptionxform effect to the is_compositing enabled path way. Moving that block of functionality makes the transformation happen at different "pahases" of the update. I.m not entirely clear why. Just an intuition. Its looking very interesting placed wher it is
 
 
 

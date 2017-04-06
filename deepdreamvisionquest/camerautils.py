@@ -239,8 +239,6 @@ class MotionDetector(object):
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
         value = int(sum(self.history)/(self.history_queue_length))
-        # if value < self.floor:
-        #     value += self.floor
         return value
 
     def force_detection(self):
@@ -256,8 +254,3 @@ class MotionDetector(object):
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()
         self.t_plus = cv2.blur(self.t_plus,(20,20))
-
-        # if self.forced:
-        #     self.forced = False
-        #     return
-
