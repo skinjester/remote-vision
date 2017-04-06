@@ -147,7 +147,45 @@ stepfx_default = [
 ]
 
 program.append({
-	'name':'pastel mushroom world',
+	'name':'Shpongled',
+	'iterations':20,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.7,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4b/5x5_reduce'
+	],
+	'features':[7],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.01, 'min_scale':1.5, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		},
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':10.0}
+		}
+	]
+})
+
+
+program.append({
+	'name':'world of aspiration',
 	'iterations':50,
 	'step_size':3,
 	'octaves':4,

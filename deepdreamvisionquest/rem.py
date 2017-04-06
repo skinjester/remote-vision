@@ -244,7 +244,7 @@ class Viewport(object):
 
         # this would be a good place for color processing that
         # only affects the output (i.e. not cycled back into the net)
-        #image = vignette(image,300)
+        # image = vignette(image,400)
         if self.b_show_HUD:
             image = show_HUD(image)
         return image
@@ -346,10 +346,6 @@ class FX(object):
         # if (int(time.time()) % 2):
         model.octave_scale += step * self.direction
         # hackish, but prevents values from getting stuck above or beneath min/max
-        if model.octave_scale < min_scale:
-            model.octave_scale = min_scale
-        if model.octave_scale > max_scale:
-            model.octave_scale = max_scale
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
