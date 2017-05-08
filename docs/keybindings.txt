@@ -1,4 +1,4 @@
-A1  10      Enter
+A1  10      Enter    Save Image (deprecated)
 A2  32      Space
 A3  80      Home
 A4  87      End      Reset

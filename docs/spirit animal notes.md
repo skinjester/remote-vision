@@ -1786,8 +1786,28 @@ interesting that I can make some changes to the placement of the  the inception 
 
 
 2017-04-06 01:35:46
-I've moved the inceptionxform effect to the is_compositing enabled path way. Moving that block of functionality makes the transformation happen at different "pahases" of the update. I.m not entirely clear why. Just an intuition. Its looking very interesting placed wher it is
+I've moved the inceptionxform effect to the is_compositing enabled path way. Moving that block of functionality makes the transformation happen at different "pahases" of the update. I.m not entirely clear why. Just an intuition. Its looking very interesting placed where it is.  more fluid
 
+
+
+2017-04-06 16:34:05
+setting up at the  Hammer Theater in San Jose
+
+
+2017-05-07 17:57:03
+I gained some insights at LASTFEST2017, it was the most nuanced and interactive show thus far. There was a big payoff for staging it with dedicated gear, as I did. One unexpected consequences of that is that I now have a storage space - needed somewhere to stor ethe gear for easy deployment
+.
+
+I'm back to the project after some time away. Will organize my goals and thoughts a bit later but here are the outcomes I achieved
+
+- invitation to speak at Piero Scaruffi LAZER talk in July
+- private show being planned here with primary goal being promotion and a night of hallucinations that I want to turn into a portrait series.
+
+- next steps?
+- many more possibilities than I'd realized, maybe a bit afraid to say it out loud?
+
+2017-05-07 18:02:11
+stepping back into python and studying multiprocessing again.
 
 
 

@@ -148,6 +148,8 @@ stepfx_default = [
 
 # ___ Initial program ___
 
+
+
 program.append({
 	'name':'geo',
 	'iterations':10,
@@ -169,48 +171,6 @@ program.append({
 			'name': 'duration_cutoff',
 			'params': {'duration':2.0}
 		}
-	]
-})
-
-
-program.append({
-	'name':'world of aspiration',
-	'iterations':50,
-	'step_size':3,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.1,
-	'step_mult':0.01,
-	'model':'googlenet',
-	'layers':[
-		'inception_4e/5x5_reduce',
-	],
-	'features':[30],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.02, 'min_scale':1.2, 'max_scale':1.6}
-		},
-		{
-			'name': 'inception_xform',
-			'params': {'scale':0.05}
-		},
-		xform_array_default
-	],
-	'stepfx':[
-		# {
-		# 	'name': 'nd_gaussian',
-		# 	'params': {'sigma': 0.5, 'order':0}
-		# },
-		{
-			'name': 'median_blur',
-			'params': {'kernel_shape':5}
-		},
-		# {
-		# 	'name': 'bilateral_filter',
-		# 	'params': {'radius': 10, 'sigma_color':30, 'sigma_xy': 30}
-		# }
 	]
 })
 
@@ -298,7 +258,7 @@ program.append({
 
 
 program.append({
-	'name':'sphere',
+	'name':'pebble beach yall',
 	'iterations':60,
 	'step_size':1.0,
 	'octaves':5,
@@ -335,41 +295,10 @@ program.append({
 })
 
 
-program.append({
-	'name':'Flowers on Mars`',
-	'iterations':10,
-	'step_size':2.0,
-	'octaves':6,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.05,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/pool',
-	],
-	'features':[16],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		# {
-		# 	'name': 'nd_gaussian',`
-		# 	'params': {'sigma': 0.4, 'order':0}
-		# },
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 17, 'sigma_color':30, 'sigma_xy': 60}
-		},
-	]
-})
+
 
 program.append({
-	'name':'dysonspherel',
+	'name':'spaceship swimming pool',
 	'iterations':30,
 	'step_size':2.0,
 	'octaves':5,
@@ -670,48 +599,6 @@ program.append({
 			'name': 'duration_cutoff',
 			'params': {'duration':10.0}
 		}
-	]
-})
-
-
-program.append({
-	'name':'world of aspiration',
-	'iterations':50,
-	'step_size':3,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.1,
-	'step_mult':0.01,
-	'model':'googlenet',
-	'layers':[
-		'inception_4e/5x5_reduce',
-	],
-	'features':[30],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.02, 'min_scale':1.2, 'max_scale':1.6}
-		},
-		{
-			'name': 'inception_xform',
-			'params': {'scale':0.05}
-		},
-		xform_array_default
-	],
-	'stepfx':[
-		# {
-		# 	'name': 'nd_gaussian',
-		# 	'params': {'sigma': 0.5, 'order':0}
-		# },
-		{
-			'name': 'median_blur',
-			'params': {'kernel_shape':5}
-		},
-		# {
-		# 	'name': 'bilateral_filter',
-		# 	'params': {'radius': 10, 'sigma_color':30, 'sigma_xy': 30}
-		# }
 	]
 })
 

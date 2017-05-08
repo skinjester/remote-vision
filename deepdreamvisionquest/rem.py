@@ -198,9 +198,11 @@ class Viewport(object):
         self.listener = listener
         self.force_refresh = True
         self.image = None
+        self.time_counter = 0
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     def show(self, image):
+        self.time_counter += 1
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
 
@@ -219,6 +221,9 @@ class Viewport(object):
         self.listener()
 
         # GRB: temp structure for saving fully rendered frames
+        if self.time_counter > 10:
+            self.export(image)
+            self.time_counter = 0
         self.image = image
 
         # export image if condition is met
@@ -226,10 +231,7 @@ class Viewport(object):
         #     self.save_next_frame = False
         #     self.export(image)
 
-    def export(self,image=None):
-        # return
-        if image is None:
-            image = self.image
+    def export(self,image):
         make_sure_path_exists(Viewport.username)
         export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
         savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -292,7 +294,7 @@ class Composer(object):
                 for fx in Model.cyclefx:
                     if fx['name'] == 'inception_xform':
                         self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
-                        Viewport.export(self.buffer1)
+                # Viewport.export(self.buffer1)
 
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -307,7 +309,6 @@ class Composer(object):
                 if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
-
 
         return image
 
@@ -907,6 +908,7 @@ def main():
         log.info('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         Composer.is_new_cycle = True
+        # Viewport.export(Composer.buffer1)
         Viewport.show(Composer.buffer1)
         MotionDetector.process()
         if MotionDetector.wasMotionDetected:
@@ -927,9 +929,10 @@ def main():
             # kicks off rem sleep - will begin continual iteration of the image through the model
             Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
 
+            # Viewport.export(Composer.buffer1)
+
             # commenting out this block allows unfiltered signal only
             if Viewport.force_refresh:
-                Viewport.export(Composer.buffer1)
                 Viewport.force_refresh = False
 
 
@@ -993,14 +996,14 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
-    flip_h=False, flip_v=True, gamma=0.85).start())
+    flip_h=False, flip_v=False, gamma=0.8).start())
 Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
-    flip_h=False, flip_v=False, gamma=1.0).start())
+    flip_h=False, flip_v=False, gamma=0.8).start())
 
 Webcam = Cameras(source=Camera, current=Device[1])
 Display = Display(width=w, height=h, camera=Webcam.get())
-MotionDetector = MotionDetector(floor=7000, camera=Webcam.get(), log=update_HUD_log)
-Viewport = Viewport('deepdreamvisionquest','dev', listener)
+MotionDetector = MotionDetector(floor=12000, camera=Webcam.get(), log=update_HUD_log)
+Viewport = Viewport('deepdreamvisionquest','LASTFEST', listener)
 Composer = Composer()
 Model = Model(program_duration=30)
 FX = FX()
