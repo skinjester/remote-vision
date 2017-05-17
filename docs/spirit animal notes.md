@@ -1809,9 +1809,18 @@ I'm back to the project after some time away. Will organize my goals and thought
 2017-05-07 18:02:11
 stepping back into python and studying multiprocessing again.
 
+2017-05-16 20:39:15
+Feeling so blocked by upcoming talk and the private show I've been thinking about
+How to stop feeling blocked? Do something now.
+- work on my talking points
+- collate current work
+- update deepdreamvisionquest.com
+- contact Piero S to discuss upcoming event and my topic
+- create guest list for event
+- transfer equipment from storage
 
-
-
+2017-05-16 20:53:15
+I've setup a local repository on the MacBook
 
 
 
