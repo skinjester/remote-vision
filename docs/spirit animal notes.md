@@ -1822,6 +1822,84 @@ How to stop feeling blocked? Do something now.
 2017-05-16 20:53:15
 I've setup a local repository on the MacBook
 
+2017-05-26 14:01:41
+The upcoming LASER talk has been sublimating even as it seemed like procrastination.
+The title:
+	So Much Neural
+The subject:
+	I want to talk about how my life as a videogame designer has influenced my new work and describe the ways I learned to use 	psychedelic machine learning to look for Universal Images
+
+The Theme:
+	Deep Dreams, Universal Images
+
+Notes
+This talk answers the question, “where do the images come from”, “why these images are important”, “where do these feelings come from”,”I can’t take my eyes off it. Why?”, What is the meaning?
+
+For show and tell,
+- it uses a series of computed portraits with imagery produced by my Deep Dream Vision Quest neural video installation.
+- full setup with magic mirror
+- projected setup
+
+What have I discovered from live shows
+- people matter
+- staging and setting matter
+Where does the data come from and who owns it?
+What do I get out of it?
+Applications
+- entertainment
+- therapy
+- outreach
+- surveillance
+- roleplaying
+
+Talking Points
+
+We live in a hyper modern world where things blur together, the categories are blending together. 
+
+What does human mean now? The Othering. To be Other.
+
+
+My mom is seeing AI in her camera. Its a filter that restyles the world like a painting. How is that app on her phone different than my work?
+
+The Mandela Effect - why?
+
+We seek to surface that which lies submerged – desire, guilt, fear, ambition – to bring to light the truth the waking mind keeps hidden
+Why?
+To find the Familiar in the Alien
+Why?
+Because the contrast is exciting
+Why
+Because there are Universal Images
+Why
+They resemble the classifications of a neural network
+Why
+The underlying behavior of learning machines must be universal
+Why
+Because the algebra and the architecture is the same
+
+Therefore:
+All perception begins as hallucination
+Mental images from activated neural patterns  project outward as iterations in a feedback loop of recognition-reclassification
+Neural patterns?
+Yes. Archetypes. Geometric memories.  Arrays of filters.
+Projected from where?
+The Center
+What is at the center?
+Me. I am hiding something
+
+What are some of the themes common to this imagery
+Repetition
+Embellishment
+Replacement
+Structure
+Autocompletion
+Suggestion
+Shorthand
+Radial Symmetry
+Scale
+
+
+
 
 
 
