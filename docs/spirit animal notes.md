@@ -1898,6 +1898,225 @@ Shorthand
 Radial Symmetry
 Scale
 
+2017-05-28 10:31:40
+Configured Windows w Sourcesafe and so forth
+
+2017-05-28 21:32:58
+building the feature block on the main deepdreamvisionquest page
+- create blog posts
+    + Beginning
+        * setup
+        * testing
+    + Middle
+        * moments
+        * best of
+    + End (these are placed in a seperate media gallery accessible from top menu)
+        * encounters (video)
+        * portraits
+
+2017-05-29 16:21:58
+Not sure how much I really accomplished in this worksession. The site looks different. probably better. Definitely cleaner. But where is the new content?
+
+2017-05-31 15:21:17
+Reading up on the LASER talks
+
+
+The LASERs are a national program of evening gatherings that bring artists and scientists together for informal presentations and conversation with an audience
+
+7:00-7:25:  Jinxia Niu (Author and Journalist) on "Chinese creativity and innovation in the 21st century"
+
+    Mainland China has staged one of the most impressive economic booms in the history of the world, without a single recession in 30 years. The nationa is now undergoing another transformation, from a manufacturing-based economy to an IT-based economy. The Chinese like talk nonstop about "innovation", but "innovation" can have wildly different meanings in the USA and in China.
+
+7:25-7:50:  Gary Boodhoo (Videogame designer) on {topic}
+
+    Abstract forthcoming
+
+8:10-8:35:  Jan Rindfleisch (Author) on "The Blossoming of Silicon Valley's Arts Community"
+
+    The story of the development of the arts in Silicon Valley has just begun to be told. Its art history is filled with people who were often marginalized, people who stood up to the status quo, people with the guts and love to persevere and build a community that nourished all, at a time when that was not easy to do. It's time to tell the story. How did we get from the largely monochromatic, exclusive, and repressive landscape of the 1970s to where we are now? Silicon Valley blossomed in the last quarter of the 20th century with the formation of arts offshoots, spin-offs, and startups that tapped into the area's increasing ferment of ideas and involved myriad supporters across all walks of life.
+
+8:35-9:00:  Pantea Karimi (Media Artist) on "(Re) Visualizing Medieval Science"
+
+    Pantea Karimi presents and discusses her medieval and early modern scientific manuscripts research project. Karimi's research topics include: Medieval Math, Medieval Paper Wheel Charts Calculators, Medieval Cartography, Medieval Medicinal Botany and Optics. Through her work she invites the viewer to observe science and its history through the process of image-making. In her talk she presents the scientific manuscripts pages, the process of research and how she uses the visual elements in early science to create her art.
+
+Fromm Hall
+2497 Golden Gate Ave
+San Francisco, CA 94118
+
+Fromm Hall hosts art studios, student housing, the Fromm Institute for Lifelong Learning, and Saint Ignatius parish offices.
+
+Informal
+35 minutes
+assumptions: projector screen (how big)
+USF, Fromm Hall, Berman Room, FR115
+
+2017-05-31 16:13:19
+The question I'm trying to answer is how can I show realtime hallucinations in the room?
+Can I rely on the projector?
+Should I consider my own projector?
+Should I consider the full Deep Dream rig?
+
+setup time needs to be minimal. talk is only 35m
+need to setup and test before the talk
+
+The talk is a show & tell
+The showing is more epic when it points at an audience
+With the right rig - could demonstrate specific effects & setups - camera, light
+
+2017-05-31 16:23:42
+requested more info about the space from @usfca
+
+2017-06-01 08:46:15
+no response from @usfca
+
+2017-06-01 08:46:30
+collating prior LASER abstracts
+
+
+Mainland China has staged one of the most impressive economic booms in the history of the world, without a single recession in 30 years.The nation is now undergoing another transformation, from a manufacturing-based economy to an IT-based economy.The Chinese like to talk nonstop about "innovation", but "innovation" can have wildly different meanings in the USA and in China.
+
+    THEME
+    How does innovation transform global economies differently?
+
+    OBSERVATION
+    Innovation can have wildly different meanings in the USA and China
+
+    WHAT PROMPTED OBSERVATION?
+    The Chinese like to talk nonstop about innovation
+
+    TOPIC
+    Mainland China has staged one of the most impressive economic booms in the history of the world
+
+    TOPIC MOVES FROM A TO B
+    The nation is now undergoing another transformation from a manufacturing based economy to an IT based economy
+
+
+The story of the development of the arts in Silicon Valley has just begun to be told.Its art history is filled with people who were often marginalized, people who stood up to the status quo, people with the guts and love to persevere and build a community that nourished all, at a time when that was not easy to do.It's time to tell the story.How did we get from the largely monochromatic, exclusive, and repressive landscape of the 1970s to where we are now? Silicon Valley blossomed in the last quarter of the 20th century with the formation of arts offshoots, spin-offs, and startups that tapped into the area's increasing ferment of ideas and involved myriad supporters across all walks of life.
+
+    THEME
+    It's time to tell the story about the art community in Silicon Valley
+
+    OBSERVATION
+    The area's increasing ferment of ideas involved myriad supporters across all walks of life.
+
+    WHAT PROMPTED OBSERVATION?
+    Silicon Valley art history is filled with people who were often marginalized
+
+    TOPIC
+    Silicon Valley blossomed in the last quarter of the 20th century with the formation of arts offshoots, spin-offs, and startups
+
+    TOPIC MOVES FROM A TO B
+    How did we get from the largely monochromatic, exclusive, and repressive landscape of the 1970s to where we are now?
+
+
+Pantea Karimi presents and discusses her medieval and early modern scientific manuscripts research project. Karimi's research topics include: Medieval Math, Medieval Paper Wheel Charts Calculators, Medieval Cartography, Medieval Medicinal Botany and Optics. Through her work she invites the viewer to observe science and its history through the process of image-making. In her talk she presents the scientific manuscripts pages, the process of research and how she uses the visual elements in early science to create her art.
+
+    THEME
+    Observe science history through the process of image-making
+
+    OBSERVATION
+    n/a
+
+    WHAT PROMPTED OBSERVATION?
+    n/a
+
+    TOPIC
+    The artist's medieval and early modern scientific manuscripts research project
+
+    TOPIC MOVES FROM A TO B
+    How she uses the visual elements of early science to create her art.
+
+
+
+As an astronomer, I view new telescopes as a steadily increasing number of senses, new interfaces to the world, that bring otherwise inaccessible phenomena into my intimate awareness. I will present a brief history of the universe informed by this perspective. Most people on this planet have never met a scientists nor used a scientific instrument. I believe that part of the cultural change needed to build a sustainable society involves making scientific knowledge acquired through instruments an intimate part of daily life. Just as the inability of large banks were to respond to the daily needs of individuals led to the micro credit movement, I argue that scientific institutions are unable to respond to the scientific needs of individuals, and that a micro-science movement is needed. I will give examples of the work of artists that in my view are exemplars of intimate science
+
+    THEME
+    Making science intimate
+
+    OBSERVATION
+    Most people on this planet have never met a scientist nor used a scientific instrument
+
+    WHAT PROMPTED OBSERVATION?
+    As an astronomer, I view new telescopes as a steadily increasing number of senses, new interfaces to the world, that bring otherwise inaccessible phenomena into my intimate awareness.
+
+    TOPIC
+    The cultural change needed to build a sustainable society involves making scientific knowledge acquired through instruments an intimate part of daily life.
+
+    TOPIC MOVES FROM A TO B
+    Just as the inability of large banks to respond to the daily needs of individuals led to the micro credit movement, I argue that scientific institutions are unable to respond to the scientific needs of individuals, and that a micro-science movement is needed
+
+
+New computer methods have been used to shed light on a number of recent controversies in the study of art.For example, computer fractal analysis has been used in authentication studies of paintings attributed to Jackson Pollock recently discovered by Alex Matter. Computer wavelet analysis has been used for attribution of the contributors in Perugino's Holy Family. An international group of computer and image scientists is studying the brushstrokes in paintings by van Gogh for detecting forgeries. Sophisticated computer analysis of perspective, shading, color and form has shed light on David Hockney's bold claim that as early as 1420, Renaissance artists employed optical devices such as concave mirrors to project images onto their canvases. How do these computer methods work? What can computers reveal about images that even the best-trained connoisseurs, art historians and artist cannot? How much more powerful and revealing will these methods become? In short, how is computer image analysis changing our understanding of art? This profusely illustrate lecture for non-scientists will include works by Jackson Pollock, Vincent van Gogh, Jan van Eyck, Hans Memling, Lorenzo Lotto, and others. You may never see paintings the same way again
+
+    THEME
+    How is computer image analysis changing our understanding of art?
+
+    OBSERVATION
+    You may never see paintings the same way again
+
+    WHAT PROMPTED OBSERVATION?
+    Sophisticated computer analysis of perspective, shading, color and form is increasingly used for attribution and authentication of artwork
+
+    TOPIC
+    New computer methods have been used to shed light on a number of recent controversies in the study of art.
+
+    TOPIC MOVES FROM A TO B
+    What can computers reveal about images that even the best-trained connoisseurs, art historians and artist cannot?
+
+
+A very brief history of the accidental discovery of natural radio in the late-19th Century, the musical aesthetics of scientific research in the 1920s and 30s, and the beginnings of amateurism and arts in the second-half of in the 20th Century.
+
+    THEME
+    n/a
+
+    OBSERVATION
+    n/a
+
+    WHAT PROMPTED OBSERVATION?
+    n/a
+
+    TOPIC
+    A very brief history of the accidental discovery of natural radio in the late-19th Century, the musical aesthetics of scientific research in the 1920s and 30s, and the beginnings of amateurism and arts in the second-half of in the 20th Century.
+
+    TOPIC MOVES FROM A TO B
+    n/a
+
+The "Sounds of Space" project is being developed to explore the connections between solar science and sound, to compare visual and aural representations of space data, mostly from NASA's STEREO mission, and to promote a better understanding of the Sun through stimulating interactive software. I will be talking about the work I am doing with musicians to sonify current solar wind data (particle data and magnetic fields) and images of the Sun.
+
+Mat-forming Cyanobacteria in San Francisco Bay salt marsh ponds move in a gentle coordinate dance of 3.5-billion years, creating our oxygen atmosphere. I wanted to capture, in motion and music, a sense of this deep time and relentless movement.
+
+3D printed architecture has the ability to transcend the way that buildings are made today. 3D printers allow architects to be material morphologists. They expand our ability to construct because they open the door for us to test material, form and structure simultaneously and instantly. 3D printing is a sustainable method of manufacture and can take advantage of local and ecological material resources. In an era of throw away consumerism and over consumption, excessive energy use, too much waste, and toxic materials, architects have a responsibility to the public, and the planet, to change our mindset about what our buildings are made of, how they function, and to inform the manufacturing processes used to construct architecture. Our research challenges the status quo of rapid prototyping materials by introducing new possibilities for digital materiality. In this scenario it is not solely the computational aspects that have potential for material transformation but also the design of the material itself. Because of the nature of these materials, they can be sourced locally (salt, ceramic, sand), come from recycled sources (paper, rubber), and are by products of industrial manufacturing (wood, coffee flour, grape skins); this would situate them within the realm of "natural building materials". However, the expansive and nascent potential of these traditional materials, when coupled with additive manufacturing, offers unnatural possibilities such as the ability to be formed with no formwork, to have translucency where there was none before, extremely high structural capabilities and the potential for water absorption and storage, the materials that we all know as natural building materials are now unnatural building materials.
+
+Pantea Karimi presents and discusses her medieval scientific manuscripts research project; the process of research and image-making, use of materials and representation of ideas. She also presents the work she is currently developing at her 6-month Fellowship Residency at the Kala Art Institute in Berkeley.
+
+Dante Alighieri, great poet and innovator of the Italian language, pushed boundaries as far as he could to adapt to "new times" of the late middle ages. And yet, his characters and actors were always coupled with Christian idealism. Ultimately rejecting this confine, Kim Anno continues his momentum and in the spirit of the great innovation also reacts to "new times." She continues the inevitable and secularizes his text, in light of the Anthropocene. The text continues to be flexible, lucid, and vivid, yet it becomes a great mirror for society, and calls for adaptation to the altered world without a Christian narrative. What can human beings do themselves? Anno uses this text in films, live performances, and in journals to draw attention to adaptation, and cultural resiliency. The viewer and audience are left to face each other to find new solutions to the epic problem of a hotter planet.
+
+Take Me To Your Dream (Dream Vortex) is a work-in-progress, a virtual installation for the KeckCAVES 3-D imaging facility at the University of California, Davis, and an artistic experiment with many layers of collaboration. In addition to the primary relationship with my scientific collaborator, geobiologist Dawn Sumner, there is a network of potential contributors including every researcher who works in the facility. This talk uses the experiences and challenges of the project as a way of thinking about collaborative processes in general,and as a way of finding creative gates in the fences between public/private, objective/subjective, traditional media/new media, and scientific/artistic forms of investigation.
+
+A funny thing happened on the way to the millenium: The world went digital. Prophets had predicted for years that a single new digital medium would replace all the old analog media. What had been ink and paper, photographs, movies, and TV, would become just bits. Well, the Great Digital Convergence happened. It crept upon us unannounced, but it's here. This talk heralds that signal moment, a massive change in our culture. The elementary particle of the revolution is the much misunderstood pixel. The talk tackles head-on the fundamental mystery of digital-that spiky represents smooth, that the discrete stands for the continuous. How can that be? The full message is an explanation of how the whole digital world works and why it deserves our trust. The beginnings go back two centuries to a man who was almost beheaded and knew Napoleon too well. And to early last century when a Russian scientist, unknown to most Americans, defined the pixel while managing to stay out of the Gulag under the protection of a brilliant woman married to one of Stalin's bloodiest henchmen.
+
+Laurie Frick has been delving deep into sleep, she uses the data to create art works and installations that incorporate the abstractions that emerge from sleep monitoring and she creates rhythmic abstractions that feel sprawling and musical. The project is called Quantifying-me. Sleep is a very active state. If you're sick, you heal. You build procedural memory, grow taller, resolve conflict, reorder and organize long-term memory. She has been conducting research on herself. She has been measuring my nightly sleep using an EEG headband for over a year, and found a definite pattern to the brainwaves. It is weirdly comforting and reaffirming to receive a sleep score everyday. She is interested in sleep as one more method of self-tracking that she believes we will all do in the future as a way to passively measure our patterns and behaviors. What if walls could produce ambient patterns of how we're doing, where we subtly adjust behavior in response to those measurements? She's transforming these scores and data into physical representations. She set out to map a language to convey self-quantifying metrics. Numbers are abstract concepts, but our brains recognize pattern intuitively. She is working on the vocabulary and grammar of pattern for self-tracking that's more visceral and direct.
+
+Traditionally, origami designs are based on the geometry of a two-dimensional sheet of paper. Folds made in the sheet are well-defined by individual creases and the sheet is two-dimensional and doesn't stretch. In the last decade or so, however, a number of approaches to design of folded objects have been developed that go beyond just two-dimensional geometry and use crumpling, tension or surfaces that cannot be folded without stretching. I'll describe some of these approaches, with the focus on my favorite, which involves creating complex curved surfaces using only straight line pleats and the tension generated by pleat intersections.
+
+Black hole and cosmological horizons play a crucial role in physics. They are central to our understanding of the origin of structure in the universe, while continuing to provide vexing theoretical puzzles. They have become accessible observationally to a remarkable degree, albeit indirectly. I will review how horizons appear in general relativity and quantum field theory. Then I will move to a systematic study of their breakdown and its relevance -- or more precisely, `dangerous irrelevance' -- to thought experiments and real observations in specific situations. After describing the sensitivity of primordial cosmological perturbations to heavy degrees of freedom and large field values, I will share some results exhibiting the breakdown of effective quantum field theory for string-theoretic probes of black hole horizons.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
