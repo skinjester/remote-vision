@@ -2012,7 +2012,7 @@ The story of the development of the arts in Silicon Valley has just begun to be 
 Pantea Karimi presents and discusses her medieval and early modern scientific manuscripts research project. Karimi's research topics include: Medieval Math, Medieval Paper Wheel Charts Calculators, Medieval Cartography, Medieval Medicinal Botany and Optics. Through her work she invites the viewer to observe science and its history through the process of image-making. In her talk she presents the scientific manuscripts pages, the process of research and how she uses the visual elements in early science to create her art.
 
     THEME
-    Observe science history through the process of image-making
+    A decolonialized view of science history through the process of image-making
 
     OBSERVATION
     n/a
@@ -2067,7 +2067,7 @@ New computer methods have been used to shed light on a number of recent controve
 A very brief history of the accidental discovery of natural radio in the late-19th Century, the musical aesthetics of scientific research in the 1920s and 30s, and the beginnings of amateurism and arts in the second-half of in the 20th Century.
 
     THEME
-    n/a
+    The electromagnetic Imaginary
 
     OBSERVATION
     n/a
@@ -2079,23 +2079,98 @@ A very brief history of the accidental discovery of natural radio in the late-19
     A very brief history of the accidental discovery of natural radio in the late-19th Century, the musical aesthetics of scientific research in the 1920s and 30s, and the beginnings of amateurism and arts in the second-half of in the 20th Century.
 
     TOPIC MOVES FROM A TO B
-    n/a
+    Accidental discoveries and correlations
 
 The "Sounds of Space" project is being developed to explore the connections between solar science and sound, to compare visual and aural representations of space data, mostly from NASA's STEREO mission, and to promote a better understanding of the Sun through stimulating interactive software. I will be talking about the work I am doing with musicians to sonify current solar wind data (particle data and magnetic fields) and images of the Sun.
 
+    THEME
+    Promote a better understanding of the Sun with interactive software
+
+    OBSERVATION
+    Comparing visual and aural representations of space data engages the public
+
+    WHAT PROMPTED OBSERVATION?
+    n/a
+
+    TOPIC
+    The "Sounds of Space" project is being developed to explore the connections between solar science and sound
+
+    TOPIC MOVES FROM A TO B
+    I will be talking about the work I am doing with musicians to sonify current solar wind data and images of the Sun.
+
+
+
 Mat-forming Cyanobacteria in San Francisco Bay salt marsh ponds move in a gentle coordinate dance of 3.5-billion years, creating our oxygen atmosphere. I wanted to capture, in motion and music, a sense of this deep time and relentless movement.
 
-3D printed architecture has the ability to transcend the way that buildings are made today. 3D printers allow architects to be material morphologists. They expand our ability to construct because they open the door for us to test material, form and structure simultaneously and instantly. 3D printing is a sustainable method of manufacture and can take advantage of local and ecological material resources. In an era of throw away consumerism and over consumption, excessive energy use, too much waste, and toxic materials, architects have a responsibility to the public, and the planet, to change our mindset about what our buildings are made of, how they function, and to inform the manufacturing processes used to construct architecture. Our research challenges the status quo of rapid prototyping materials by introducing new possibilities for digital materiality. In this scenario it is not solely the computational aspects that have potential for material transformation but also the design of the material itself. Because of the nature of these materials, they can be sourced locally (salt, ceramic, sand), come from recycled sources (paper, rubber), and are by products of industrial manufacturing (wood, coffee flour, grape skins); this would situate them within the realm of "natural building materials". However, the expansive and nascent potential of these traditional materials, when coupled with additive manufacturing, offers unnatural possibilities such as the ability to be formed with no formwork, to have translucency where there was none before, extremely high structural capabilities and the potential for water absorption and storage, the materials that we all know as natural building materials are now unnatural building materials.
+    THEME
+    Motion and Music 
 
-Pantea Karimi presents and discusses her medieval scientific manuscripts research project; the process of research and image-making, use of materials and representation of ideas. She also presents the work she is currently developing at her 6-month Fellowship Residency at the Kala Art Institute in Berkeley.
+    OBSERVATION
+    Mat-forming Cyanobacteria in San Francisco Bay salt marsh ponds move in a gentle coordinate dance of 3.5-billion years creating our oxygen atmosphere
 
-Dante Alighieri, great poet and innovator of the Italian language, pushed boundaries as far as he could to adapt to "new times" of the late middle ages. And yet, his characters and actors were always coupled with Christian idealism. Ultimately rejecting this confine, Kim Anno continues his momentum and in the spirit of the great innovation also reacts to "new times." She continues the inevitable and secularizes his text, in light of the Anthropocene. The text continues to be flexible, lucid, and vivid, yet it becomes a great mirror for society, and calls for adaptation to the altered world without a Christian narrative. What can human beings do themselves? Anno uses this text in films, live performances, and in journals to draw attention to adaptation, and cultural resiliency. The viewer and audience are left to face each other to find new solutions to the epic problem of a hotter planet.
+    WHAT PROMPTED OBSERVATION?
+    Our oxygen atmosphere. 
+
+    TOPIC
+    Deep Time
+
+    TOPIC MOVES FROM A TO B
+    I wanted to capture, in motion and music, a sense of this deep time and relentless movement.
+
+3D printed architecture has the ability to transcend the way that buildings are made today. 3D printers allow architects to be material morphologists.They expand our ability to construct because they open the door for us to test material, form and structure simultaneously and instantly. 3D printing is a sustainable method of manufacture and can take advantage of local and ecological material resources. In an era of throw away consumerism and over consumption, excessive energy use, too much waste, and toxic materials, architects have a responsibility to the public, and the planet, to change our mindset about what our buildings are made of, how they function, and to inform the manufacturing processes used to construct architecture. Our research challenges the status quo of rapid prototyping materials by introducing new possibilities for digital materiality.In this scenario it is not solely the computational aspects that have potential for material transformation but also the design of the material itself. Because of the nature of these materials, they can be sourced locally (salt, ceramic, sand), come from recycled sources (paper, rubber), and are by products of industrial manufacturing (wood, coffee flour, grape skins); this would situate them within the realm of "natural building materials". However, the expansive and nascent potential of these traditional materials, when coupled with additive manufacturing, offers unnatural possibilities such as the ability to be formed with no formwork, to have translucency where there was none before, extremely high structural capabilities and the potential for water absorption and storage, the materials that we all know as natural building materials are now unnatural building materials.
+
+    THEME
+    New possibilities for digital materials
+
+    OBSERVATION
+    The materials that we all know as natural building materials are now unnatural building materials.
+
+    WHAT PROMPTED OBSERVATION?
+    Traditional materials, when coupled with additive manufacturing, offer unusual possibilities
+
+    TOPIC
+    3D printed architecture has the ability to transcend the way that buildings are made today.
+
+    TOPIC MOVES FROM A TO B
+    Architects have a responsibility to the public, and the planet, to change our mindset about what our buildings are made of, how they function
+
+
 
 Take Me To Your Dream (Dream Vortex) is a work-in-progress, a virtual installation for the KeckCAVES 3-D imaging facility at the University of California, Davis, and an artistic experiment with many layers of collaboration. In addition to the primary relationship with my scientific collaborator, geobiologist Dawn Sumner, there is a network of potential contributors including every researcher who works in the facility. This talk uses the experiences and challenges of the project as a way of thinking about collaborative processes in general,and as a way of finding creative gates in the fences between public/private, objective/subjective, traditional media/new media, and scientific/artistic forms of investigation.
 
+    THEME
+    How to collaborate with scientists
+
+    OBSERVATION
+    Take Me To Your Dream (Dream Vortex) is an artistic experiment with many layers of collaboration.
+
+    WHAT PROMPTED OBSERVATION?
+    In addition to the primary relationship with my scientific collaborator, geobiologist Dawn Sumner, there is a network of potential contributors including every researcher who works in the facility.
+
+    TOPIC
+    This talk uses the experiences and challenges of the project as a way of thinking about collaborative processes in general
+
+    TOPIC MOVES FROM A TO B
+    Finding creative gates in the fences between public/private, objective/subjective, traditional media/new media, and scientific/artistic forms of investigation.
+
+
 A funny thing happened on the way to the millenium: The world went digital. Prophets had predicted for years that a single new digital medium would replace all the old analog media. What had been ink and paper, photographs, movies, and TV, would become just bits. Well, the Great Digital Convergence happened. It crept upon us unannounced, but it's here. This talk heralds that signal moment, a massive change in our culture. The elementary particle of the revolution is the much misunderstood pixel. The talk tackles head-on the fundamental mystery of digital-that spiky represents smooth, that the discrete stands for the continuous. How can that be? The full message is an explanation of how the whole digital world works and why it deserves our trust. The beginnings go back two centuries to a man who was almost beheaded and knew Napoleon too well. And to early last century when a Russian scientist, unknown to most Americans, defined the pixel while managing to stay out of the Gulag under the protection of a brilliant woman married to one of Stalin's bloodiest henchmen.
 
-Laurie Frick has been delving deep into sleep, she uses the data to create art works and installations that incorporate the abstractions that emerge from sleep monitoring and she creates rhythmic abstractions that feel sprawling and musical. The project is called Quantifying-me. Sleep is a very active state. If you're sick, you heal. You build procedural memory, grow taller, resolve conflict, reorder and organize long-term memory. She has been conducting research on herself. She has been measuring my nightly sleep using an EEG headband for over a year, and found a definite pattern to the brainwaves. It is weirdly comforting and reaffirming to receive a sleep score everyday. She is interested in sleep as one more method of self-tracking that she believes we will all do in the future as a way to passively measure our patterns and behaviors. What if walls could produce ambient patterns of how we're doing, where we subtly adjust behavior in response to those measurements? She's transforming these scores and data into physical representations. She set out to map a language to convey self-quantifying metrics. Numbers are abstract concepts, but our brains recognize pattern intuitively. She is working on the vocabulary and grammar of pattern for self-tracking that's more visceral and direct.
+    THEME
+    The talk tackles head-on the fundamental mystery of digital
+
+    OBSERVATION
+    Prophets had predicted for years that a single new digital medium would replace all the old analog media.
+
+    WHAT PROMPTED OBSERVATION?
+    It crept upon us unannounced, but it's here.
+
+    TOPIC
+    The full message is an explanation of how the whole digital world works and why it deserves our trust.
+
+    TOPIC MOVES FROM A TO B
+    The beginnings go back two centuries to a man who was almost beheaded and knew Napoleon too well. And to early last century when a Russian scientist, unknown to most Americans, defined the pixel while managing to stay out of the Gulag under the protection of a brilliant woman married to one of Stalin's bloodiest henchmen.
+
 
 Traditionally, origami designs are based on the geometry of a two-dimensional sheet of paper. Folds made in the sheet are well-defined by individual creases and the sheet is two-dimensional and doesn't stretch. In the last decade or so, however, a number of approaches to design of folded objects have been developed that go beyond just two-dimensional geometry and use crumpling, tension or surfaces that cannot be folded without stretching. I'll describe some of these approaches, with the focus on my favorite, which involves creating complex curved surfaces using only straight line pleats and the tension generated by pleat intersections.
 
