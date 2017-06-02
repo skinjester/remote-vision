@@ -2188,7 +2188,7 @@ Gary Boodhoo combines video games with machine learning to create interactive sc
 Deep Dream Vision Quest is a video synthesizer that creates multiplayer hallucinations. Live cameras reveal the world to a neural network which progressively misunderstands what it sees. Choosing between the front facing or back facing camera turns the AI dream into a mirror or a window.
 
 
-note to self before I forget. Anyone who's ever wanted to "learn to code" needs to experience this moment to truly get it. The stakes seem so high to me right now, and looking backl I've put so much of myslef into understandingthis idea and how to realize it. Learning python has been a big part of that. I didn't realize how beautiful the language is. Truly, its like Elvish. But right now - thinking through the trial and error of passing functions and parameters as part of a "program" that drives my artwork is the most challenging computer science ever. Its bitter to know that you could have done it differently, that you didnt understand something the way you thought, or that  you are almost certainly missing out on a basic concept, knowledge of which would make this current impasse invisible. Still - I'm hacking my waty to the solution, and its happening right now!
+note to self before I forget. Anyone who's ever wanted to "learn to code" needs to experience this moment to truly get it. The stakes seem so high to me right now, and looking back, I've put so much of myslef into understanding this idea and how to realize it. Learning python has been a big part of that. I didn't realize how beautiful the language is. Truly, its like Elvish. But right now - thinking through the trial and error of passing functions and parameters as part of a "program" that drives my artwork is the most challenging computer science ever. Its bitter to know that you could have done it differently, that you didnt understand something the way you thought, or that  you are almost certainly missing out on a basic concept, knowledge of which would make the current impasse invisible. Still - I'm hacking my waty to the solution, and its happening right now!
 
 Experience an interactive psychedelic journey within a computer interface. Using the DeepDream convolutional neural network algorithm and real-time video feedback, the system turns your image into a vision of its own thought processes--a magic mirror. Questions about DeepDream, the magic mirror setup, and the spirit realm inside the machine are all welcome. Attendees will leave with an understanding of how neural networks may be used for image synthesis
 
@@ -2294,13 +2294,65 @@ Well? Why did you do it?
 TOPIC MOVES FROM A TO B
 
 
+Well? Why did you do it?
+Fame, glory, getting out of my comfort zone, curiosity
+
+Why did you keep on doing it?
+The code kept getting better and suggesting new directions. When people saw it, their reactions suggested new ways of coding and presenting. Their reactions included silence and pantomime. I saw an opportunity to shape these behaviors further with new code and stagecraft. I continue to search for ways to extend the moments of surprise and extend them into meaningful experiences. I've always maintained the fiction that this was some kind of videogame, until it became a truly reactive system. As I've shown it, I have observed that some people just "get it" more than others. The repeated but hallucinatory patterns that emerge in response to activity in front of the camera changes that activity. Currently I see this kind of feedback loop iterating (recursing) 2-3 times. Someone does something and sees it multiplied on screen, they pose and point at the screen and the image continues to change. They learn to shift their posture and play with the camera (which to my surprise) has turned out to be a hugely responsive game controller.
+
+What does it do?
+The video installation shows the world to a neural network machine through a live camera. The machine reconstructs what it sees. We project that image back into the installation space. Until the machine detects motion, it dreams about the last thing it has seen. With each uninterrupted dream cycle the transformation of this memory becomes more extreme. Strange creatures emerge from alien landscapes. Only in stillness are they visible. They fade away when you move. This reflective "hurry up and wait" quality provides the basis for emergent gameplay. 
+
+Why did you make it?
+A year later, It is still unclear where the intelligence emerges and where it ends. The best moments are when the environment itself seems to have an intention. It wants to turn you into a kind of reptile. It wants to find ghosts(!) That's science fiction theatre, but is it a mirror or a window? Is it a mask or confession?
+
+2017-06-02 10:38:35
+I've generated several schematics for potential talks. Here they are
+
+
+#
+    THEME
+    Hacking the solution
+
+    OBSERVATION
+    Anyone who's ever wanted to "learn to code" needs to experience this moment to truly get it.
+
+    WHAT PROMPTED OBSERVATION?
+    The trial and inference of passing functions and parameters as part of a "program" that creates artwork is the most challenging computer science ever.
+
+    TOPIC
+    How I use neural network machines to make pictures
+
+    TOPIC MOVES FROM A TO B
+    I've presented living machine hallucinations to audiences for the past year as a way to share my own reactions to creative AI.
+
+#
+    THEME
+    Where they come from
+
+    OBSERVATION
+    I seek to surface that which lies submerged
+
+    WHAT PROMPTED OBSERVATION?
+    One of my parent's friends asked me about the AI in his camera. The one that makes the video look like a painting. How is that app different than my work?
+
+    TOPIC
+    How I use neural network machines to make pictures
+
+    What I've learned from presenting machine hallucinations to humans and living rooms for the past year. 
+
+    TOPIC MOVES FROM A TO B
+    I've presented living machine hallucinations to audiences for the past year and am discovering a design language to extend moments of surprise into meaningful experiences
 
 
 
+make the theme more active:
+Where they came from
+
+// doing something. Finding
+Find your spirit animal in a deep dream vision quest
 
 
-
-
-
+Deep Dreams, memories and confessions
 
 
