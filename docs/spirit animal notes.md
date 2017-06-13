@@ -2232,15 +2232,15 @@ What does human mean now? The Othering. To be Other.
 
 One of my parent's friends asked me about the AI in his camera. The one that makes the video look like a painting. How is that app different than my work?
 
-The Mandela Effect - why?
 
 
 Why I've presented living machine hallucinations to audiences for the past year. 
-    - I seek to surface that which lies submerged
+    - I seek to surface the stories that lies submerged underneath vision
 Why?
-    - To find the Alien Familiar
+    - To better understand the images I respond to and prepare for consumption
 Why?
-Seen clearly, the contrast between perception and hallucination is surprisngly emotional.
+    - To recognize the alien as familiar, and to recognize how alien the familiar is
+
 Why
 Because there are Universal Images
 Why
@@ -2304,7 +2304,7 @@ What does it do?
 The video installation shows the world to a neural network machine through a live camera. The machine reconstructs what it sees. We project that image back into the installation space. Until the machine detects motion, it dreams about the last thing it has seen. With each uninterrupted dream cycle the transformation of this memory becomes more extreme. Strange creatures emerge from alien landscapes. Only in stillness are they visible. They fade away when you move. This reflective "hurry up and wait" quality provides the basis for emergent gameplay. 
 
 Why did you make it?
-A year later, It is still unclear where the intelligence emerges and where it ends. The best moments are when the environment itself seems to have an intention. It wants to turn you into a kind of reptile. It wants to find ghosts(!) That's science fiction theatre, but is it a mirror or a window? Is it a mask or confession?
+A year later, It is still unclear where the intelligence emerges and where it ends. The best moments are when the environment itself seems to have an intention. It likes some things, and perhaps some people more than others. It wants to turn you into a kind of reptile. It wants to find ghosts(!) That's science fiction theatre, but why is it so easy, and is it a mirror or a window? 
 
 2017-06-02 10:38:35
 I've generated several schematics for potential talks. Here they are
@@ -2352,7 +2352,367 @@ Where they came from
 // doing something. Finding
 Find your spirit animal in a deep dream vision quest
 
-
 Deep Dreams, memories and confessions
 
+Conspiring to uncover a universal interface
 
+Confessions of a universal interface
+
+finding the universal interface to the memory palace
+
+Finding the universal interface to legacy reality
+
+Uncovering their tracks
+
+Hunting for a universal interface
+
+Uncovering rituals with widespread deep dreaming
+
+Improving the quality of ritual interfaces for humans
+
+Deep Dreams, high scores and epic dread
+
+High sco
+
+
+Deep Dreams, Omens and Premonitions.
+
+Sharing memories with machine intelligence
+
+Deep Dream, Ritual Interface
+Deep Dream, Ritual Interface to the Library of Babel
+
+
+Machine Learning teaches us something amazing. It doesn't take much to invent the world. Any technology capable of recognizing images must also create them. Wherever we find aliens they'll be artists too. 
+
+
+
+2017-06-03 12:03:24
+What's not being said:
+My experiences over the years with an intense lucid dream where I asked Jesus to help me.
+My experiences with psychedelics, specifically the reality that DMT uncovered.
+Any mention of legacy reality
+
+
+It's not that I seek to uncover the submerged. It's that the visual memories shared by machines and people conspire to uncover the truth of a universal interface. 
+
+The surprising emergent property of hyperplatonic digital is archaic dreamtime. Everything, everywhere is an event horizon, infinitely receding and
+The visual memories shared by people and machines conspire to reveal universal images. The kinds of images that build dreams and over time build civilizations. The design space is a metaphor that constructs legacy reality.
+[example ]
+
+Legacy Reality means the kind of reality that can be sensed with a camera. An electromagnetic field really. Functionally this is the source of the datasets a visual intelligence can learn to classify.
+
+Hallucination means that the memories of Legacy Reality are reconstructed visually, in a feedback loop, running on any hardware capable of representing a large enough array of summed multiplication. Like a visual cortex, and also like a GPU.
+
+2017-06-03 17:02:57
+Wherever we find aliens they'll be artists too. 
+
+can Alien be removed from this statement, while preserving the intent? Its too much of a shortcut. I don't like how its becoming a default word.
+
+Wherever we find ourselves, we'll be artists
+When we find ourselves we'll be artists
+arists find selves wherever they are
+The 
+
+
+The eye as transmitter is found worldwide, as is a prohibition against staring at people.
+
+Even in our society you don’t look directly at someone for any length of time without speaking. People in prison avoid eye contact since it’s seen as an aggressive act.
+
+Young children believe that the eye is a transmitter and that the eye beams of people can mix or clash.
+
+In the comics, Superman is able to heat a hotdog or open a safe with his eye beams.
+
+The eye objectifies, which is why we speak of “sex objects”. Not enough attention has been given to the way in which cultures train people to use their senses. 
+
+In medieval times the dictum was “fides ex auditu” (faith comes from hearing) but by the Renaissance the Protestants were reading the Bible. 
+
+Another medieval dictum was “nil intellectu quod non prius in aliquodo modo in sensibus”. There is nothing in the mind which is not first, in some manner, in the senses.
+
+2017-06-03 17:19:53
+1st draft
+
+    THEME
+    The memories shared by machines and people conspire to uncover universal images. Where do they come from?
+
+
+    OBSERVATION
+    It doesn't take much to invent the world. Any system capable of recognizing images must also create them.
+
+
+    WHAT PROMPTED OBSERVATION?
+    As I coded variations on the feedback loop used to create pictures, I soon realized that people were completing the synthetic images with their own memories and expectations. Perception is a kind of hallucination made up from universal images which are mirrored by the learned classifications of a neural network.
+
+
+    TOPIC
+    The surprising emergent property of Big Data is the archaic dreamtime we remember from 50000 years ago.
+
+
+    TOPIC MOVES FROM A TO B
+    I've presented living machine hallucinations to audiences for the past year and in that time have discovered a design language to extend moments of surprise into long term meaningful experiences
+
+what's missing?
+no reference to cargo cult of machine intelligence. The imagined internal life of a machine intelligence is so much bigger than the machine intelligence. Is this just another way of expressing surprise that human beings seem much smarter than they need to be?
+
+2017-06-03 18:30:44
+does the topic involve the audience sufficiently?
+what's so interesting about the archaic dreamtime then?
+- we all share it at our most vulnerable
+- animals share it too
+- maybe it can be found outside of a nervous system
+
+what's important to my mom about the archaic dreamtime?
+- it draws a line between the unknown and the unknowable
+- the wellspring of spirituality, and maybe even hope
+- the spirit of the age (legacy reality) is shaped by archaic dreams. What dreams may come aren't random, but instead reactive
+
+Unpack that - reactive?
+Like a computer UI, the reactive spirit of the age isn't waiting for input, its always creating even when surrounded by darkness. Interfaces like this uplift the "user" into communion with the Unknowable Unknown. The Alien. The Other. The Electromagnetic Imaginary. The Mystery.
+
+
+Psychedelic AI space erotica
+Psychedelic AI space invasion
+Psychedelic AI space exploration
+
+The psychedelic AI cargo cult of machine intelligence
+
+Deep Dream, a psychedelic creative intelligence
+Deep Dream Vision Quest for a 
+
+Psychedelic space invader
+
+You know all those ancient aliens you hear about in the news? I'm the worst one.
+
+Human encounters with a gregarious creative intelligence in quest of a universal interface
+
+Quest for a universal interface
+
+Quest for an automated dreamtime
+
+deep dream vision quest for creative intelligence
+
+Portraits of a gregarious creative intelligence
+
+Machine Hallucination
+
+Science Fiction Thriller
+
+Cargo, Mana and Taboo
+
+Deep Dream Cargo Cult
+
+As such, commodity fetishism transforms the subjective, abstract aspects of economic value into objective, real things that people believe have intrinsic value.[1]
+
+Millenarianism has been found through history among people who rally around often-apocalyptic religious prophecies that predict a return to power, the defeat of enemies, and/or the accumulation of wealth. These movements have been especially common among people living under colonialism or other forces that disrupt previous social arrangements.
+
+A cargo cult is a millenarian movement first described in Melanesia which encompasses a range of practices and occurs in the wake of contact with more technologically advanced societies. The name derives from the belief which began among Melanesians in the late 19th and early 20th century that various ritualistic acts such as the building of an airplane runway will result in the appearance of material wealth, particularly highly desirable Western goods (i.e., "cargo"), via Western airplanes.
+
+
+
+THEME
+Memories shared by machines and people reveal universal images. Where do they come from?
+
+
+OBSERVATION
+It doesn't take much to invent the world. Any system capable of recognizing images must also create them.
+
+The surprising emergent property of Big Data is an iteractive and archaic dreamtime.
+
+
+WHAT PROMPTED OBSERVATION?
+As I coded variations on the feedback loop used to create pictures, I soon realized that people were completing the synthetic images with their own memories and expectations. Perception is a kind of hallucination made up from universal images which are mirrored by the learned classifications of a neural network.
+
+
+TOPIC
+How I use neural networks to find pictures
+
+
+TOPIC MOVES FROM A TO B
+I've presented living machine hallucinations to audiences for the past year and in that time have discovered a design language to extend moments of surprise into long term meaningful experiences
+
+
+THEME
+Serendipity rewards stillness
+
+OBSERVATION
+AI in 2017 may be understood as a cargo cult (?) 
+[not uninteresting - but does it leads the conversation away from or towards the role of serendipity ]
+
+WHAT PROMPTED OBSERVATION
+
+
+TOPIC
+How I use neural networks to find pictures
+
+
+
+THEME
+Serendipity
+
+
+
+Dreams emerge from a process called gradient descent. Neural activity is added back to the picture that caused it. Thus creating a feedback loop which serves to make any detected features more like themselves. The software doesn't generate fully realized images all at once. Instead the neural network dreams repeatedly, building up a picture from nothing but statistics. Its incredible.
+
+Deep Dream is a lens that reveals how visual concepts are represented by a learning machine. The computer simulates a vast cortical array. This geometry is called a neural network. Neural, because it is said to behave like a nervous system. 
+
+
+Neural networks come in different shapes and sizes. Deep Dream Vision Quest uses a popular implementation of Google's Inception architecture (like the movie) called GoogLeNet. It may come as a surprise, but the network doesn't contain images. It contains only habits, which are the learned weight values of neural connections. GoogLeNet was trained on over 1 TB of images, but is itself only 50 MB in size. 
+
+A
+This is a story of a guy who saw  on the internet and became curious about how they were made. He was a hacker and an artist and an on-again off-again Radical Platonist who wanted to put everything inside of a box
+
+B
+Decades of psionic research provided tantalizing hints. But what can you say about the Unspeakable? 
+
+Yes, he had faced UFO's and the creatures that drive them. He had regarded the reptile mammal insect plant entity inside himself with Dread and Awe. Most of all he was stubborn.
+
+C
+Showing it to people
+
+As he coded variations on the feedback loop used to create pictures, he realized that people were completing the synthetic images with their own memories and expectations. Perception is a kind of hallucination made up from universal images which are mirrored by the learned classifications of a neural network.
+
+Then he saw a ghost. He pointed the camera at the empty auditorium and turned around to finish setting up the equipment. Meanwhile on the television, something emerged from the vacant seats. Spirit animals, machine elves. The same hybrids
+
+The machine dreams were alien but also familiar. The pictures it made apparently lack any logic beyond the amplified coincidences found in the source material.
+
+identify your unique spin on a universal theme
+I am an artist who uncovers the familar in the alien
+I am the oldest son who welcomes the stranger
+I lifted the covers and found a spider
+The other one, in the mirror.
+
+2017-06-10 22:03:24
+I just want to talk about the work I'm currently doing and what has led me to this point. The unexpected insight I gained along the way was that this technology can transform environments and change the way people behave.
+
+
+Bio:
+Gary Boodhoo combines video games with machine learning to invent interactive science fiction. He arrived in the United States from Jamaica along with the first personal computers determined to find or build a new world.
+Millions of players around the world use the game interfaces I designed for Madden NFL, The Sims, Star Wars: The Force Unleashed and The Elder Scrolls Online. My design studio skinjester, inc. helps creative organizations build humane software. 
+
+Title:
+Deep Dreams, Omens and Premonitions
+Human encounters with a gregarious machine intelligence
+
+How is live machine hallucination different than the app on my phone
+
+2017-06-11 13:16:52
+You've not yet asked what the audience wants. I know my own motivations for wanting to present but why did that person sitting in front of me bother to come? How much can you find out about them?
+
+WANT
+Curiosity
+The subject of machine learning fits into their view of the world
+Desire to feel smart and share personal observations
+They arrive with something they want to express about the subject although they may not have put it into words (its hard!) They came to be entertained. Show them how to get what they want. How do you know what they want?
+
+They wanted to feel smart
+They wanted to feel like their interest is validated
+They want to learn - guide them through a step by step analysis of how 
+
+No one comes to these talks without an interest in the subject.
+It may be that some people are figuring it all out themselves and are putting the presentation on a spectrum of what they know or assume
+
+The importance of credibility
+My credibility validates their interest
+
+They came because they have an interest and want to see where my story fits into their personal narrative.
+
+Some people just came to meet other people. Maybe make some kind of personal connection. Maybe find perspective.
+
+No one goes to these things to judge me, and my big fear is that I'll be judged. 
+
+What parts of myself have I not shown?
+- the arcane researcher pushing my understanding to understand how it works
+- the person who spent money to make it work faster
+- the self taught everyman who was born special, and this was why
+What parts of myself has it felt best to share?
+ - the arcane setup that kept evolving and led me to this moment, it was epic just making it work at all! Made me feel like a real hacker
+I'm going to talk about something your parents and the clergy told you never to discuss in polite company.
+
+If you don't think you're in sales, I want you to think about the last time you wanted sex...
+
+In this fun and personal talk, Caroline shares a story of moving from stage-paralysis to expressive self. Accompanied by an unusual prop, she encourages us to use our voice as an instrument and really find the confidence within. 
+
+
+
+As I child I wondered if I'd seen everything a person could see. Maybe everything to come would be a combination of all the patterns I was familiar with. I wondered - could there be images that 
+
+
+In this talk, Gary shares a story of how he befriended an intelligent machine and became an artist again.  Learning to code in Python was the gateway to 
+
+
+I was so surprised to find that the type of image synthesis being performed worked exactly the same way from a functional standpoint. We train the neural network to recognize images and then "run it backward" by amplifying the signals it makes during image recognition and adding them back to the image it attempts to recognize. This leads to wild visual feedback which to us appears as a "machine hallucination". Yet how interesting it is that these hallucinatory images resonate with our own internalized visual language. The expression of which has resonated throughout human history in our cave art and our dreams. As soon as I connec
+
+In traditional computing decisions are yes/no, true/false affairs. Neural computation is a bit different. Instead, decisions emerge from a little more of this, a little less of the other thing. Choices are more like habits. Learning then, is the process of adjusting all the biases so a neural network gets into the habit of recognizing new input. Machine learning is the art of getting it to do this on its own.
+
+
+
+An alien intelligence surrounds us. Even now, in this very room.  
+
+To achieve these results we've constructed artificial memories that represent more than just data, they are a model of nervous systems work. 
+
+We call them neural networks. 
+
+By doing so, we gain a better understanding of how our own minds work. Specifically, how do we understand what we see. 
+
+
+
+
+Machine learning personifies how to extract intelligence from the environment, whatever that environment happens to be. The underlying assumptions of a learning machine are shaped by its training. Neural networks have habits, and with the right training they can get into the habit of recognizing spam email as or .
+
+Image classification and the deep Dream algorithm are both deterministic. Given the same image, the machine will draw the same hallucination every time. But the world is less deterministic than the model. Showing the outside world to the network with a live camera, the input is never the same.
+
+
+
+
+
+
+
+
+The software doesn't generate fully realized images all at once. Instead the neural network dreams repeatedly, building up a picture from nothing but statistics.
+
+2017-06-13 13:26:54
+LASER Talk Summary:
+
+HUMAN ENCOUNTERS WITH A GREGARIOUS LEARNING MACHINE
+
+Suddenly, computers are good at seeing and understanding. Learning machines have arrived, bearing unexpected cargo. The surprising truth behind artificial intelligence is that Mind emerges from the environment. 
+
+In 2015 a team at Google led by Alexander Mordvintsev released the first "Deep Dream" images to an amazed internet. These were instantly recognizable as photographs of the psychedelic experience. The algorithm is a dozen lines of code. It exaggerates a provided picture using habits the machine has learned.  It's a deterministic process. For any given image, the machine constructs the same hallucination every time.
+
+I create video installations that show the world to a learning machine through a live camera. Deep Dream Vision Quest is a neural image synthesizer that creates multiplayer hallucinations. Although the algorithm is predictable, the world is not. At live performances I'm often asked where the images come from. I've come to recognize how easy it is for humans to complete them with our memories. In this talk I describe how I use stagecraft, creative coding, and game design to make pictures of Minds.
+
+
+2017-06-13 14:16:21
+TITLE:
+Human encounters with a gregarious machine intelligence
+
+[identify your unique spin on a universal theme]
+THEME
+universal: what is the nature of perception?
+A mirror is a mask that looks at you
+
+OBSERVATION
+Intelligence emergences from the environment
+
+PROMPT
+The same program that identifies spam in your inbox can also identify a pedestrian in your car. Machine learning is the study of how to generalize information efficiently. Big Data 
+
+TOPIC
+How I use neural networks to find pictures
+
+TOPIC MOVES FROM A TO B
+I've presented living machine hallucinations to audiences for the past year and in that time have discovered a design language to extend moments of surprise into long term meaningful experiences
+
+
+This time, with proofreading. Thanks Piero. G
+
+LASER Talk, 11 July 2017
+
+
+Human Encounters With a Gregarious Learning Machine
+
+Suddenly, computers are good at seeing and understanding. Learning machines have arrived, bearing unexpected cargo. The surprising truth behind artificial intelligence is that Mind emerges from the environment. 
+
+In 2015 a team at Google led by Alexander Mordvintsev released the first "Deep Dream" images to an amazed internet. These were instantly recognizable as photographs of the psychedelic experience. The algorithm is a dozen lines of code. It exaggerates a provided picture using habits the machine has learned.  It's a deterministic process. For any given image, the machine constructs the same hallucination every time.
+
+I create video installations that show the world to a learning machine through a live camera. Deep Dream Vision Quest is a neural image synthesizer that creates multiplayer hallucinations. Although the algorithm is predictable, the world is not. At live performances I'm often asked where the images come from. I've come to recognize how easy it is for humans to complete them with our memories. In this talk I describe how I use stagecraft, creative coding, and game design to make pictures of Minds.
