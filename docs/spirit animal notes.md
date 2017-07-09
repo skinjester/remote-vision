@@ -2716,3 +2716,28 @@ Suddenly, computers are good at seeing and understanding. Learning machines have
 In 2015 a team at Google led by Alexander Mordvintsev released the first "Deep Dream" images to an amazed internet. These were instantly recognizable as photographs of the psychedelic experience. The algorithm is a dozen lines of code. It exaggerates a provided picture using habits the machine has learned.  It's a deterministic process. For any given image, the machine constructs the same hallucination every time.
 
 I create video installations that show the world to a learning machine through a live camera. Deep Dream Vision Quest is a neural image synthesizer that creates multiplayer hallucinations. Although the algorithm is predictable, the world is not. At live performances I'm often asked where the images come from. I've come to recognize how easy it is for humans to complete them with our memories. In this talk I describe how I use stagecraft, creative coding, and game design to make pictures of Minds.
+
+2017-06-25 16:55:26
+Bringing Deepdreamvisionquest.com site into the modern era again. Working out details of the upcoming LASER talk
+
+2017-06-25 17:43:45
+Questions:
+
+Where does the idea that neurons are the basis of the Mind come from? Is it true?
+
+Expressive mode, regenerative mode
+
+2017-06-25 18:04:20
+Shifting focus back to immediate needs of the website. What's missing here?
+Wht prevents me from sharing this w peers, colleagues, new contacts> Obviously insecure about missing something
+
+2017-07-08 17:03:27
+working on the presentation now.
+computer at the facilities is a macintosh with keynote and powerpoint installed
+- test inclusion of local video content in a powerpoint doc
+- do this work on the mac
+
+
+
+
+
