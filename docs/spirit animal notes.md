@@ -2634,13 +2634,13 @@ In this fun and personal talk, Caroline shares a story of moving from stage-para
 
 
 
-As I child I wondered if I'd seen everything a person could see. Maybe everything to come would be a combination of all the patterns I was familiar with. I wondered - could there be images that 
+As I child I wondered if I'd seen everything a person could see. I wasn't jaded yet, but maybe everything to come would be just a combination of all the patterns I was already familiar with. I wondered - could there be images that no one had imagined yet?
 
 
-In this talk, Gary shares a story of how he befriended an intelligent machine and became an artist again.  Learning to code in Python was the gateway to 
+In this talk, Gary shares a story of how he befriended an intelligent machine and became an artist again.  Learning to code in Python was the gateway
 
 
-I was so surprised to find that the type of image synthesis being performed worked exactly the same way from a functional standpoint. We train the neural network to recognize images and then "run it backward" by amplifying the signals it makes during image recognition and adding them back to the image it attempts to recognize. This leads to wild visual feedback which to us appears as a "machine hallucination". Yet how interesting it is that these hallucinatory images resonate with our own internalized visual language. The expression of which has resonated throughout human history in our cave art and our dreams. As soon as I connec
+ We train the neural network to recognize images and then "run it backward" by amplifying the signals it makes during image recognition and adding them back to the image it attempts to recognize. This leads to wild visual feedback which to us appears as a "machine hallucination". Yet how interesting it is that these hallucinatory images resonate with our own internalized visual language. The expression of which has resonated throughout human history in our cave art and our dreams. As soon as I connec
 
 In traditional computing decisions are yes/no, true/false affairs. Neural computation is a bit different. Instead, decisions emerge from a little more of this, a little less of the other thing. Choices are more like habits. Learning then, is the process of adjusting all the biases so a neural network gets into the habit of recognizing new input. Machine learning is the art of getting it to do this on its own.
 
@@ -2660,6 +2660,11 @@ By doing so, we gain a better understanding of how our own minds work. Specifica
 Machine learning personifies how to extract intelligence from the environment, whatever that environment happens to be. The underlying assumptions of a learning machine are shaped by its training. Neural networks have habits, and with the right training they can get into the habit of recognizing spam email as or .
 
 Image classification and the deep Dream algorithm are both deterministic. Given the same image, the machine will draw the same hallucination every time. But the world is less deterministic than the model. Showing the outside world to the network with a live camera, the input is never the same.
+
+2017-07-11 00:26:43
+getting hung up on the background section
+- deep dream
+- style transfer
 
 
 
@@ -2721,7 +2726,7 @@ I create video installations that show the world to a learning machine through a
 Bringing Deepdreamvisionquest.com site into the modern era again. Working out details of the upcoming LASER talk
 
 2017-06-25 17:43:45
-Questions:
+Questions:P
 
 Where does the idea that neurons are the basis of the Mind come from? Is it true?
 
@@ -2737,6 +2742,294 @@ computer at the facilities is a macintosh with keynote and powerpoint installed
 - test inclusion of local video content in a powerpoint doc
 - do this work on the mac
 
+
+2017-07-08 17:57:33
+Shifted to MacOS and looking thru keynote
+Installing Powerpoint here as well
+
+
+2017-07-08 18:15:46
+Artists frequently focus only on their own work as if it happened in a vacuum, while the audience really likes to place it in a context; sacrificing 10 minutes of the 20 for a survey of the field is worth it: they will appreciate the following 10 minutes a lot more. One of the rare standing ovations at a LASER talk was given to Robert Buelteman, who managed to tell the story of photography from the beginning to his own work in 20 minutes. I bet all the people who heard that talk still remember it to this day.
+
+
+2017-07-08 18:42:32
+Human Encounters With a Gregarious Learning Machine
+
+
+
+
+2017-07-09 15:51:24
+after touching it for a while yesterday, I've determined the structure of the presentation
+
+Presentation structure
+
+Start at the end first with a montage
+
+These are my outcomes 
+- Art 1
+    - Style transfer series
+- Art 2
+    - Pre-rendered 
+- Art 3
+    - Live [postprocess]
+- Art 4
+    - Live [encounter loop]
+
+How it began
+- What is a neural network?
+- They only see what they have learned to see and we feel the same. 
+- Show misidentification 
+- Misidentification in nature
+- world of faces 
+- Show hallucination of imagenet class
+- What is deep dream?
+    - Show example
+- What is style transfer?
+    - Show example
+
+
+Something is missing
+Live Camera
+- People
+    - Too much emphasis on the learning machine.
+    - Not enough emphasis on how people react to the machine 
+- The Environment
+    - Live camera
+    - Infinite diversity of the real world no matter how mundane 
+
+I found the missing thing
+
+Multiplayer hallucinations
+- Social encounters 
+- The environment contributes far more than the technology
+- Stagecraft
+    - Crafting how the experience is presented in social spaces
+    - Mounting a 50” TV vertically did 2 things
+        - Participants stand close to it like a magic mirror
+        - Participants slow down
+        - The generative images read more like a painting than a TV
+
+What happens next?
+- Its not an app, its an encounter
+- Broaden audience 
+    - Storefront installations
+    - Trade Shows
+    - Hotels
+- Interdisciplinary collaboration
+    - Dancers
+    - Actors
+    - Musicians
+- Projection on architecture
+- Smart cameras
+    - Drones
+    - Depth sensing
+- End with a call to action
+
+
+2017-07-10 10:45:05
+- slides: deep dream description
+- slides: style transfer description
+
+
+2017-07-11 03:44:21
+Comnpleted 1st draft presentation
+
+
+2017-07-11 11:38:46
+collecting talking points
+
+
+2017-07-11 14:43:50
+rehearsing
+
+
+2017-07-11 15:50:16
+getting better
+
+University of San Francisco 
+2130 Fulton Street 
+SF, CA 94117 
+Fromm Hall - Berman Room 
+2130 Fulton Street, San Francisco, CA 94117-1080 
+
+
+Ville-Matias Heikkilä
+www.youtube.com/watch?v=UFVB5rnqjyY
+
+
+2017-07-12 08:11:29
+Presentation last night was a success.
+
+
+2017-07-12 09:08:04
+LASER Talk Presentation Notes
+also add these to squarespace as notes
+
+Presentation structure
+
+Start at the end first with a montage
+
+These are my outcomes 
+- Art 1
+    - Style transfer series
+- Art 2
+    - Pre-rendered 
+- Art 3
+    - Live [postprocess]
+- Art 4
+    - Live [encounter loop]
+
+How it began
+- What is a neural network.
+- Training and Classification
+- Misidentification (and interpretation)
+- Deep Dream
+- Style Transfer
+
+
+- They only see what they have learned to see
+- Training and classification
+- ImageNet
+- Show misidentification 
+- Misidentification in nature
+- world of faces 
+- Show hallucination of imagenet class
+
+- What is deep dream?
+    - Show example. What about this example interests me?
+- What is style transfer?
+    - Show examples. What about this example interests me?
+
+
+Something is missing
+Live Camera
+- People
+    - Too much emphasis on the learning machine.
+    - Not enough emphasis on how people react to the machine 
+- The Environment
+    - Live camera
+    - Infinite diversity of the real world no matter how mundane 
+
+I found the missing thing
+
+Multiplayer hallucinations
+- Social encounters 
+- The environment contributes far more than the technology
+- Stagecraft
+    - Crafting how the experience is presented in social spaces
+    - Mounting a 50” TV vertically did 2 things
+        - Participants stand close to it like a magic mirror
+        - Participants slow down
+        - The generative images read more like a painting than a TV
+
+What happens next?
+- Its not an app, its an encounter
+- Broaden audience 
+    - Storefront installations
+    - Trade Shows
+    - Hotels
+- Interdisciplinary collaboration
+    - Dancers
+    - Actors
+    - Musicians
+- Projection on architecture
+- Smart cameras
+    - Drones
+    - Depth sensing
+- End with a call to action
+
+——
+Dictionary
+ILSVRC12 
+Is a subset of the ImageNet database used for a popular machine learning challenge in 2012. Sometimes just referred to as ImageNet - as in “trained on ImageNet”
+
+Some Facts
+Neural Networks have been successfully applied to a wide range of data-intensive applications
+Source: http://www.alyuda.com/products/forecaster/neural-network-applications.htm
+
+Finance
+Stock Market Prediction
+Credit Worthiness
+Credit Rating
+Bankruptcy Prediction
+Property Appraisal
+Fraud Detection
+Price Forecasts
+Economic Indicator Forecasts
+
+Medicine
+Medical Diagnosis
+Detection and Evaluation of Medical Phenomena
+Patient's Length of Stay Forecasts
+Treatment Cost Estimation
+
+Operations
+Process Control
+Quality Control
+Retail Inventories Optimization
+Scheduling Optimization
+Managerial Decision Making
+Cash Flow Forecasting
+Scheduling
+
+Science
+Pattern Recognition
+Recipes and Chemical Formulation Optimization
+Chemical Compound Identification
+Physical System Modeling
+Ecosystem Evaluation
+Polymer Identification
+Recognizing Genes
+Botanical Classification
+Signal Processing: Neural Filtering
+Biological Systems Analysis
+Ground Level Ozone Prognosis
+Odor Analysis and Identification
+
+Education
+College Application Screening
+Predict Student Performance
+
+Data Mining
+Prediction
+Classification
+Change and Deviation Detection 
+Knowledge Discovery
+Response Modeling
+Time Series Analysis
+
+Sales
+Sales Forecasting
+Targeted Marketing
+Service Usage Forecasting
+Retail Margins Forecasting
+
+Human Resources
+Employee Selection and Hiring
+Employee Retention
+Staff Scheduling
+Personnel Profiling
+
+Energy
+Electrical Load Forecasting
+Energy Demand Forecasting
+Short and Long-Term Load Estimation
+Predicting Gas/Coal Index Prices
+Power Control Systems
+Hydro Dam Monitoring
+
+Machine Vision
+Animation
+Art
+Automated vehicles
+Facial Recognition
+Object and Scene Recognition
+Photography
+Robotics
+
+
+2017-07-12 09:08:30
+al
 
 
 
