@@ -2587,7 +2587,7 @@ I just want to talk about the work I'm currently doing and what has led me to th
 
 Bio:
 Gary Boodhoo combines video games with machine learning to invent interactive science fiction. He arrived in the United States from Jamaica along with the first personal computers determined to find or build a new world.
-Millions of players around the world use the game interfaces I designed for Madden NFL, The Sims, Star Wars: The Force Unleashed and The Elder Scrolls Online. My design studio skinjester, inc. helps creative organizations build humane software. 
+Millions of players around the world use the game interfaces he directed and designed for Madden NFL, The Sims, Star Wars: The Force Unleashed and The Elder Scrolls Online. My design studio skinjester, inc. helps creative organizations build humane software. 
 
 Title:
 Deep Dreams, Omens and Premonitions
@@ -3028,8 +3028,34 @@ Photography
 Robotics
 
 
-2017-07-12 09:08:30
-al
+
+2017-07-12 09:26:59
+working on LAST Festival blog post
+
+
+2017-07-12 10:00:38
+CODAME slides for Matchbox Talk due 7/14, presentation is on 7/20 *next Thursday)
+
+3 minute artist talk: Randy Reyes + Gary Boodhoo. After investigating each other for a week, we meet for the first time and present 10 "facts" in 3 minutes. Happy hour after.
+
+
+
+
+2017-07-17 08:15:22
+put together a map for talk about Randy.
+Estimated 7hrs to completion of this project
+
+
+2017-07-20 08:25:17
+completed final edit for slides last night
+- confirm w Jordan that he's seeing them
+- notes
+- rehearsal
+
+
+2017-07-20 08:25:55
+spending this am updating deepdreamvisionquest.com
+
 
 
 
