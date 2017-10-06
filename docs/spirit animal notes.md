@@ -1810,7 +1810,23 @@ I'm back to the project after some time away. Will organize my goals and thought
 stepping back into python and studying multiprocessing again.
 
 
+2017-05-07 18:39:36
+ The multiprocessing module allows you to spawn processes in much that same manner than you can spawn threads with the threading module.
 
+2017-05-09 16:00:42
+CTRL-J joins the line below to the end of the current line
+CTRL-L selects the current line
+CTRL-C copies current line if no selection
+CTRL K,B toggle sidebarx
+
+
+2017-05-09 17:01:15
+Try and Except.
+If an error is encountered a Try block execution is stopped and transferred down to the Except block. In addition to using an Except block after the Try block, you can also use the Finally block. The code in the Finally block will be executed regardless of whether an exception occurs.
+
+
+2017-05-09 18:09:59
+the join() method tells Python to wait for the process to terminate.
 
 
 
