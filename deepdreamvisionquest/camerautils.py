@@ -12,7 +12,7 @@ import LogSettings # global log settings template
 
 
 # --------
-# INIT
+# INIT.
 # --------
 
 # setup system logging facilities
