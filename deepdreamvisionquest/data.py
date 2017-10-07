@@ -148,7 +148,9 @@ stepfx_default = [
 
 # ___ Initial program ___
 
-
+# name: program name
+# iterations: number of iterations per octave
+# step size:
 
 program.append({
 	'name':'geo',

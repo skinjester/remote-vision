@@ -30,7 +30,7 @@ from collections import deque
 
 
 
-# using this to index some values with dot notation
+# using this to index some values with dot notation in their own namespace
 # perhaps misguided, but needing expediency at the moment
 class Display(object):
     def __init__(self, width, height, camera):
@@ -132,7 +132,6 @@ class Model(object):
         log.critical('program:{} started:{}'.format(self.program[self.current_program]['name'], self.program_start_time))
 
 
-
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
@@ -221,7 +220,7 @@ class Viewport(object):
         self.listener()
 
         # GRB: temp structure for saving fully rendered frames
-        if self.time_counter > 10:
+        if self.time_counter > 10 and self.username != 'silent':
             self.export(image)
             self.time_counter = 0
         self.image = image
@@ -663,7 +662,7 @@ def listener():
         log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
         return
 
-    if key == 19: # p key : pause/unpause motion detection
+    if key == 112: # p key : pause/unpause motion detection
         MotionDetector.is_paused = not MotionDetector.is_paused
         if not MotionDetector.is_paused:
             MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
@@ -689,6 +688,9 @@ def listener():
     if key == 27: # ESC: Exit
         log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
         Viewport.shutdown()
+
+        # close the motion detector data export file
+        MotionDetector.export.close()
         return
 
 
@@ -995,15 +997,17 @@ Device = [0,1] # debug
 
 w = data.capture_w
 h = data.capture_h
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False,
     flip_h=False, flip_v=False, gamma=0.8).start())
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=False,
     flip_h=False, flip_v=False, gamma=0.8).start())
 
 Webcam = Cameras(source=Camera, current=Device[1])
 Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=12000, camera=Webcam.get(), log=update_HUD_log)
-Viewport = Viewport('deepdreamvisionquest','LASTFEST', listener)
+
+# disable screen export when usename specified is 'silent'
+Viewport = Viewport('deepdreamvisionquest','silent', listener)
 Composer = Composer()
 Model = Model(program_duration=30)
 FX = FX()

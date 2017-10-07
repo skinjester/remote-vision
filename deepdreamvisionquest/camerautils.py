@@ -160,6 +160,10 @@ class MotionDetector(object):
         # temp
         self._counter_ = 0
 
+        # dataexport
+        self.export = open("motiondata-test4.txt","w+")
+
+
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
     def process(self):
@@ -177,15 +181,19 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
 
-        self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
+        self.delta_trigger = self.add_to_history(self.delta_count) + (self.floor*2)
 
         self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
         log.debug(self.monitor_msg)
+
 
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
         ratio = float(ratio/(self.camera.width * self.camera.height))
         log.warning('ratio:{:02.3f}'.format(ratio))
+
+        ### GRB export data to textfile
+        self.export.write('%d,%d,%d\n'%(self.delta_trigger,self.delta_count,self.delta_count_history))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
@@ -238,7 +246,7 @@ class MotionDetector(object):
         self.history.append(self.delta_count)
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
-        value = int(sum(self.history)/(self.history_queue_length))
+        value = int((sum(self.history)*1.5)/(self.history_queue_length)) #GRB history multiplier
         return value
 
     def force_detection(self):
