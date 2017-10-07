@@ -181,7 +181,7 @@ class MotionDetector(object):
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
 
-        self.delta_trigger = self.add_to_history(self.delta_count) + (self.floor*2)
+        self.delta_trigger = self.add_to_history(self.delta_count*2) + (self.floor*2)
 
         self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
         log.debug(self.monitor_msg)
@@ -246,7 +246,7 @@ class MotionDetector(object):
         self.history.append(self.delta_count)
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
-        value = int((sum(self.history)*1.5)/(self.history_queue_length)) #GRB history multiplier
+        value = int((sum(self.history)*1.2)/(self.history_queue_length)) #GRB history multiplier
         return value
 
     def force_detection(self):

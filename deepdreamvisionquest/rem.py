@@ -575,7 +575,7 @@ def listener():
     # --------------------------------
 
     if key==85: # PAGE UP: Previous Bank
-        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-'))
+        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-')).
         return
 
     if key==86: # PAGE DOWN: NEXT Bank
@@ -583,7 +583,7 @@ def listener():
         return
 
     if key == 81: # left-arrow key: previous program
-        log.critical('{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
+        log.critical('x{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
         Model.prev_program()
         return
 
