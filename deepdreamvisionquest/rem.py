@@ -575,7 +575,7 @@ def listener():
     # --------------------------------
 
     if key==85: # PAGE UP: Previous Bank
-        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-')).
+        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-'))
         return
 
     if key==86: # PAGE DOWN: NEXT Bank
@@ -993,23 +993,25 @@ Camera = []
 
 # note that camera index changes if a webcam is unplugged
 # default values are  [0,1]
-Device = [0,1] # debug
+Device = [0,] # debug
 
 w = data.capture_w
 h = data.capture_h
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False,
-    flip_h=False, flip_v=False, gamma=0.8).start())
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=False,
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
     flip_h=False, flip_v=False, gamma=0.8).start())
 
-Webcam = Cameras(source=Camera, current=Device[1])
+# temp disable cam 2 for show setup
+# Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
+#     flip_h=False, flip_v=False, gamma=0.8).start())
+
+Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 MotionDetector = MotionDetector(floor=12000, camera=Webcam.get(), log=update_HUD_log)
 
 # disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','silent', listener)
+Viewport = Viewport('deepdreamvisionquest','living-room', listener)
 Composer = Composer()
-Model = Model(program_duration=30)
+Model = Model(program_duration=600)
 FX = FX()
 
 Model.set_program(0)
