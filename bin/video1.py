@@ -1,14 +1,17 @@
 import cv2
 
-#capture from camera at location 0
-cv2.namedWindow('input', cv2.WINDOW_NORMAL)
-cap = cv2.VideoCapture(0)
-#set the width and height
-cap.set(3,1920)
-cap.set(4,1080)
+cap = []
+
+# capture from camera at location 0
+cv2.namedWindow('video0', cv2.WINDOW_NORMAL)
+cap[0] = cv2.VideoCapture(0)
+
+# width and height
+cap[0].set(3,1920)
+cap[0].set(4,1080)
 
 def read():
-	return cv2.flip(cv2.transpose(cap.read()[1]),1)
+	return cv2.flip(cv2.transpose(cap[0].read()[1]),1)
 
 while True:
     img = read()
