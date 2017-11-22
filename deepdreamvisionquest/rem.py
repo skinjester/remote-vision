@@ -110,6 +110,10 @@ class Model(object):
 
         update_HUD_log('model',self.caffemodel)
 
+    def showlayers(self):
+        # outputs valid layer list for this model
+        print self.net.blobs.keys()
+
     def set_program(self, index):
         self.package_name = data.program[index]['name']
         self.iterations = data.program[index]['iterations']
@@ -171,6 +175,9 @@ class Model(object):
         if self.current_feature > max_feature_index-1:
             self.current_feature = -1
         self.set_featuremap()
+
+    def reset_feature(self):
+        pass
 
     def prev_program(self):
         self.current_program -= 1
@@ -304,7 +311,7 @@ class Composer(object):
 
             if self.is_compositing_enabled:
                 image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-                self.opacity = self.opacity * 0.8
+                self.opacity = self.opacity * 0.9
                 if self.opacity <= 0.01:
                     self.opacity = 1.0
                     self.is_compositing_enabled = False
@@ -371,7 +378,7 @@ class FX(object):
         elapsed = time.time() - self.cycle_start_time
         if elapsed >= duration:
             MotionDetector.force_detection()
-            # Viewport.refresh()
+            Viewport.refresh()
         log.debug('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
 
     # called by main() at start of each cycle
@@ -452,7 +459,7 @@ def vignette(img,param):
     mask = 255 * kernel / np.linalg.norm(kernel)
     output = np.copy(img)
     for i in range(3):
-        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 255))
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 2))
     return output
 
 def sobel(img):
@@ -585,11 +592,13 @@ def listener():
     if key == 81: # left-arrow key: previous program
         log.critical('x{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
         Model.prev_program()
+        Model.reset_feature()
         return
 
     if key == 83: # right-arrow key: next program
         log.critical('{}:{} {} {}'.format('B4',key,'ARROWR','PROGRAM+'))
         Model.next_program()
+        Model.reset_feature()
         return
 
     # Row C
@@ -651,16 +660,20 @@ def listener():
         MotionDetector.floor += 1000 * Viewport.keypress_mult
         update_HUD_log('floor',MotionDetector.floor)
         log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
+
+        #temp
+        Model.showlayers()
         return
 
     # Row F
     # --------------------------------
 
-    if key == 190: # F1 key: Toggle Camera
-        index = (Webcam.current + 1) % 2 # hardcoded for 2 cameras
-        MotionDetector.camera = Webcam.set(Device[index])
-        log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
-        return
+    # dssabled for single camera show
+    # if key == 190: # F1 key: Toggle Camera
+    #     index = (Webcam.current + 1) % 2 # hardcoded for 2 cameras
+    #     MotionDetector.camera = Webcam.set(Device[index])
+    #     log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
+    #     return
 
     if key == 112: # p key : pause/unpause motion detection
         MotionDetector.is_paused = not MotionDetector.is_paused
@@ -711,7 +724,7 @@ def objective_guide(dst):
     x = x.reshape(ch,-1)
     y = y.reshape(ch,-1)
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
-    dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one sthta match best
+    dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one that matches best
 
 
 # -------
@@ -777,6 +790,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         return Webcam.get().read()
 
+    
+
 
     # SETUPOCTAVES---
     Composer.is_new_cycle = False
@@ -825,6 +840,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # attenuate step size over rem cycle
             x = step_params['step_size']
             step_params['step_size'] += x * Model.step_mult * 1.0
+
+            # set a floor for any cyuclefx step modification
+            if step_params['step_size'] < 1.1:
+                step_params['step_size'] = 1.1
 
             i += 1
 
@@ -992,26 +1011,27 @@ net = None
 Camera = []
 
 # note that camera index changes if a webcam is unplugged
-# default values are  [0,1]
-Device = [0,] # debug
+# default values are  [0,1] for 2 camera setup
+Device = [0,1] # debug
 
 w = data.capture_w
 h = data.capture_h
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True,
-    flip_h=False, flip_v=False, gamma=0.8).start())
+# single camera setuo will use camera index 0
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, flip_h=False, flip_v=False, gamma=0.8).start())
 
 # temp disable cam 2 for show setup
-# Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True,
-#     flip_h=False, flip_v=False, gamma=0.8).start())
+# Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 
 Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
-MotionDetector = MotionDetector(floor=12000, camera=Webcam.get(), log=update_HUD_log)
+
+# need to set the floor value to reflect the amount of light in the area
+MotionDetector = MotionDetector(floor=6000, camera=Webcam.get(), log=update_HUD_log)
 
 # disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','living-room', listener)
+Viewport = Viewport('deepdreamvisionquest','dev-1', listener)
 Composer = Composer()
-Model = Model(program_duration=600)
+Model = Model(program_duration=60) # seconds
 FX = FX()
 
 Model.set_program(0)

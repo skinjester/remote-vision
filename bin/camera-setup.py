@@ -25,7 +25,8 @@ cv2.namedWindow('webcam1',cv2.WINDOW_NORMAL)
 # collect camera objects
 cap = []
 cap.append(cv2.VideoCapture(0))
-cap.append(cv2.VideoCapture(1))
+# disabled for single camera setup
+#cap.append(cv2.VideoCapture(1))
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 

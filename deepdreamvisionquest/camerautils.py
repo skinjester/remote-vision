@@ -177,7 +177,7 @@ class MotionDetector(object):
         self.delta_count_history = self.delta_count
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus)
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
-        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
+        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 200, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
 
@@ -200,7 +200,6 @@ class MotionDetector(object):
             # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
             self.monitor_msg += ' overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
             log.debug(self.monitor_msg)
-
 
             self.delta_count = 0 # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
 
