@@ -21,7 +21,7 @@ log = logging.getLogger('logtest-debug')
 threadlog = logging.getLogger('logtest-debug-thread')
 
 '''
-Camera Manager collects Camera Objects
+Camera Manager collects any Camera Objects
 '''
 class Cameras(object):
     def __init__(self, source=[], current=0):

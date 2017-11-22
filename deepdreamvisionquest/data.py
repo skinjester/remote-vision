@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+# processing resolution
 capture_w = 1280
 capture_h = 720
 

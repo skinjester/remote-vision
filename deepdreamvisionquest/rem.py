@@ -1,4 +1,3 @@
-# TODO: not needing all of these imports. cleanup
 import os
 import os.path
 import argparse
