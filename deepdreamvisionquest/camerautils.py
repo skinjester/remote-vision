@@ -78,9 +78,9 @@ class WebcamVideoStream(object):
         self.gamma = gamma
         self.stopped = False
 
+        # generates internal table for gamma correction
         self.table = np.array([((i / 255.0) ** (1.0 / self.gamma)) * 255
         for i in np.arange(0, 256)]).astype("uint8")
-
 
         # initial frame to prime the queue
         # the initial capture is aligned on init
@@ -124,7 +124,6 @@ class WebcamVideoStream(object):
         # # apply gamma correction using the lookup table defined on init
         if self.gamma == 1.0:
             return img
-        log.warning('gamma correction enabled')
         return cv2.LUT(img, self.table)
 
     def stop(self):

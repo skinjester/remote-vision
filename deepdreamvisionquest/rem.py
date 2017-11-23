@@ -1,3 +1,5 @@
+# rem.py
+
 import os
 import os.path
 import argparse
@@ -25,7 +27,6 @@ import LogSettings # global log settings templ
 
 import math
 from collections import deque
-
 
 
 
@@ -200,6 +201,7 @@ class Viewport(object):
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
         self.username = username
+        self.imagesavepath = '/home/gary/Pictures/'+self.username
         self.listener = listener
         self.force_refresh = True
         self.image = None
@@ -231,14 +233,13 @@ class Viewport(object):
             self.time_counter = 0
         self.image = image
 
-        # export image if condition is met
-        # if self.save_next_frame:
-        #     self.save_next_frame = False
-        #     self.export(image)
-
     def export(self,image):
-        make_sure_path_exists(Viewport.username)
-        export_path = '{}/{}.jpg'.format(Viewport.username,time.time())
+        make_sure_path_exists(self.imagesavepath)
+        log.debug('{}:{}'.format('export image',self.imagesavepath))
+        export_path = '{}/{}.jpg'.format(
+            self.imagesavepath,
+            time.strftime('%m-%d-%H-%M-%s')
+            )
         savefile = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         PIL.Image.fromarray(np.uint8(savefile)).save(export_path)
         #tweet(export_path)
@@ -1016,7 +1017,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 # single camera setuo will use camera index 0
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, flip_h=False, flip_v=False, gamma=0.8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, flip_h=False, flip_v=False, gamma=0.2).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
