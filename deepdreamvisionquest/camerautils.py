@@ -1,6 +1,7 @@
 from __future__ import division # so division works like you expect it to
 import numpy as np
 import cv2
+import time
 import datetime
 from threading import Thread
 import sys
@@ -169,9 +170,11 @@ class MotionDetector(object):
 
         # temp
         self._counter_ = 0
+        self.elapsed = 0
+        self.now = time.time()
 
         # dataexport
-        # self.export = open("motiondata-test-1.txt","w+")
+        self.export = open("motiondata/motiondata-test-3.txt","w+")
 
 
     def delta_images(self,t0, t1, t2):
@@ -189,7 +192,7 @@ class MotionDetector(object):
         self.delta_count_history = self.delta_count
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus)
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
-        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
+        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 200, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
 
@@ -205,7 +208,14 @@ class MotionDetector(object):
         log.info('ratio:{:02.3f}'.format(ratio))
 
         ### GRB export data to textfile
-        # self.export.write('%d,%d,%d\n'%(self.delta_trigger,self.delta_count,self.delta_count_history))
+        ###
+
+        self.elapsed = time.time() - self.now # elapsed time for logging function
+        self.export.write('%f,%d\n'%(self.elapsed,self.delta_count))
+
+
+        ##
+        ##
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):

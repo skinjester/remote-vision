@@ -1025,7 +1025,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 # single camera setuo will use camera index 0
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, flip_h=False, flip_v=False, gamma=0.2).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, flip_h=False, flip_v=False, gamma=1.0).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
@@ -1034,7 +1034,7 @@ Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
 # need to set the floor value to reflect the amount of light in the area
-MotionDetector = MotionDetector(floor=100000, camera=Webcam.get(), log=update_HUD_log)
+MotionDetector = MotionDetector(floor=0, camera=Webcam.get(), log=update_HUD_log)
 
 # disable screen export when usename specified is 'silent'
 Viewport = Viewport('deepdreamvisionquest','dev-1', listener)
