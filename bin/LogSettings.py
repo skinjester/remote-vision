@@ -20,12 +20,12 @@ LOGGING_CONFIG = {
             'formatter': 'simple'
         },
         'console-detailed': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'detailed'
         },
         'console-thread-detail': {
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'showthread'
         }
