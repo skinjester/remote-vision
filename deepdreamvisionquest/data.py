@@ -214,32 +214,32 @@ program.append({
 	'step_size':3,
 	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
+	'octave_scale':1.2,
 	'iteration_mult':0.2,
 	'step_mult':-0.01,
 	'model':'vgg19',
 	'layers':[
 		'conv5_3',
 	],
-	'features':range(128,256),
+	'features':range(136,256),
 	'cyclefx': [
 		{
 			'name': 'xform_array',
-			'params': {'amplitude':20, 'wavelength':100}
+			'params': {'amplitude':2, 'wavelength':200}
 		},
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.2, 'max_scale':1.5}
+			'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.3}
 		}
 	],
 	'stepfx': [
 		{
 			'name': 'bilateral_filter',
-			'params': {'radius': 9, 'sigma_color':32, 'sigma_xy': 200}
+			'params': {'radius': 9, 'sigma_color':32, 'sigma_xy': 20}
 		},
 		{
 			'name': 'nd_gaussian',
-			'params': {'sigma': 0.1, 'order':0}
+			'params': {'sigma': 0.2, 'order':0}
 		},
 	]
 })

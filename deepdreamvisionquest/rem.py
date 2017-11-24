@@ -356,7 +356,7 @@ class FX(object):
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
-        log.warning('Model:{} octave_scale: {}'.format(model,model.octave_scale))
+        log.info('octave_scale: {}'.format(model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
         # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
@@ -973,6 +973,14 @@ def main():
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
+log.setLevel(logging.CRITICAL) # not sure why this works instead of definitions for this elsewhere
+
+
+# log.debug('debug message!')
+# log.info('info message!')
+# log.error('error message')
+# log.warning('warning message')
+# log.critical('critical message')
 
 hud_log = {
     # (current value, old value)
@@ -1026,7 +1034,7 @@ Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
 # need to set the floor value to reflect the amount of light in the area
-MotionDetector = MotionDetector(floor=6000, camera=Webcam.get(), log=update_HUD_log)
+MotionDetector = MotionDetector(floor=100000, camera=Webcam.get(), log=update_HUD_log)
 
 # disable screen export when usename specified is 'silent'
 Viewport = Viewport('deepdreamvisionquest','dev-1', listener)

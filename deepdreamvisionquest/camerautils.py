@@ -18,11 +18,20 @@ import LogSettings # global log settings template
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
+log.setLevel(logging.CRITICAL)
 threadlog = logging.getLogger('logtest-debug-thread')
+threadlog.setLevel(logging.CRITICAL)
 
 '''
 Camera Manager collects any Camera Objects
 '''
+
+# log.debug('*debug message!')
+# log.info('*info message!')
+# log.error('*error message')
+# log.warning('warning message')
+# log.critical('critical message')
+
 class Cameras(object):
     def __init__(self, source=[], current=0):
         self.source = source
@@ -43,11 +52,12 @@ class Cameras(object):
     def set(self,camera_index):
         # returns a pointer to the specified camera object
         self.current = camera_index
+        log.critical('cameraID: {}'.format(self.current))
         return self.source[self.current]
 
     def get(self):
         # returns a pointer to the current camera object
-        log.warning('')
+        log.critical('cameraID: {}'.format(self.current))
         return self.source[self.current]
 
 
@@ -63,7 +73,7 @@ class WebcamVideoStream(object):
     # because the hardware doesn't capture arbitrary window sizes
     def __init__(self, src, capture_width, capture_height, portrait_alignment, flip_h=False, flip_v=False, gamma=1.0):
 
-        # set camera dimensiions before reading frames
+        # set camera dimensions before reading frames
         # requested size is rounded to nearest camera size if non-matching
         self.stream = cv2.VideoCapture(src)
         self.stream.set(3, capture_width)
@@ -91,9 +101,10 @@ class WebcamVideoStream(object):
 
     def start(self):
         Thread(target=self.update, args=()).start()
-        threadlog.debug('started new thread')
+        threadlog.critical('started camera thread')
         return self
 
+    # !!! to adjust gamma correction dynamically look here
     def update(self):
         # loop until the thread is stopped
         while True:
@@ -102,7 +113,7 @@ class WebcamVideoStream(object):
 
             _,img = self.stream.read()
             self.frame = self.gamma_correct(self.transpose(img))
-            threadlog.debug('capture RGB:{}'.format(self.frame))
+            threadlog.debug('camera buffer RGB:{}'.format(self.frame.shape))
 
     def read(self):
         # print "[read] {}".format(self.frame.shape)
@@ -160,39 +171,41 @@ class MotionDetector(object):
         self._counter_ = 0
 
         # dataexport
-        self.export = open("motiondata-test4.txt","w+")
+        # self.export = open("motiondata-test-1.txt","w+")
 
 
     def delta_images(self,t0, t1, t2):
         return cv2.absdiff(t2, t0)
+
     def process(self):
         if self.is_paused:
+            log.critical('detector paused')
             self.wasMotionDetected = False
             return
 
-        log.debug('detect motion')
+        log.critical('detector running')
         # history
         self.wasMotionDetected_history = self.wasMotionDetected
         self.delta_count_history = self.delta_count
         self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus)
         retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
-        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 200, cv2.NORM_MINMAX)
+        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 255, cv2.NORM_MINMAX)
         img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
         self.delta_count = cv2.countNonZero(img_count_view)
 
         self.delta_trigger = self.add_to_history(self.delta_count*2) + (self.floor*2)
 
-        self.monitor_msg = 'delta_trigger:{} delta_count:{}'.format(self.delta_trigger, self.delta_count,self.delta_count_history)
-        log.debug(self.monitor_msg)
+        self.monitor_msg = 'delta_count:{}'.format(self.delta_count)
+        log.critical(self.monitor_msg)
 
 
         # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
         ratio = self.delta_count
         ratio = float(ratio/(self.camera.width * self.camera.height))
-        log.warning('ratio:{:02.3f}'.format(ratio))
+        log.info('ratio:{:02.3f}'.format(ratio))
 
         ### GRB export data to textfile
-        self.export.write('%d,%d,%d\n'%(self.delta_trigger,self.delta_count,self.delta_count_history))
+        # self.export.write('%d,%d,%d\n'%(self.delta_trigger,self.delta_count,self.delta_count_history))
 
         if (self.delta_count >= self.delta_trigger and
             self.delta_count_history >= self.delta_trigger):
