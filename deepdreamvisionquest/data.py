@@ -209,37 +209,92 @@ program.append({
 })
 
 program.append({
+	'name':'wildlife-cambrian-1',
+	'iterations':10,
+	'step_size':4,
+	'octaves':6,
+	'octave_cutoff':6,
+	'octave_scale':1.3,
+	'iteration_mult':0.25,
+	'step_mult':-0.2,
+	'model':'vgg19',
+	'layers':[
+		'conv5_3',
+		'conv5_2',
+		'conv5_1',
+		'conv4_4',
+		'conv4_3',
+	],
+	'features':range(136,256),
+	'cyclefx': [
+	    inception_xform_default,
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
+	    }
+	],
+	'stepfx': [
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
+		},
+	]
+})
+
+program.append({
+	'name':'wildlife-cambrian',
+	'iterations':10,
+	'step_size':4,
+	'octaves':6,
+	'octave_cutoff':6,
+	'octave_scale':1.3,
+	'iteration_mult':0.25,
+	'step_mult':-0.2,
+	'model':'vgg19',
+	'layers':[
+		'conv4_3'
+	],
+	'features':range(140,512),
+	'cyclefx': [
+	    inception_xform_default,
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
+	    }
+	],
+	'stepfx': [
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
+		},
+	]
+})
+
+program.append({
 	'name':'wildlife',
-	'iterations':20,
+	'iterations':40,
 	'step_size':3,
-	'octaves':5,
-	'octave_cutoff':5,
+	'octaves':6,
+	'octave_cutoff':6,
 	'octave_scale':1.2,
-	'iteration_mult':0.2,
-	'step_mult':-0.01,
+	'iteration_mult':0.25,
+	'step_mult':-0.05,
 	'model':'vgg19',
 	'layers':[
 		'conv5_3',
 	],
 	'features':range(136,256),
 	'cyclefx': [
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':2, 'wavelength':200}
-		},
+		inception_xform_default,
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.3}
+			'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
 		}
 	],
 	'stepfx': [
 		{
 			'name': 'bilateral_filter',
-			'params': {'radius': 9, 'sigma_color':32, 'sigma_xy': 20}
-		},
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.2, 'order':0}
+			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
 		},
 	]
 })
