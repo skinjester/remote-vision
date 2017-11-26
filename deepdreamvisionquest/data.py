@@ -227,7 +227,10 @@ program.append({
 	],
 	'features':range(136,256),
 	'cyclefx': [
-	    inception_xform_default,
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.01}
+	    },
 	    {
 	    	'name': 'octave_scaler',
 	    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
@@ -315,7 +318,6 @@ program.append({
 	],
 	'features':range(104,256),
 	'cyclefx':[
-		xform_array_default,
 			{
 				'name': 'octave_scaler',
 				'params': {'step':0.1, 'min_scale':1.2, 'max_scale':1.6}
@@ -370,6 +372,39 @@ program.append({
 	]
 })
 
+
+program.append({
+	'name':'neomorph-neo-2',
+	'iterations':40,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':3,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/5x5'
+	],
+	'features':[7],
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
+		}
+	]
+})
 
 program.append({
 	'name':'neomorph-neo',
