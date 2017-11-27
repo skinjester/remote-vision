@@ -5,6 +5,12 @@ import cv2
 capture_w = 1280
 capture_h = 720
 
+# capture_w = 1920
+# capture_h = 1080
+
+# capture_w = 960
+# capture_h = 720
+
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -715,24 +721,24 @@ program.append({
 
 program.append({
 	'name':'hifi-featuremap',
-	'iterations':20,
-	'step_size':1.5,
+	'iterations':5,
+	'step_size':2,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
-	'step_mult':0.0,
+	'step_mult':0.01,
 	'model':'places',
 	'layers':[
-		'inception_4b/3x3_reduce'
+		'inception_4b/3x3_reduce',
+		'inception_4c/3x3_reduce'
 	],
-	'features':[-1],
+	'features':range(54,100),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+			'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.7}
 		},
-		inception_xform_default
 	],
 	'stepfx':[
 		# {
@@ -741,12 +747,13 @@ program.append({
 		# },
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 200}
 		},
 		{
 			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
-		}
+			'params': {'duration':5.0}
+		},
+
 	]
 })
 
