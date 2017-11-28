@@ -263,11 +263,11 @@ class Viewport(object):
 
     def monitor(self):
         if self.motiondetect_log_enabled:
-            img = MotionDetector.t_delta_framebuffer
+            img = Webcam.get().t_delta_framebuffer
 
             # composite motion stats here
             # rectangle
-            overlay = MotionDetector.t_delta_framebuffer.copy()
+            overlay = img.copy()
             opacity = 1.0
             #cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
             cv2.putText(overlay, MotionDetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
@@ -826,7 +826,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 return Webcam.get().read()
 
             #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
-            MotionDetector.process()
+            #MotionDetector.process()
 
             # isResting?
             # this saying if the MotionDetector history doesn't Match the current MotionDetector
@@ -938,7 +938,9 @@ def main():
         Viewport.show(Composer.buffer1)
 
         #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
-        MotionDetector.process()
+        # MotionDetector.process()
+
+
         if MotionDetector.wasMotionDetected:
             Composer.is_dirty = False
 
@@ -1021,8 +1023,7 @@ GREEN = (0,255,0)
 # global reference to the neural network object
 net = None
 
-# temp window for monitoring camera diff at capture time
-cv2.namedWindow('diff', cv2.WINDOW_NORMAL)
+
 
 # camera setup
 Camera = []
