@@ -702,6 +702,7 @@ def listener():
         log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
         Viewport.shutdown()
 
+        # logging
         # close the motion detector data export file
         MotionDetector.export.close()
         return
@@ -732,7 +733,7 @@ def objective_guide(dst):
 # apply normalized ascent step upon the image in the networks data blob
 # supports Feature Map activation
 # -------
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1):
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
@@ -790,7 +791,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         return Webcam.get().read()
 
-    
 
 
     # SETUPOCTAVES---
@@ -825,7 +825,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 return Webcam.get().read()
 
+            #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
             MotionDetector.process()
+
+            # isResting?
+            # this saying if the MotionDetector history doesn't Match the current MotionDetector
+            # then the value of WasMotionDetected has toggled
             if not MotionDetector.isResting():
                 break
 
@@ -931,6 +936,8 @@ def main():
         Composer.is_new_cycle = True
         # Viewport.export(Composer.buffer1)
         Viewport.show(Composer.buffer1)
+
+        #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
         MotionDetector.process()
         if MotionDetector.wasMotionDetected:
             Composer.is_dirty = False
@@ -1014,6 +1021,8 @@ GREEN = (0,255,0)
 # global reference to the neural network object
 net = None
 
+# temp window for monitoring camera diff at capture time
+cv2.namedWindow('diff', cv2.WINDOW_NORMAL)
 
 # camera setup
 Camera = []
@@ -1025,7 +1034,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 # single camera setuo will use camera index 0
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, flip_h=False, flip_v=False, gamma=1.0).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, flip_h=True, flip_v=False, gamma=0.75).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
@@ -1033,16 +1042,13 @@ Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, flip_
 Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
-# need to set the floor value to reflect the amount of light in the area
-MotionDetector = MotionDetector(floor=0, camera=Webcam.get(), log=update_HUD_log)
-
 # disable screen export when usename specified is 'silent'
 Viewport = Viewport('deepdreamvisionquest','dev-1', listener)
 Composer = Composer()
-Model = Model(program_duration=60) # seconds
+Model = Model(program_duration=9999) # seconds
 FX = FX()
 
-Model.set_program(0)
+Model.set_program(16)
 
 
 if __name__ == "__main__":

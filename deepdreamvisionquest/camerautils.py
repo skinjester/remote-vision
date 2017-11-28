@@ -12,27 +12,9 @@ import LogSettings # global log settings template
 
 
 
-# --------
-# INIT.
-# --------
 
-# setup system logging facilities
-logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
-log = logging.getLogger('logtest-debug')
-log.setLevel(logging.CRITICAL)
-threadlog = logging.getLogger('logtest-debug-thread')
-threadlog.setLevel(logging.CRITICAL)
 
-'''
-Camera Manager collects any Camera Objects
-'''
-
-# log.debug('*debug message!')
-# log.info('*info message!')
-# log.error('*error message')
-# log.warning('warning message')
-# log.critical('critical message')
-
+# Camera collection
 class Cameras(object):
     def __init__(self, source=[], current=0):
         self.source = source
@@ -62,12 +44,7 @@ class Cameras(object):
         return self.source[self.current]
 
 
-
-
-
-'''
-Camera Object
-'''
+# camera object
 class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
@@ -83,6 +60,7 @@ class WebcamVideoStream(object):
         self.height = int(self.stream.get(4))
         self.capture_size = [self.width,self.height]
 
+        # image transform and gamma
         self.portrait_alignment = portrait_alignment
         self.flip_h = flip_h
         self.flip_v = flip_v
@@ -93,11 +71,14 @@ class WebcamVideoStream(object):
         self.table = np.array([((i / 255.0) ** (1.0 / self.gamma)) * 255
         for i in np.arange(0, 256)]).astype("uint8")
 
-        # initial frame to prime the queue
-        # the initial capture is aligned on init
-        # alignment correction is applied to the capture only
-        (self.grabbed, self.frame) = self.stream.read()
-        self.frame = self.transpose(self.frame)
+        # motion detection
+        self.delta_count = 0 # difference between current frame and previous
+        self.img_difference = np.zeros((self.height, self.width ,3), np.uint8) # framebuffer for image differencing operations
+
+        # frame buffer housekeeping
+        self.rawframe = np.zeros((self.height, self.width ,3), np.uint8) # empty img for initial diff
+        (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
+        self.frame = self.transpose(self.frame) # alignment correction
 
 
     def start(self):
@@ -105,26 +86,39 @@ class WebcamVideoStream(object):
         threadlog.critical('started camera thread')
         return self
 
-    # !!! to adjust gamma correction dynamically look here
     def update(self):
         # loop until the thread is stopped
         while True:
             if self.stopped:
                 return
 
-            _,img = self.stream.read()
-            self.frame = self.gamma_correct(self.transpose(img))
+            _, img = self.stream.read()
+
+            # self.rawframe contains non-transformed/non gamma-corrected camera img
+            # self.frame contains transformed/gamma-corrected image
+
+            # motion detection
+            self.img_difference = cv2.subtract(img, self.rawframe)
+            self.img_difference = cv2.cvtColor(self.img_difference, cv2.COLOR_RGB2GRAY)
+            _, self.img_difference = cv2.threshold(self.img_difference, 32, 255, cv2.THRESH_TOZERO)
+            self.delta_count = cv2.countNonZero(self.img_difference)
+            MotionDetector.process()
+
+            # update internal buffers
+            self.rawframe = img # unprocessed camera img
+            self.frame = self.gamma_correct(self.transpose(img)) # processed camera img
+
+            # logging
+            cv2.imshow('diff', _diff)
+            threadlog.critical('_countdiff:{}'.format(_count))
             threadlog.debug('camera buffer RGB:{}'.format(self.frame.shape))
 
     def read(self):
-        # print "[read] {}".format(self.frame.shape)
-        log.info('camera buffer RGB:{}'.format(self.frame.shape))
-
-        # return img_gamma
+        log.debug('camera buffer RGB:{}'.format(self.frame.shape))
         return self.frame
 
     def transpose(self, img):
-        if self.portrait_alignment:
+        if self.portrait_alignment: 
             img = cv2.transpose(img)
         if self.flip_v:
             img = cv2.flip(img, 0)
@@ -143,21 +137,11 @@ class WebcamVideoStream(object):
 
 class MotionDetector(object):
 
-    def __init__(self, floor, camera, log):
+    def __init__(self, floor):
         self.delta_trigger = 0
         self.delta_trigger_history = 0
         self.delta_count = 0
         self.delta_count_history = 0
-        self.camera = camera
-
-        self.t_minus = self.camera.read()
-        self.t_now = self.camera.read()
-        self.t_plus =self.camera.read()
-
-        self.width = self.t_minus.shape[1]
-        self.height = self.t_minus.shape[0]
-
-        self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # empty img
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
         self.is_paused = False
@@ -168,100 +152,21 @@ class MotionDetector(object):
         self.forced = False
         self.monitor_msg = None
 
-        # temp
+        # dataexport
+        self.export = open("motiondata/motiondata-test-6.txt","w+")
+
+        # temp (?)
         self._counter_ = 0
         self.elapsed = 0
         self.now = time.time()
+        self.counted = 0
 
-        # dataexport
-        self.export = open("motiondata/motiondata-test-3.txt","w+")
-
-
-    def delta_images(self,t0, t1, t2):
-        return cv2.absdiff(t2, t0)
+        # temp for thread debug
+        self.thread_msg = 'none'
+        self.stopped = False
 
     def process(self):
-        if self.is_paused:
-            log.critical('detector paused')
-            self.wasMotionDetected = False
-            return
-
-        log.critical('detector running')
-        # history
-        self.wasMotionDetected_history = self.wasMotionDetected
-        self.delta_count_history = self.delta_count
-        self.t_delta_framebuffer = self.delta_images(self.t_minus, self.t_now, self.t_plus)
-        retval, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 16, 255, 3)
-        cv2.normalize(self.t_delta_framebuffer, self.t_delta_framebuffer, 0, 200, cv2.NORM_MINMAX)
-        img_count_view = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
-        self.delta_count = cv2.countNonZero(img_count_view)
-
-        self.delta_trigger = self.add_to_history(self.delta_count*2) + (self.floor*2)
-
-        self.monitor_msg = 'delta_count:{}'.format(self.delta_count)
-        log.critical(self.monitor_msg)
-
-
-        # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
-        ratio = self.delta_count
-        ratio = float(ratio/(self.camera.width * self.camera.height))
-        log.info('ratio:{:02.3f}'.format(ratio))
-
-        ### GRB export data to textfile
-        ###
-
-        self.elapsed = time.time() - self.now # elapsed time for logging function
-        self.export.write('%f,%d\n'%(self.elapsed,self.delta_count))
-
-
-        ##
-        ##
-
-        if (self.delta_count >= self.delta_trigger and
-            self.delta_count_history >= self.delta_trigger):
-            # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
-            self.monitor_msg += ' overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
-            log.debug(self.monitor_msg)
-
-            self.delta_count = 0 # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
-
-        if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
-            self.delta_count -= int(self.delta_count/2)
-            self.update_hud_log('detect','*')
-            self.wasMotionDetected = True
-            self.monitor_msg += ' movement started'
-            log.debug('movement started')
-
-        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
-            self.wasMotionDetected = False
-            self.update_hud_log('detect','-')
-            log.debug('movement ended')
-            self.monitor_msg += ' movement ended'
-        else:
-            # is this the resting condition?
-            self.update_hud_log('detect','-')
-            self.wasMotionDetected = False
-            log.debug('all motion is beneath threshold:{}'.format(self.floor))
-
-
-        self._counter_ += 1 # used to index delta_count_history
-
-
-        lastmsg = '{:0>6}'.format(self.delta_count_history)
-        if self.delta_count_history > self.delta_trigger:
-            # ratio = 1.0 * self.delta_count_history/self.delta_trigger
-            lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_history,ratio)
-
-        nowmsg = '{:0>6}'.format(self.delta_count)
-        if self.delta_count > self.delta_trigger:
-            # ratio = 1.0 * self.delta_count/self.delta_trigger
-            nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
-
-        self.monitor_msg += str(ratio)
-
-        self.update_hud_log('last',lastmsg)
-        self.update_hud_log('now',nowmsg)
-        self.refresh_queue()
+        pass
 
     def add_to_history(self,value):
         self.history.append(self.delta_count)
@@ -271,7 +176,8 @@ class MotionDetector(object):
         return value
 
     def force_detection(self):
-        self.wasMotionDetected = True
+        pass
+        #self.wasMotionDetected = True
 
     def isResting(self):
         log.debug('resting...')
@@ -282,4 +188,30 @@ class MotionDetector(object):
         self.t_minus = self.t_now
         self.t_now = self.t_plus
         self.t_plus = self.camera.read()
-        self.t_plus = cv2.blur(self.t_plus,(20,20))
+        #self.t_plus = cv2.blur(self.t_plus,(20,20))
+
+
+# --------
+# INIT.
+# --------
+
+# setup system logging facilities
+logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
+log = logging.getLogger('logtest-debug')
+log.setLevel(logging.CRITICAL)
+threadlog = logging.getLogger('logtest-debug-thread')
+threadlog.setLevel(logging.CRITICAL)
+
+'''
+Camera Manager collects any Camera Objects
+'''
+
+# log.debug('*debug message!')
+# log.info('*info message!')
+# log.error('*error message')
+# log.warning('warning message')
+# log.critical('critical message')
+
+
+# floor value compensates for the amount of light in the area
+MotionDetector = MotionDetector(floor=0)
