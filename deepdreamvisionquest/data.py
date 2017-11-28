@@ -347,11 +347,11 @@ program.append({
 
 program.append({
 	'name':'cafe',
-	'iterations':40,
+	'iterations':20,
 	'step_size':1.6,
 	'octaves':5,
 	'octave_cutoff':4,
-	'octave_scale':1.4,
+	'octave_scale':1.5,
 	'iteration_mult':0.5,
 	'step_mult':0.001,
 	'model':'places',
@@ -361,7 +361,7 @@ program.append({
 		'inception_4c/pool',
 		'inception_4d/3x3'
 	],
-	'features':range(-1,100),
+	'features':range(5,100),
 	'cyclefx':[
 		# {
 		# 	'name': 'octave_scaler',
