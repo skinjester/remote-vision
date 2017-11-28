@@ -313,7 +313,7 @@ program.append({
 	'name':'violaceous',
 	'iterations':20,
 	'step_size':2,
-	'octaves':5,
+	'octaves':7,
 	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':0.2,
@@ -346,34 +346,37 @@ program.append({
 
 
 program.append({
-	'name':'castle',
-	'iterations':30,
-	'step_size':2,
-	'octaves':6,
+	'name':'cafe',
+	'iterations':40,
+	'step_size':1.6,
+	'octaves':5,
 	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.1,
-	'step_mult':0.0,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.001,
 	'model':'places',
 	'layers':[
+		'inception_4d/5x5',
 		'inception_4c/output',
 		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5'
+		'inception_4d/3x3'
 	],
-	'features':[7],
+	'features':range(-1,100),
 	'cyclefx':[
+		# {
+		# 	'name': 'octave_scaler',
+		# 	'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		# },
 		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':1.7}
-		},
-		inception_xform_default
+			'name': 'inception_xform',
+			'params': {'scale':0.025}
+		}
 	],
 	'stepfx':[
 
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 60}
+		'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
 		}
 	]
 })
