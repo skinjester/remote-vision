@@ -1033,7 +1033,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 # single camera setuo will use camera index 0
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, flip_h=True, flip_v=False, gamma=0.75).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
@@ -1047,7 +1047,7 @@ Composer = Composer()
 Model = Model(program_duration=9999) # seconds
 FX = FX()
 
-Model.set_program(16)
+Model.set_program(1)
 
 
 if __name__ == "__main__":

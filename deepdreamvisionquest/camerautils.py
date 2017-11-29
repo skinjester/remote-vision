@@ -34,12 +34,12 @@ class Cameras(object):
     def set(self,camera_index):
         # returns a pointer to the specified camera object
         self.current = camera_index
-        log.critical('cameraID: {}'.format(self.current))
+        log.debug('cameraID: {}'.format(self.current))
         return self.source[self.current]
 
     def get(self):
         # returns a pointer to the current camera object
-        log.critical('cameraID: {}'.format(self.current))
+        log.debug('cameraID: {}'.format(self.current))
         return self.source[self.current]
 
 
@@ -48,7 +48,7 @@ class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
     # because the hardware doesn't capture arbitrary window sizes
-    def __init__(self, src, capture_width, capture_height, portrait_alignment, flip_h=False, flip_v=False, gamma=1.0):
+    def __init__(self, src, capture_width, capture_height, portrait_alignment, log, flip_h=False, flip_v=False, gamma=1.0):
 
         # set camera dimensions before reading frames
         # requested size is rounded to nearest camera size if non-matching
@@ -71,7 +71,7 @@ class WebcamVideoStream(object):
         for i in np.arange(0, 256)]).astype("uint8")
 
         # motion detection
-        self.motiondetector = MotionDetector(1000)
+        self.motiondetector = MotionDetector(1000, log)
         self.delta_count = 0 # difference between current frame and previous
         self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # framebuffer for image differencing operations
 
@@ -81,6 +81,7 @@ class WebcamVideoStream(object):
         self.frame = self.transpose(self.frame) # alignment correction
 
         # logging
+        self.log = log # this contains reference to hud logging function in rem.py
         self.monitor_msg = '*' #  for HUD
 
 
@@ -97,28 +98,19 @@ class WebcamVideoStream(object):
 
             _, img = self.stream.read()
 
-            # self.rawframe contains non-transformed/non gamma-corrected camera img
-            # self.frame contains transformed/gamma-corrected image
-
             # motion detection
             self.t_delta_framebuffer = cv2.subtract(img, self.rawframe)
             self.t_delta_framebuffer = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
             _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 32, 255, cv2.THRESH_TOZERO)
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
-            # process further when not in the paused state
+            # dont process motion detection if paused
             if self.motiondetector.is_paused == False:
                 self.motiondetector.process(self.delta_count)
 
-
-            # update internal buffers
+            # update internal buffers w camera frame
             self.rawframe = img # unprocessed camera img
             self.frame = self.gamma_correct(self.transpose(img)) # processed camera img
-
-            # logging
-            self.monitor_msg = 'delta_count:{}'.format(self.delta_count)
-            threadlog.critical(self.monitor_msg)
-
 
     def read(self):
         log.debug('camera buffer RGB:{}'.format(self.frame.shape))
@@ -144,7 +136,7 @@ class WebcamVideoStream(object):
 
 class MotionDetector(object):
 
-    def __init__(self, floor):
+    def __init__(self, floor, log):
 
         self.wasMotionDetected = False
         self.wasMotionDetected_history = False
@@ -159,7 +151,7 @@ class MotionDetector(object):
         self.history = []
         self.history_queue_length = 50
         self.forced = False
-        self.monitor_msg = None
+        self.monitor_msg = '*'
 
         # dataexport
         self.export = open("motiondata/motiondata-test-6.txt","w+")
@@ -176,95 +168,88 @@ class MotionDetector(object):
 
     def process(self, delta_count):
         # history
+        self.delta_count = delta_count
         self.wasMotionDetected_history = self.wasMotionDetected
-        self.delta_count_history = delta_count
 
         # scale delta trigger so it rides peak values to prevent sensitive triggering
         self.delta_trigger = self.add_to_history(delta_count*2) + (self.floor*2)
 
-        # # this ratio represents the number of pixels in motion relative to the total number of pixels on screen
-        # ratio = self.delta_count
-        # ratio = float(ratio/(self.camera.width * self.camera.height))
-        # log.info('ratio:{:02.3f}'.format(ratio))
+        # logging
+        # create local copies of this info
+        # because it gets changed after comparison
+        # and we need to see the values are were used for comparison
+        _elapsed = self.elapsed
+        _delta_count_history = self.delta_count_history
+        _delta_trigger = self.delta_trigger
 
-        # # logging
-        # # create local copies of this info
-        # # because it gets changed after comparison
-        # # and need to see what the values are that are used for comparison
-        # _elapsed = self.elapsed
-        # _delta_count = self.delta_count
-        # _delta_count_history = self.delta_count_history
-        # _delta_trigger = self.delta_trigger
-
-        # # motion detection
+        # motion detection
         # if (self.delta_count >= self.delta_trigger and
         #     self.delta_count_history >= self.delta_trigger):
-        #     # print "[motiondetector] overflow now:{} last:{}".format(self.delta_count,self.delta_count_history)
-        #     self.monitor_msg += ' overflow now:{} last:{}'.format(self.delta_count,self.delta_count_history)
-        #     log.debug(self.monitor_msg)
-        #     # logging
-        #     # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
-        #     #self.delta_count = 0
 
-        # if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
-        #     self.delta_count -= int(self.delta_count/2)
-        #     self.update_hud_log('detect','*')
-        #     self.wasMotionDetected = True
-        #     self.monitor_msg += ' movement detected'
-        #     log.debug('movement detected')
+            # logging
+            # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
+            #self.delta_count = 0
 
-        # elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
-        #     self.wasMotionDetected = False
-        #     self.update_hud_log('detect','-')
-        #     log.debug('movement ended')
-        #     self.monitor_msg += ' movement ended'
-        # else:
-        #     # is this the resting condition?
-        #     self.update_hud_log('detect','-')
-        #     self.wasMotionDetected = False
-        #     log.debug('all motion is beneath threshold:{}'.format(self.floor))
+        if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
+            self.delta_count -= int(self.delta_count/2)
+            self.update_hud_log('detect','*')
+            self.wasMotionDetected = True
+            self.monitor_msg += ' movement detected'
+            log.critical('movement detected')
 
-        # self.elapsed = time.time() - self.now # elapsed time for logging function
-        # if self.elapsed > 5 and self.elapsed < 6:
-        #     self.counted += 1
+
+
+        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
+            self.wasMotionDetected = False
+            self.update_hud_log('detect','-')
+            log.debug('movement ended')
+            self.monitor_msg += ' movement ended'
+        else:
+            # is this the resting condition?
+            self.update_hud_log('detect','-')
+            self.wasMotionDetected = False
+            log.debug('all motion is beneath threshold:{}'.format(self.floor))
+
+        self.elapsed = time.time() - self.now # elapsed time for logging function
+        if self.elapsed > 5 and self.elapsed < 6:
+            self.counted += 1
 
         # # logging
         # # preprocess self.wasMotionDetected to appear as 1/0 in datafile
-        # b_condition = 0
-        # if self.wasMotionDetected:
-        #     b_condition = 1
+        b_condition = 0
+        if self.wasMotionDetected:
+            b_condition = 1
 
         # ### logging
-        # ### export data to previousl;y defined textfile
-        # self.export.write('%f,%d,%d,%d,%d\n'%(
-        #     _elapsed,
-        #     _delta_count,
-        #     _delta_count_history,
-        #     _delta_trigger,
-        #     b_condition
-        #     ))
+        # ### export data to previously defined textfile
+        self.export.write('%f,%d,%d,%d,%d\n'%(
+            _elapsed,
+            self.delta_count,
+            _delta_count_history,
+            _delta_trigger,
+            b_condition
+            ))
 
-        # ##
-        # ##
+        threadlog.critical('delta_trigger;{}'.format(self.delta_trigger))
 
-        # self._counter_ += 1 # used to index delta_count_history
+        self._counter_ += 1 # used to index delta_count_history
 
 
-        # lastmsg = '{:0>6}'.format(self.delta_count_history)
-        # if self.delta_count_history > self.delta_trigger:
-        #     # ratio = 1.0 * self.delta_count_history/self.delta_trigger
-        #     lastmsg = '{:0>6}({:02.3f})'.format(self.delta_count_history,ratio)
+        lastmsg = '{:0>6}'.format(self.delta_count_history)
+        if self.delta_count_history > self.delta_trigger:
+            # ratio = 1.0 * self.delta_count_history/self.delta_trigger
+            lastmsg = '{:0>6}'.format(self.delta_count_history)
 
-        # nowmsg = '{:0>6}'.format(self.delta_count)
-        # if self.delta_count > self.delta_trigger:
-        #     # ratio = 1.0 * self.delta_count/self.delta_trigger
-        #     nowmsg = '{:0>6}({:02.3f})'.format(self.delta_count,ratio)
+        nowmsg = '{:0>6}'.format(self.delta_count)
+        if self.delta_count > self.delta_trigger:
+            # ratio = 1.0 * self.delta_count/self.delta_trigger
+            nowmsg = '{:0>6}'.format(self.delta_count)
 
-        # self.monitor_msg += str(ratio)
 
-        # self.update_hud_log('last',lastmsg)
-        # self.update_hud_log('now',nowmsg)
-        # self.refresh_queue()
+        self.update_hud_log('last',lastmsg)
+        self.update_hud_log('now',nowmsg)
+
+        self.delta_count_history = self.delta_count
 
 
     def add_to_history(self,value):
@@ -282,13 +267,6 @@ class MotionDetector(object):
         log.debug('resting...')
         return self.wasMotionDetected == self.wasMotionDetected_history
 
-    def refresh_queue(self):
-        log.debug('.')
-        self.t_minus = self.t_now
-        self.t_now = self.t_plus
-        self.t_plus = self.camera.read()
-        #self.t_plus = cv2.blur(self.t_plus,(20,20))
-
 
 # --------
 # INIT.
@@ -297,9 +275,9 @@ class MotionDetector(object):
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
-log.setLevel(logging.CRITICAL)
+log.setLevel(logging.INFO)
 threadlog = logging.getLogger('logtest-debug-thread')
-threadlog.setLevel(logging.CRITICAL)
+threadlog.setLevel(logging.INFO)
 
 '''
 Camera Manager collects any Camera Objects
