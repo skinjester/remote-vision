@@ -15,7 +15,6 @@ import data
 import tweepy
 os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
-from camerautils import MotionDetector
 from camerautils import WebcamVideoStream
 from camerautils import Cameras
 from random import randint
@@ -270,7 +269,7 @@ class Viewport(object):
             overlay = img.copy()
             opacity = 1.0
             #cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
-            cv2.putText(overlay, MotionDetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
+            cv2.putText(overlay, Webcam.get().monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
             # add overlay back to source
             img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img)
             cv2.imshow('delta', img)
@@ -306,7 +305,7 @@ class Composer(object):
             self.is_compositing_enabled = False
 
         else:
-            if self.is_new_cycle and MotionDetector.isResting() == False:
+            if self.is_new_cycle and Webcam.get().motiondetector.isResting() == False:
                 self.is_compositing_enabled = True
 
             if self.is_compositing_enabled:
@@ -377,7 +376,7 @@ class FX(object):
     def duration_cutoff(self, duration):
         elapsed = time.time() - self.cycle_start_time
         if elapsed >= duration:
-            MotionDetector.force_detection()
+            Webcam.get().motiondetector.force_detection()
             Viewport.refresh()
         log.debug('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
 
@@ -649,16 +648,16 @@ def listener():
         log.critical('{}:{} {} {}'.format('E2',key,']','***'))
 
     if key == 45: # _ key (underscore) : decrease motion threshold
-        MotionDetector.floor -= 1000 * Viewport.keypress_mult
-        if MotionDetector.floor < 1:
-            MotionDetector.floor = 1
-        update_HUD_log('floor',MotionDetector.floor)
+        Webcam.get().motiondetector.floor -= 1000 * Viewport.keypress_mult
+        if Webcam.get().motiondetector.floor < 1:
+            Webcam.get().motiondetector.floor = 1
+        update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.critical('{}:{} {} {}'.format('E3',key,'-','FLOOR-'))
         return
 
     if key == 61: # = key (equals): increase motion threshold
-        MotionDetector.floor += 1000 * Viewport.keypress_mult
-        update_HUD_log('floor',MotionDetector.floor)
+        Webcam.get().motiondetector.floor += 1000 * Viewport.keypress_mult
+        update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
 
         #temp
@@ -671,14 +670,14 @@ def listener():
     # dssabled for single camera show
     # if key == 190: # F1 key: Toggle Camera
     #     index = (Webcam.current + 1) % 2 # hardcoded for 2 cameras
-    #     MotionDetector.camera = Webcam.set(Device[index])
+    #     Webcam.get().motiondetector.camera = Webcam.set(Device[index])
     #     log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
     #     return
 
     if key == 112: # p key : pause/unpause motion detection
-        MotionDetector.is_paused = not MotionDetector.is_paused
-        if not MotionDetector.is_paused:
-            MotionDetector.delta_trigger = MotionDetector.delta_trigger_history
+        Webcam.get().motiondetector.is_paused = not Webcam.get().motiondetector.is_paused
+        if not Webcam.get().motiondetector.is_paused:
+            Webcam.get().motiondetector.delta_trigger = Webcam.get().motiondetector.delta_trigger_history
         log.critical('{}:{} {} {}'.format('F2',key,'P','TOGGLE MOTION'))
         return
 
@@ -704,7 +703,7 @@ def listener():
 
         # logging
         # close the motion detector data export file
-        MotionDetector.export.close()
+        Webcam.get().motiondetector.export.close()
         return
 
 
@@ -760,7 +759,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     if clip:
         bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 200-bias)
+        src.data[:] = np.clip(src.data, -bias, 240-bias)
 
     # postprocessor
     src.data[0] = iterationPostProcess(net, src.data[0])
@@ -786,7 +785,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     # GRB: Not entirely sure why this condition gets triggered 
     # noticing it when the system starts up. does it appear at other times? when?
-    if MotionDetector.wasMotionDetected:
+    if Webcam.get().motiondetector.wasMotionDetected:
         Composer.write_buffer2(Webcam.get().read())
         Composer.is_dirty = False # no, we'll be refreshing the frane buffer
         return Webcam.get().read()
@@ -825,13 +824,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 return Webcam.get().read()
 
-            #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
             #MotionDetector.process()
 
             # isResting?
             # this saying if the MotionDetector history doesn't Match the current MotionDetector
             # then the value of WasMotionDetected has toggled
-            if not MotionDetector.isResting():
+            if not Webcam.get().motiondetector.isResting():
                 break
 
             # delegate gradient ascent to step function
@@ -857,8 +855,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
             iterationmsg = '{:0>3}:{:0>3} x{}'.format(i,iteration_max,Model.iteration_mult)
             stepsizemsg = '{:02.3f} x{:02.3f}'.format(step_params['step_size'],Model.step_mult)
-            thresholdmsg = '{:0>6}'.format(MotionDetector.delta_trigger)
-            floormsg = '{:0>6}'.format(MotionDetector.floor)
+            thresholdmsg = '{:0>6}'.format(Webcam.get().motiondetector.delta_trigger)
+            floormsg = '{:0>6}'.format(Webcam.get().motiondetector.floor)
             update_HUD_log('octave',octavemsg)
             update_HUD_log('width',w)
             update_HUD_log('height',h)
@@ -884,7 +882,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
-        if MotionDetector.wasMotionDetected:
+        if Webcam.get().motiondetector.wasMotionDetected:
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
             Composer.is_dirty = False # no, we'll be refreshing the frane buffer
             return Webcam.get().read()
@@ -937,11 +935,11 @@ def main():
         # Viewport.export(Composer.buffer1)
         Viewport.show(Composer.buffer1)
 
-        #log.critical('* md thread msg:{}'.format(MotionDetector.thread_msg))
+        #log.critical('* md thread msg:{}'.format(Webcam.get().motiondetector.thread_msg))
         # MotionDetector.process()
 
 
-        if MotionDetector.wasMotionDetected:
+        if Webcam.get().motiondetector.wasMotionDetected:
             Composer.is_dirty = False
 
         if Composer.is_dirty == False or Viewport.force_refresh:
@@ -1044,7 +1042,7 @@ Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
 # disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','dev-1', listener)
+Viewport = Viewport('deepdreamvisionquest','silent', listener)
 Composer = Composer()
 Model = Model(program_duration=9999) # seconds
 FX = FX()
