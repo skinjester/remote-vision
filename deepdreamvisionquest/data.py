@@ -370,7 +370,7 @@ program.append({
 
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':5, 'sigma_xy': 50}
+		'params': {'radius': 7, 'sigma_color':5, 'sigma_xy': 0}
 		}
 	]
 })
@@ -710,26 +710,26 @@ program.append({
 	'stepfx':stepfx_default
 })
 
-
-
 program.append({
-	'name':'pebble beach yall',
-	'iterations':60,
+	'name':'therapod',
+	'iterations':100,
 	'step_size':1.0,
 	'octaves':5,
-	'octave_cutoff':4,
+	'octave_cutoff':5,
 	'octave_scale':1.4,
-	'iteration_mult':0.0,
+	'iteration_mult':0.5,
 	'step_mult':0.01,
 	'model':'googlenet',
 	'layers':[
+		'inception_4b/3x3_reduce',
+		'inception_4d/3x3_reduce',
 		'inception_4c/3x3_reduce',
 	],
-	'features':[8],
+	'features':range(63,128),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
+			'params': {'step':0.01, 'min_scale':1.3, 'max_scale':1.7}
 		},
 		inception_xform_default
 	],
@@ -738,13 +738,46 @@ program.append({
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.4, 'order':0}
 		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':10, 'sigma_xy': 10}
-		},
+
 		{
 			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
+			'params': {'duration':5.0}
+		},
+	]
+})
+
+program.append({
+	'name':'pebble beach yall',
+	'iterations':100,
+	'step_size':1.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4b/3x3_reduce',
+		'inception_4d/3x3_reduce',
+		'inception_4c/3x3_reduce',
+	],
+	'features':range(63,128),
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.01, 'min_scale':1.3, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':5.0}
 		},
 	]
 })
