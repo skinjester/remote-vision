@@ -244,7 +244,7 @@ program.append({
 	'iterations':5,
 	'step_size':2.4,
 	'octaves':5,
-	'octave_cutoff':4,
+	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':-0.25,
 	'step_mult':0.02,

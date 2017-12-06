@@ -212,9 +212,6 @@ class Viewport(object):
         # convert and clip floating point matrix into RGB bounds as integers
         image = np.uint8(np.clip(image, 0, 255))
 
-        # resize image to fit viewport, skip if already at full size
-        if image.shape[0] != Display.height:
-            image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
         image = Composer.update(image) # Render MASTER
         if self.b_show_HUD: # HUD overlay
@@ -269,17 +266,39 @@ class Composer(object):
     def __init__(self):
         self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
-        self.buffer1 = Webcam.get().read() # uses camera capture dimensions
-        self.buffer2 = Webcam.get().read() # uses camera capture dimensions
         self.opacity = 1.0
         self.is_compositing_enabled = False
         self.xform_scale = 0.03
+        self.buffer = []
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
+        self.buffer1 = Webcam.get().read() # uses camera capture dimensions
+        self.buffer2 = Webcam.get().read() # uses camera capture dimensions
+
 
         # maybe ?
         self.force_refresh = True
 
-    def send(self, channel, image):
-        return
+    def send(self, channel, img):
+         # route nput to channel
+        self.buffer[channel] = img
+
+        ### resize channel to match viewport dimensions
+        if img.shape[1] != Display.width:
+            self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+
+        # convert and clip any floating point values into RGB bounds as integers
+        self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
+
+        # log.critical(self.buffer)
+
+    def mix(self, channel_front, channel_back, channel_mix):
+        opacity = 0.5
+
+        log.critical('channel_front type: {}  channel_back type: {}'.format(type(self.buffer[channel_front]),type(self.buffer[channel_back])))
+        cv2.addWeighted(self.buffer[channel_front], opacity, self.buffer[channel_back], 1-opacity, 0, self.buffer[channel_mix])
+
 
     def update(self, image):
         if self.is_dirty:
@@ -796,14 +815,17 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             make_step(Model.net, end=end, **step_params)
             log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
 
-            # write netblob to Composer - channel 1
+            # write netblob to Composer - channel 0
             Composer.buffer1 = caffe2rgb(Model.net, src.data[0])
-            Composer.send(1, caffe2rgb(Model.net, src.data[0]))
-
-            log.critical('write net to buffer1: {}'.format(Composer.buffer1.shape))
-
-            # explicitly show the composer
-            Viewport.show(Composer.buffer1)
+            ###
+            Composer.send(0, caffe2rgb(Model.net, src.data[0]))
+            ###
+            # write webcam to Composer - channel 1
+            Composer.send(1, Webcam.get().read())
+            ####
+            Composer.mix(1,0,2)
+            # send the main mix to the viewport
+            Viewport.show( Composer.buffer[2] )
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
