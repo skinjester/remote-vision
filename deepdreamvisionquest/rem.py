@@ -196,7 +196,7 @@ class Viewport(object):
         self.window_name = window_name
         self.b_show_HUD = False
         self.keypress_mult = 3 # accelerate value changes when key held
-        self.b_show_stats = False
+        self.b_show_stats = True
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
         self.username = username
@@ -210,21 +210,19 @@ class Viewport(object):
     def show(self, image):
         self.time_counter += 1
         # convert and clip floating point matrix into RGB bounds as integers
-        image = np.uint8(np.clip(image, 0, 224)) # TODO valid practice still? tweaked to get some hilites in output
+        image = np.uint8(np.clip(image, 0, 255))
 
         # resize image to fit viewport, skip if already at full size
         if image.shape[0] != Display.height:
             image = cv2.resize(image, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
-        image = Composer.update(image)
+        image = Composer.update(image) # Render MASTER
+        if self.b_show_HUD: # HUD overlay
+            image = draw_HUD(image)
+        cv2.imshow(self.window_name, image) # draw to window
 
-        image = self.postfx(image) # HUD
-        if self.b_show_stats:
-            image = self.postfx2(image) # stats
-        cv2.imshow(self.window_name, image)
-
-        self.monitor()
-        self.listener()
+        self.monitor() # handle motion detection viewport
+        self.listener() # listen for keyboard events
 
         # GRB: temp structure for saving fully rendered frames
         if self.time_counter > 10 and self.username != 'silent':
@@ -247,31 +245,15 @@ class Viewport(object):
     def refresh(self):
         self.force_refresh = True
 
-    def postfx(self, image):
-
-        # this would be a good place for color processing that
-        # only affects the output (i.e. not cycled back into the net)
-        # image = vignette(image,400)
-        if self.b_show_HUD:
-            image = show_HUD(image)
-        return image
-
-    def postfx2(self, image):
-        image = show_stats(image)
-        return image
-
     def monitor(self):
         if self.motiondetect_log_enabled:
-            img = Webcam.get().t_delta_framebuffer
+            img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
 
             # composite motion stats here
-            # rectangle
             overlay = img.copy()
             opacity = 1.0
-            #cv2.rectangle(overlay,(0,0),(Display.width, Display.height), (0, 0, 0), -1)
-            cv2.putText(overlay, Webcam.get().monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
-            # add overlay back to source
-            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img)
+            cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
+            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
             cv2.imshow('delta', img)
 
 
@@ -293,13 +275,19 @@ class Composer(object):
         self.is_compositing_enabled = False
         self.xform_scale = 0.03
 
+        # maybe ?
+        self.force_refresh = True
+
+    def send(self, channel, image):
+        return
+
     def update(self, image):
         if self.is_dirty:
             if self.is_new_cycle:
                 for fx in Model.cyclefx:
                     if fx['name'] == 'inception_xform':
                         self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
-                # Viewport.export(self.buffer1)
+
 
             self.is_dirty = False
             self.is_compositing_enabled = False
@@ -413,40 +401,9 @@ def iterationPostProcess(net, net_data_blob):
     return rgb2caffe(Model.net, img)
 
 
+# rename this function plz
 def blur(img, sigmax, sigmay):
     img2 = img.copy()
-    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    # if (int(time.time()) % 0.5):
-    #     return img
-
-    # img = cv2.medianBlur(img,sigmax)
-
-    # A
-    # img = cv2.bilateralFilter(img, 17, 30, 3)
-    # img = cv2.bilateralFilter(img, 10, 30, 30)
-
-    #B
-    # img = cv2.bilateralFilter(img, 7, 50, 3)
-    # img = cv2.medianBlur(img,3)
-
-    #C
-    # extreme grey cartoon
-    # img = nd.filters.gaussian_filter(img, 0.6, order=0)
-    # img = cv2.bilateralFilter(img, 13, 20, 120)
-
-    # eurogoth (work-in-progress)
-    # img = nd.filters.gaussian_filter(img, 0.7, order=0)
-    # img = cv2.bilateralFilter(img, 3, 70, 50)
-
-    #D monoworld
-    # img2 = nd.filters.gaussian_filter(img2, 0.5, order=0)
-    # img2 = cv2.medianBlur(img2,3)
-
-    # simplified
-    # works best with high iteration counts
-    # img = cv2.medianBlur(img,5)
-
-    # return img2
     return cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
 
 
@@ -498,13 +455,14 @@ def update_HUD_log(key,new_value):
 
 
 def show_stats(image):
+    log.critical('show stats')
     stats_overlay = image.copy()
-    opacity = 0.9
-    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, GREEN)
+    opacity = 1.0
+    cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, RED)
     return cv2.addWeighted(stats_overlay, opacity, image, 1-opacity, 0, image)
 
 
-def show_HUD(image):
+def draw_HUD(image):
     # rectangle
     overlay = image.copy()
     opacity = 0.5
@@ -818,13 +776,15 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # OCTAVECYCLE
         i=0
         while i < iteration_max:
+
+            #
             # FORCE REFRESH
+            #
+
             if Viewport.force_refresh:
                 Composer.write_buffer2(Webcam.get().read())
                 Composer.is_dirty = False # no, we'll be refreshing the frane buffer
                 return Webcam.get().read()
-
-            #MotionDetector.process()
 
             # isResting?
             # this saying if the MotionDetector history doesn't Match the current MotionDetector
@@ -833,11 +793,16 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 break
 
             # delegate gradient ascent to step function
-            log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
             make_step(Model.net, end=end, **step_params)
+            log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
 
-            # write netblob to Composer
+            # write netblob to Composer - channel 1
             Composer.buffer1 = caffe2rgb(Model.net, src.data[0])
+            Composer.send(1, caffe2rgb(Model.net, src.data[0]))
+
+            log.critical('write net to buffer1: {}'.format(Composer.buffer1.shape))
+
+            # explicitly show the composer
             Viewport.show(Composer.buffer1)
 
             # attenuate step size over rem cycle
@@ -867,11 +832,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('program',Model.package_name)
             update_HUD_log('threshold',thresholdmsg)
             update_HUD_log('floor',floormsg)
-
-
-        # probably temp? export each completed iteration
-        # Viewport.export(Composer.buffer1)
-
 
 
         # CUTOFF
@@ -906,38 +866,32 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 # ------- 
 def main():
 
-    # start timer
-    now = time.time()
+    now = time.time() # start timer
 
     # set GPU mode
     caffe.set_device(0)
     caffe.set_mode_gpu()
 
     # parameters
-    #Model.set_program('hirez-fast')
     iterations = Model.iterations
     stepsize = Model.stepsize_base
     octaves = Model.octaves
     octave_scale = Model.octave_scale
     jitter = 300
+
+    # logging
     update_HUD_log('model',Model.caffemodel)
     update_HUD_log('username',Viewport.username)
     update_HUD_log('settings',Model.package_name)
-
 
     # the madness begins
     Composer.buffer1 = Webcam.get().read() # initial camera image for init
 
     while True:
-        log.info('new cycle')
-        FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         Composer.is_new_cycle = True
-        # Viewport.export(Composer.buffer1)
-        Viewport.show(Composer.buffer1)
-
-        #log.critical('* md thread msg:{}'.format(Webcam.get().motiondetector.thread_msg))
-        # MotionDetector.process()
-
+        log.critical('new cycle')
+        FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
+        Viewport.show(Composer.buffer1) # show whatever is in buffer 1
 
         if Webcam.get().motiondetector.wasMotionDetected:
             Composer.is_dirty = False
@@ -954,23 +908,31 @@ def main():
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
 
-            # kicks off rem sleep - will begin continual iteration of the image through the model
-            Composer.buffer1 = deepdream(net, Composer.buffer1, iteration_max = Model.iterations, octave_n = Model.octaves, octave_scale = Model.octave_scale, step_size = Model.stepsize_base, end = Model.end, feature = Model.features[Model.current_feature])
-
-            # Viewport.export(Composer.buffer1)
+            # kicks off rem sleep
+            Composer.buffer1 = deepdream(
+                net,
+                Composer.buffer1,
+                iteration_max = Model.iterations,
+                octave_n = Model.octaves,
+                octave_scale = Model.octave_scale,
+                step_size = Model.stepsize_base,
+                end = Model.end,
+                feature = Model.features[Model.current_feature]
+                )
 
             # commenting out this block allows unfiltered signal only
             if Viewport.force_refresh:
                 Viewport.force_refresh = False
 
-
         # a bit later
         later = time.time()
         difference = later - now
         duration_msg = '{:.2f}s'.format(difference)
-        update_HUD_log('cycle_time',duration_msg) # HUD
-        log.info('cycle time: {}\n{}'.format(duration_msg,'-'*80))
         now = time.time() # the new now
+
+        # logging
+        update_HUD_log('cycle_time',duration_msg) # HUD
+        log.critical('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
 
 # --------
@@ -980,7 +942,7 @@ def main():
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
-log.setLevel(logging.CRITICAL) # not sure why this works instead of definitions for this elsewhere
+log.setLevel(logging.WARNING)
 
 
 # log.debug('debug message!')
@@ -989,8 +951,9 @@ log.setLevel(logging.CRITICAL) # not sure why this works instead of definitions 
 # log.warning('warning message')
 # log.critical('critical message')
 
+# HUD
+# dictionary contains the key/values we'll be logging
 hud_log = {
-    # (current value, old value)
     'octave': [None,None],
     'width': [None,None],
     'height': [None,None],
@@ -1012,19 +975,15 @@ hud_log = {
     'floor': [None,None]
 }
 
-# HUD
-# dictionary contains the key/values we'll be logging
+# opencv font and color
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 WHITE = (255, 255, 255)
 GREEN = (0,255,0)
-
-# global reference to the neural network object
-net = None
+RED = (255,0,0)
 
 
-
-# camera setup
-Camera = []
+net = None # global reference to the neural network object
+Camera = [] # global reference to camera collection
 
 # note that camera index changes if a webcam is unplugged
 # default values are  [0,1] for 2 camera setup
@@ -1032,7 +991,7 @@ Device = [0,1] # debug
 
 w = data.capture_w
 h = data.capture_h
-# single camera setuo will use camera index 0
+
 Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75).start())
 
 # temp disable cam 2 for show setup
@@ -1047,8 +1006,7 @@ Composer = Composer()
 Model = Model(program_duration=9999) # seconds
 FX = FX()
 
-Model.set_program(1)
-
+Model.set_program(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

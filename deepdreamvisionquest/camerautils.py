@@ -82,7 +82,6 @@ class WebcamVideoStream(object):
 
         # logging
         self.log = log # this contains reference to hud logging function in rem.py
-        self.monitor_msg = '*' #  for HUD
 
 
     def start(self):
@@ -151,7 +150,7 @@ class MotionDetector(object):
         self.history = []
         self.history_queue_length = 50
         self.forced = False
-        self.monitor_msg = '*'
+        self.monitor_msg = '****'
 
         # dataexport
         self.export = open("motiondata/motiondata-test-6.txt","w+")
@@ -192,10 +191,10 @@ class MotionDetector(object):
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.delta_count -= int(self.delta_count/2)
-            self.update_hud_log('detect','*')
             self.wasMotionDetected = True
-            self.monitor_msg += ' movement detected'
-            log.critical('movement detected')
+            self.monitor_msg = '***'
+            self.update_hud_log('detect','*')
+            threadlog.critical('movement detected')
 
 
 
@@ -203,11 +202,12 @@ class MotionDetector(object):
             self.wasMotionDetected = False
             self.update_hud_log('detect','-')
             log.debug('movement ended')
-            self.monitor_msg += ' movement ended'
+            self.monitor_msg = '---'
         else:
+            self.wasMotionDetected = False
+            self.monitor_msg = '-'
             # is this the resting condition?
             self.update_hud_log('detect','-')
-            self.wasMotionDetected = False
             log.debug('all motion is beneath threshold:{}'.format(self.floor))
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
@@ -230,7 +230,7 @@ class MotionDetector(object):
             b_condition
             ))
 
-        threadlog.critical('delta_trigger;{}'.format(self.delta_trigger))
+        threadlog.warning('delta_trigger:{}'.format(self.delta_trigger))
 
         self._counter_ += 1 # used to index delta_count_history
 
@@ -275,9 +275,9 @@ class MotionDetector(object):
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
-log.setLevel(logging.INFO)
+log.setLevel(logging.CRITICAL)
 threadlog = logging.getLogger('logtest-debug-thread')
-threadlog.setLevel(logging.INFO)
+threadlog.setLevel(logging.CRITICAL)
 
 '''
 Camera Manager collects any Camera Objects
