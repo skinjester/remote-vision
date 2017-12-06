@@ -241,13 +241,13 @@ program.append({
 
 program.append({
 	'name':'strangerthing',
-	'iterations':10,
-	'step_size':2,
-	'octaves':6,
+	'iterations':5,
+	'step_size':2.4,
+	'octaves':5,
 	'octave_cutoff':4,
 	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
+	'iteration_mult':-0.25,
+	'step_mult':0.02,
 	'model':'vgg19',
 	'layers':[
 		'conv4_4'
@@ -263,7 +263,7 @@ program.append({
 	'stepfx': [
 		{
 			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
+			'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 70}
 		},
 	]
 })
