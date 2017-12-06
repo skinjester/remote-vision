@@ -217,58 +217,47 @@ program.append({
 program.append({
 	'name':'wildlife-cambrian-1',
 	'iterations':10,
-	'step_size':4,
+	'step_size':3,
 	'octaves':6,
-	'octave_cutoff':6,
-	'octave_scale':1.3,
-	'iteration_mult':0.25,
-	'step_mult':-0.2,
-	'model':'vgg19',
+	'octave_cutoff':4,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':-0.1,
+	'model':'googlenet',
 	'layers':[
-		'conv5_3',
-		'conv5_2',
-		'conv5_1',
-		'conv4_4',
-		'conv4_3',
+		'inception_4c/pool',
 	],
-	'features':range(136,256),
+	'features':range(-1,256),
 	'cyclefx': [
 	    {
 	    	'name': 'inception_xform',
 	    	'params': {'scale':0.01}
 	    },
-	    {
-	    	'name': 'octave_scaler',
-	    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
-	    }
 	],
 	'stepfx': [
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
-		},
+
 	]
 })
 
 program.append({
-	'name':'wildlife-cambrian',
+	'name':'strangerthing',
 	'iterations':10,
-	'step_size':4,
+	'step_size':2,
 	'octaves':6,
-	'octave_cutoff':6,
-	'octave_scale':1.3,
-	'iteration_mult':0.25,
-	'step_mult':-0.2,
+	'octave_cutoff':4,
+	'octave_scale':1.4,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
 	'model':'vgg19',
 	'layers':[
-		'conv4_3'
+		'conv4_4'
 	],
-	'features':range(140,512),
+	'features':range(177,512),
 	'cyclefx': [
 	    inception_xform_default,
 	    {
 	    	'name': 'octave_scaler',
-	    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
+	    	'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.5}
 	    }
 	],
 	'stepfx': [
