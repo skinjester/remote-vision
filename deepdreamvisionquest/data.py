@@ -218,7 +218,7 @@ program.append({
 	'name':'wildlife-cambrian-1',
 	'iterations':10,
 	'step_size':3,
-	'octaves':6,
+	'octaves':5,
 	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,

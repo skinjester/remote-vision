@@ -264,7 +264,7 @@ class Composer(object):
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
     def __init__(self):
-        self.is_dirty = False # the type of frame in buffer1. dirty when recycling clean when refreshing
+        self.isDreaming = False # the type of frame in buffer1. dirty when recycling clean when refreshing
         self.is_new_cycle = True
         self.opacity = 1.0
         self.is_compositing_enabled = False
@@ -272,17 +272,17 @@ class Composer(object):
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
-        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer1 = Webcam.get().read() # uses camera capture dimensions
         self.buffer2 = Webcam.get().read() # uses camera capture dimensions
-
+        self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
+        self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
 
         # maybe ?
         self.force_refresh = True
 
     def send(self, channel, img):
          # route nput to channel
-        self.buffer[channel] = img
+        self.buffer[channel] = img.copy()
 
         ### resize channel to match viewport dimensions
         if img.shape[1] != Display.width:
@@ -293,22 +293,28 @@ class Composer(object):
 
         # log.critical(self.buffer)
 
-    def mix(self, channel_front, channel_back, channel_mix):
+    def mix(self, img_front, img_back):
         opacity = 0.5
+        cv2.addWeighted(
+            img_front,
+            opacity,
+            img_back,
+            1-opacity,
+            0,
+            self.mixbuffer
+            )
 
-        log.critical('channel_front type: {}  channel_back type: {}'.format(type(self.buffer[channel_front]),type(self.buffer[channel_back])))
-        cv2.addWeighted(self.buffer[channel_front], opacity, self.buffer[channel_back], 1-opacity, 0, self.buffer[channel_mix])
-
+        return self.mixbuffer
 
     def update(self, image):
-        if self.is_dirty:
+        if self.isDreaming:
             if self.is_new_cycle:
                 for fx in Model.cyclefx:
                     if fx['name'] == 'inception_xform':
                         self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
 
 
-            self.is_dirty = False
+            self.isDreaming = False
             self.is_compositing_enabled = False
 
         else:
@@ -764,7 +770,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     # noticing it when the system starts up. does it appear at other times? when?
     if Webcam.get().motiondetector.wasMotionDetected:
         Composer.write_buffer2(Webcam.get().read())
-        Composer.is_dirty = False # no, we'll be refreshing the frane buffer
+        Composer.isDreaming = False # no, we'll be refreshing the frane buffer
         return Webcam.get().read()
 
 
@@ -802,7 +808,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             if Viewport.force_refresh:
                 Composer.write_buffer2(Webcam.get().read())
-                Composer.is_dirty = False # no, we'll be refreshing the frane buffer
+                Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 return Webcam.get().read()
 
             # isResting?
@@ -816,16 +822,16 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
 
             # write netblob to Composer - channel 0
-            Composer.buffer1 = caffe2rgb(Model.net, src.data[0])
+            Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
             ###
             Composer.send(0, caffe2rgb(Model.net, src.data[0]))
             ###
             # write webcam to Composer - channel 1
             Composer.send(1, Webcam.get().read())
             ####
-            Composer.mix(1,0,2)
             # send the main mix to the viewport
-            Viewport.show( Composer.buffer[2] )
+            # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+            Viewport.show( Composer.buffer[0] )
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -859,14 +865,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # CUTOFF
         # this turned out to be the last octave calculated in the series
         if octave == Model.octave_cutoff:
-            Composer.is_dirty = True
+            Composer.isDreaming = True
             return caffe2rgb(Model.net, src.data[0])
 
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if Webcam.get().motiondetector.wasMotionDetected:
             Composer.write_buffer2(caffe2rgb(Model.net, src.data[0]))
-            Composer.is_dirty = False # no, we'll be refreshing the frane buffer
+            Composer.isDreaming = False # no, we'll be refreshing the frane buffer
             return Webcam.get().read()
 
         # extract details produced on the current octave
@@ -877,7 +883,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         #iteration_max = Model.next_iteration(iteration_max)
 
     # return the resulting image (converted back to x,y,RGB structured matrix)
-    Composer.is_dirty = True # yes, we'll be recycling the Composer
+    Composer.isDreaming = True # yes, we'll be recycling the Composer
 
     # return rendered img
     return caffe2rgb(Model.net, src.data[0])
@@ -907,18 +913,22 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
     # the madness begins
-    Composer.buffer1 = Webcam.get().read() # initial camera image for init
+    Composer.dreambuffer = Webcam.get().read() # initial camera image for init
+    Composer.send(0, Composer.dreambuffer)
 
     while True:
-        Composer.is_new_cycle = True
         log.critical('new cycle')
+        Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-        Viewport.show(Composer.buffer1) # show whatever is in buffer 1
+        # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
+        Viewport.show( Composer.buffer[0] )
+        # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+
 
         if Webcam.get().motiondetector.wasMotionDetected:
-            Composer.is_dirty = False
+            Composer.isDreaming = False
 
-        if Composer.is_dirty == False or Viewport.force_refresh:
+        if Composer.isDreaming == False or Viewport.force_refresh:
             # Viewport.save_next_frame = True
 
             #  apply cyclefx, assuming they've been defined
@@ -931,9 +941,9 @@ def main():
                         FX.octave_scaler(model=Model, **fx['params'])
 
             # kicks off rem sleep
-            Composer.buffer1 = deepdream(
+            Composer.dreambuffer = deepdream(
                 net,
-                Composer.buffer1,
+                Composer.dreambuffer,
                 iteration_max = Model.iterations,
                 octave_n = Model.octaves,
                 octave_scale = Model.octave_scale,
