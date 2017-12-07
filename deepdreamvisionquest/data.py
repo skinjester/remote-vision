@@ -265,45 +265,16 @@ program.append({
 	]
 })
 
+
 program.append({
 	'name':'wildlife',
-	'iterations':40,
-	'step_size':3,
-	'octaves':6,
-	'octave_cutoff':6,
-	'octave_scale':1.2,
-	'iteration_mult':0.25,
-	'step_mult':-0.05,
-	'model':'vgg19',
-	'layers':[
-		'conv5_3',
-	],
-	'features':range(136,256),
-	'cyclefx': [
-		inception_xform_default,
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
-		}
-	],
-	'stepfx': [
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 10}
-		},
-	]
-})
-
-
-program.append({
-	'name':'violaceous',
 	'iterations':20,
-	'step_size':2,
-	'octaves':7,
+	'step_size':1.2,
+	'octaves':6,
 	'octave_cutoff':5,
 	'octave_scale':1.4,
-	'iteration_mult':0.2,
-	'step_mult':0.01,
+	'iteration_mult':0.1,
+	'step_mult':0.05,
 	'model':'vgg19',
 	'layers':[
 		'conv5_3'
@@ -312,14 +283,11 @@ program.append({
 	'cyclefx':[
 			{
 				'name': 'octave_scaler',
-				'params': {'step':0.1, 'min_scale':1.2, 'max_scale':1.6}
+				'params': {'step':0.1, 'min_scale':1.2, 'max_scale':1.4}
 			}
 		],
 	'stepfx': [
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 7, 'sigma_color':50, 'sigma_xy': 3}
-		},
+
 		{
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.2, 'order':0}
