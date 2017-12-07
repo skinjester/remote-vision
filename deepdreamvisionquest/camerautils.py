@@ -100,7 +100,7 @@ class WebcamVideoStream(object):
             # motion detection
             self.t_delta_framebuffer = cv2.subtract(img, self.rawframe)
             self.t_delta_framebuffer = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
-            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 32, 255, cv2.THRESH_TOZERO)
+            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 127, 255, cv2.THRESH_TOZERO)
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
             # dont process motion detection if paused
@@ -170,7 +170,7 @@ class MotionDetector(object):
         self.delta_count = delta_count
 
         # scale delta trigger so it rides peak values to prevent sensitive triggering
-        self.delta_trigger = self.add_to_history(delta_count*2) + (self.floor*2)
+        self.delta_trigger = self.add_to_history(delta_count*2) + self.floor
 
         # logging
         # create local copies of this info
@@ -189,7 +189,7 @@ class MotionDetector(object):
             #self.delta_count = 0
 
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
-            self.delta_count -= int(self.delta_count/2)
+            # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
             self.detection_toggle = True
             self.monitor_msg = '***'
