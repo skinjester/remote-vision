@@ -229,10 +229,7 @@ program.append({
 	],
 	'features':range(-1,256),
 	'cyclefx': [
-	    {
-	    	'name': 'inception_xform',
-	    	'params': {'scale':0.01}
-	    },
+	    inception_xform_default,
 	],
 	'stepfx': [
 

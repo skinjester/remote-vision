@@ -48,7 +48,7 @@ class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
     # because the hardware doesn't capture arbitrary window sizes
-    def __init__(self, src, capture_width, capture_height, portrait_alignment, log, flip_h=False, flip_v=False, gamma=1.0):
+    def __init__(self, src, capture_width, capture_height, portrait_alignment, log,flip_h=False, flip_v=False, gamma=1.0, floor=1000):
 
         # set camera dimensions before reading frames
         # requested size is rounded to nearest camera size if non-matching
@@ -71,7 +71,7 @@ class WebcamVideoStream(object):
         for i in np.arange(0, 256)]).astype("uint8")
 
         # motion detection
-        self.motiondetector = MotionDetector(1000, log)
+        self.motiondetector = MotionDetector(floor, log)
         self.delta_count = 0 # difference between current frame and previous
         self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # framebuffer for image differencing operations
 
@@ -138,7 +138,7 @@ class MotionDetector(object):
     def __init__(self, floor, log):
 
         self.wasMotionDetected = False
-        self.wasMotionDetected_history = False
+        self.detection_toggle = False
         self.delta_count_history = 0
 
         self.delta_trigger = 0
@@ -168,7 +168,6 @@ class MotionDetector(object):
     def process(self, delta_count):
         # history
         self.delta_count = delta_count
-        self.wasMotionDetected_history = self.wasMotionDetected
 
         # scale delta trigger so it rides peak values to prevent sensitive triggering
         self.delta_trigger = self.add_to_history(delta_count*2) + (self.floor*2)
@@ -192,6 +191,7 @@ class MotionDetector(object):
         if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
             self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
+            self.detection_toggle = True
             self.monitor_msg = '***'
             self.update_hud_log('detect','*')
             threadlog.critical('movement detected')
@@ -265,7 +265,7 @@ class MotionDetector(object):
 
     def isResting(self):
         log.debug('resting...')
-        return self.wasMotionDetected == self.wasMotionDetected_history
+        return self.wasMotionDetected == self.detection_toggle
 
 
 # --------

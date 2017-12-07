@@ -722,7 +722,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
     dst = net.blobs[end]
 
     ox, oy = np.random.randint(-jitter, jitter+1, 2)
-    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
+    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # shift image (jitter)
     net.forward(end=end)
 
     # feature inspection
@@ -750,7 +750,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
     # sequencer
     program_elapsed_time = time.time() - Model.program_start_time
     if program_elapsed_time > Model.program_duration:
-        # if Model.program_bank
         Model.next_program()
 
 
@@ -759,19 +758,18 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 # -------
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
     # COOLDOWN
-    # returns the camera on the first update of a new cycle 
+    # returns the camera on the first update of a new cycle
     # after previously being kicked out of deepdream
     # effectively keeps the Composer in sync
         # disabling this prevents the previous camera capture from being flushed
         # (we end up seeing it as a ghost image before hallucination begins on the new camera)
 
-
-    # GRB: Not entirely sure why this condition gets triggered 
+    # GRB: Not entirely sure why this condition gets triggered
     # noticing it when the system starts up. does it appear at other times? when?
-    if Webcam.get().motiondetector.wasMotionDetected:
-        Composer.write_buffer2(Webcam.get().read())
-        Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-        return Webcam.get().read()
+    # if Webcam.get().motiondetector.wasMotionDetected:
+    #     Composer.write_buffer2(Webcam.get().read())
+    #     Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+    #     return Webcam.get().read()
 
 
 
@@ -806,16 +804,17 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # FORCE REFRESH
             #
 
+            # trying out this toggle mechanism to see if it can compensate for
+            # detection that happened while we weren't looking
+            if Webcam.get().motiondetector.detection_toggle:
+                Viewport.force_refresh = True
+                Webcam.get().motiondetector.detection_toggle = False # reset the toggle
+
+
             if Viewport.force_refresh:
                 Composer.write_buffer2(Webcam.get().read())
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 return Webcam.get().read()
-
-            # isResting?
-            # this saying if the MotionDetector history doesn't Match the current MotionDetector
-            # then the value of WasMotionDetected has toggled
-            if not Webcam.get().motiondetector.isResting():
-                break
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
@@ -862,6 +861,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('floor',floormsg)
 
 
+
+
         # CUTOFF
         # this turned out to be the last octave calculated in the series
         if octave == Model.octave_cutoff:
@@ -891,7 +892,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
 # -------
 # MAIN
-# ------- 
+# -------
 def main():
 
     now = time.time() # start timer
@@ -913,8 +914,7 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
     # the madness begins
-    Composer.dreambuffer = Webcam.get().read() # initial camera image for init
-    Composer.send(0, Composer.dreambuffer)
+    Composer.dreambuffer = Webcam.get().read() # initial camera image for starting
 
     while True:
         log.critical('new cycle')
@@ -925,6 +925,7 @@ def main():
         # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
+        log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
         if Webcam.get().motiondetector.wasMotionDetected:
             Composer.isDreaming = False
 
@@ -1024,7 +1025,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=1000).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
