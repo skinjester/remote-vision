@@ -143,7 +143,7 @@ class Model(object):
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
-        log.critical('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
+        log.critical('layer: {} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
         update_HUD_log('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
 
     def prev_layer(self):
@@ -257,7 +257,7 @@ class Viewport(object):
             # composite motion stats here
             overlay = img.copy()
             opacity = 1.0
-            cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (30, Display.height - 100), FONT, 0.5, WHITE)
+            cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
             img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
             cv2.imshow('delta', img)
 
@@ -643,13 +643,13 @@ def listener():
         if Webcam.get().motiondetector.floor < 0:
             Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
-        log.critical('{}:{} {} {}'.format('E3',key,'-','FLOOR-'))
+        log.critical('{}:{} {} {} :{}'.format('E3',key,'-','FLOOR-',Webcam.get().motiondetector.floor))
         return
 
     if key == 61: # = key (equals): increase detection floor
         Webcam.get().motiondetector.floor += 10
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
-        log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
+        log.critical('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
         return
 
     # Row F
@@ -664,9 +664,7 @@ def listener():
 
     if key == 112: # p key : pause/unpause motion detection
         Webcam.get().motiondetector.is_paused = not Webcam.get().motiondetector.is_paused
-        if not Webcam.get().motiondetector.is_paused:
-            Webcam.get().motiondetector.delta_trigger = Webcam.get().motiondetector.delta_trigger_history
-        log.critical('{}:{} {} {}'.format('F2',key,'P','TOGGLE MOTION'))
+        log.critical('{}:{} {} {}:{}'.format('F2',key,'P','PAUSE',Webcam.get().motiondetector.is_paused))
         return
 
     if key == 96: # `(tilde) key: toggle HUD
@@ -1030,7 +1028,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=500).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.8, floor=500).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())

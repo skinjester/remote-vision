@@ -62,7 +62,13 @@ class WebcamVideoStream(object):
         # image transform and gamma
         self.portrait_alignment = portrait_alignment
         self.flip_h = flip_h
-        self.flip_v = flip_v
+        self.flip_v = flip_v    
+ 
+
+
+
+
+
         self.gamma = gamma
         self.stopped = False
 
@@ -80,9 +86,9 @@ class WebcamVideoStream(object):
         (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
         self.frame = self.transpose(self.frame) # alignment correction
         ###
-        self.t_minus = cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY)
-        self.t_now = cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY)
-        self.t_plus = cv2.cvtColor( self.stream.read()[1],cv2.COLOR_RGB2GRAY)
+        self.t_minus = self.transpose(cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY))
+        self.t_now = self.transpose(cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY))
+        self.t_plus = self.transpose(cv2.cvtColor( self.stream.read()[1],cv2.COLOR_RGB2GRAY))
 
         # logging
         self.log = log # this contains reference to hud logging function in rem.py
@@ -105,7 +111,7 @@ class WebcamVideoStream(object):
             # update detection buffer queue
             self.t_minus = self.t_now
             self.t_now = self.t_plus
-            self.t_plus = cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(5,5))
+            self.t_plus = self.transpose(cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(5,5)))
 
             self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
             _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 32, 255, cv2.THRESH_BINARY)
@@ -121,10 +127,10 @@ class WebcamVideoStream(object):
             # dont process motion detection if paused
             if self.motiondetector.is_paused == False:
                 self.motiondetector.process(self.delta_count)
-
             # update internal buffers w camera frame
             self.rawframe = img # unprocessed camera img
             self.frame = self.gamma_correct(self.transpose(img)) # processed camera img
+
 
     def read(self):
         log.debug('camera buffer RGB:{}'.format(self.frame.shape))
