@@ -200,38 +200,29 @@ class MotionDetector(object):
         _delta_count_history = self.delta_count_history
         _delta_trigger = self.delta_trigger
 
-        # motion detection
-        # if (self.delta_count >= self.delta_trigger and
-        #     self.delta_count_history >= self.delta_trigger):
-
-            # logging
-            # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
-            #self.delta_count = 0
-
-        # if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
         if (self.delta_count > self.delta_trigger):
             # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
             self.detection_toggle = True #  gets reset from motion detector queries elsewhere
-            # self.monitor_msg = '***'
+            self.monitor_msg = '***'
             self.update_hud_log('detect','*')
             threadlog.critical('movement detected')
 
 
 
-        # elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
-        #     self.wasMotionDetected = False
-        #     # self.monitor_msg = '---'
-        #     self.update_hud_log('detect','-')
-        #     log.debug('movement ended')
+        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
+            self.wasMotionDetected = False
+            self.monitor_msg = '---'
+            self.update_hud_log('detect','-')
+            log.debug('movement ended')
         else:
             self.wasMotionDetected = False
-            # self.monitor_msg = '-'
+            self.monitor_msg = '-'
             self.update_hud_log('detect','-')
             log.debug('all motion is beneath threshold:{}'.format(self.floor))
 
         ###
-        self.monitor_msg = 'delta_count:{} delta_trigger:{}'.format(self.delta_count,self.delta_trigger)
+        self.monitor_msg += '{}:{}'.format(self.delta_count,self.delta_trigger)
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
         if self.elapsed > 5 and self.elapsed < 6:
