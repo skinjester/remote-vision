@@ -8,6 +8,7 @@ import cv2
 # 864 x 480
 # 800 x 600
 # 640 x 480
+# 640 x 360
 # 352 x 288
 # 320 x 240
 # 320 x 180
@@ -33,8 +34,11 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 
 # set the width and height
 for index,the_camera in enumerate(cap):
-    the_camera.set(3,1920)
-    the_camera.set(4,1080)
+    # the_camera.set(3,1920)
+    # the_camera.set(4,1080)
+
+    the_camera.set(3,800)
+    the_camera.set(4,540)
 
 
 while True:
@@ -42,13 +46,14 @@ while True:
         ret, img = the_camera.read()
 
         if camera_index == 0:
-            img = cv2.flip(cv2.transpose(img),1)
+            # img = cv2.flip(cv2.transpose(img),1)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2,2))
             equalized = clahe.apply(gray)
             img = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
             cv2.putText(img,'camera 0',(10,20), font, 0.51, (0,255,0), 1, cv2.LINE_AA)
             cv2.imshow('webcam0', img)
+            print img.shape
         else:
             img = cv2.flip(cv2.transpose(img),0)
             cv2.putText(img,'camera 1',(10,20), font, 0.51, (0,255,0), 1, cv2.LINE_AA)
