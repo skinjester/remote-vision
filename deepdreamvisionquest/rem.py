@@ -111,9 +111,14 @@ class Model(object):
 
         update_HUD_log('model',self.caffemodel)
 
-    def showlayers(self):
-        # outputs valid layer list for this model
+    def show_network_details(self):
+        # outputs layer details to console
         print self.net.blobs.keys()
+        print 'current layer:{} ({}) current feature:{}'.format(
+            self.end,
+            self.net.blobs[self.end].data.shape[1],
+            self.features[self.current_feature]
+            )
 
     def set_program(self, index):
         self.package_name = data.program[index]['name']
@@ -140,7 +145,8 @@ class Model(object):
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
-        update_HUD_log('layer','{}/{}'.format(end,self.net.blobs[self.end].data.shape[1]))
+        log.critical('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
+        update_HUD_log('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
 
     def prev_layer(self):
         self.current_layer -= 1
@@ -156,9 +162,9 @@ class Model(object):
 
     def set_featuremap(self):
         Viewport.force_refresh = True
-        featuremap = self.features[self.current_feature]
-        log.critical('featuremap:{}'.format(featuremap))
-        update_HUD_log('featuremap',featuremap)
+        # featuremap = self.features[self.current_feature]
+        log.critical('featuremap:{}'.format(self.features[self.current_feature]))
+        update_HUD_log('featuremap',self.features[self.current_feature])
 
     def prev_feature(self):
         max_feature_index = self.net.blobs[self.end].data.shape[1]
@@ -547,6 +553,7 @@ def listener():
 
     if key==32: # SPACE
         log.critical('{}:{} {} {}'.format('A2',key,'SPACE','***'))
+        return
 
     if key==80: # HOME
         log.critical('{}:{} {} {}'.format('A3',key,'HOME','***'))
@@ -559,11 +566,11 @@ def listener():
     # Row B
     # --------------------------------
 
-    if key==85: # PAGE UP: Previous Bank
+    if key==85: # PAGE UP
         log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-'))
         return
 
-    if key==86: # PAGE DOWN: NEXT Bank
+    if key==86: # PAGE DOWN
         log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','BANK+'))
         return
 
@@ -592,18 +599,22 @@ def listener():
     if key == 122: # z key: next network layer
         log.critical('{}:{} {} {}'.format('C3',key,'Z','LAYER-'))
         Model.prev_layer()
+        Model.reset_feature()
         return
 
     if key == 120: # x key: previous network layer
         log.critical('{}:{} {} {}'.format('C4',key,'X','LAYER+'))
         Model.next_layer()
+        Model.reset_feature()
         return
 
     # Row D
     # --------------------------------
 
-    elif key==196: # F7
+    elif key==196: # F7: show network details
         log.critical('{}:{} {} {}'.format('D1',key,'F7','***'))
+        Model.show_network_details()
+        return
 
     elif key==197: # F8
         log.critical('{}:{} {} {}'.format('D2',key,'F8','***'))
@@ -626,21 +637,18 @@ def listener():
     if key==93: # ]
         log.critical('{}:{} {} {}'.format('E2',key,']','***'))
 
-    if key == 45: # _ key (underscore) : decrease motion threshold
-        Webcam.get().motiondetector.floor -= 1000 * Viewport.keypress_mult
-        if Webcam.get().motiondetector.floor < 1:
-            Webcam.get().motiondetector.floor = 1
+    if key == 45: # _ key (underscore) : decrease detection floor
+        Webcam.get().motiondetector.floor -= 10
+        if Webcam.get().motiondetector.floor < 0:
+            Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.critical('{}:{} {} {}'.format('E3',key,'-','FLOOR-'))
         return
 
-    if key == 61: # = key (equals): increase motion threshold
-        Webcam.get().motiondetector.floor += 1000 * Viewport.keypress_mult
+    if key == 61: # = key (equals): increase detection floor
+        Webcam.get().motiondetector.floor += 10
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.critical('{}:{} {} {}'.format('E4',key,'=','FLOOR+'))
-
-        #temp
-        Model.showlayers()
         return
 
     # Row F
@@ -796,12 +804,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         i=0
         while i < iteration_max:
 
-            #
-            # FORCE REFRESH
-            #
-
-            # trying out this toggle mechanism to see if it can compensate for
-            # detection that happened while we weren't looking
+            # check if motion detected
             if Webcam.get().motiondetector.detection_toggle:
                 Viewport.force_refresh = True
                 Webcam.get().motiondetector.detection_toggle = False # reset the toggle
@@ -809,7 +812,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-                # Viewport.force_refresh = False # this should get cleared on its own in the event loop, but let's see
                 return Webcam.get().read()
 
             # delegate gradient ascent to step function
@@ -825,8 +827,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.send(1, Webcam.get().read())
             ####
             # send the main mix to the viewport
-            # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
-            Viewport.show( Composer.buffer[0] )
+            Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+            # Viewport.show( Composer.buffer[0] )
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -937,7 +939,7 @@ def main():
             if Model.cyclefx is not None:
                 for fx in Model.cyclefx:
                     if fx['name'] == 'xform_array':
-                        FX.xform_array(Composer.buffer1, **fx['params'])
+                        FX.xform_array(Composer.buffer[0], **fx['params'])
 
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
@@ -1026,7 +1028,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=200).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=500).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
