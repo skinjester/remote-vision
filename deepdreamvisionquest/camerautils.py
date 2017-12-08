@@ -102,6 +102,7 @@ class WebcamVideoStream(object):
         # generates internal table for gamma correction
         self.table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
         for i in np.arange(0, 256)]).astype("uint8")
+        threadlog.critical('gamma: {}'.format(gamma))
 
     def update(self):
         # loop until the thread is stopped
