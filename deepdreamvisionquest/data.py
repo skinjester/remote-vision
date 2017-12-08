@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 
 # processing resolution
-capture_w = 1280
-capture_h = 720
+# capture_w = 1280
+# capture_h = 720
 
 # capture_w = 1920
 # capture_h = 1080
@@ -11,8 +11,8 @@ capture_h = 720
 # capture_w = 960
 # capture_h = 720
 
-# capture_w = 864
-# capture_h = 480
+capture_w = 864
+capture_h = 480
 
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
@@ -187,8 +187,8 @@ program.append({
   'octaves':5,
   'octave_cutoff':4,
   'octave_scale':1.2,
-  'iteration_mult':0.5,
-  'step_mult':0.1,
+  'iteration_mult':0.0,
+  'step_mult':0.001,
   'model':'vgg19',
   'layers':[
 	'conv3_1',
@@ -206,7 +206,10 @@ program.append({
 	],
   'features':range(-1,255),
   'cyclefx':[
-    inception_xform_default,
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
     {
     	'name': 'octave_scaler',
     	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
@@ -254,12 +257,12 @@ program.append({
 program.append({
 	'name':'strangerthing',
 	'iterations':5,
-	'step_size':2.4,
+	'step_size':3,
 	'octaves':6,
-	'octave_cutoff':5,
+	'octave_cutoff':6,
 	'octave_scale':1.3,
 	'iteration_mult':-0.25,
-	'step_mult':0.01,
+	'step_mult':0.02,
 	'model':'vgg19',
 	'layers':[
 		'conv4_4'
@@ -269,7 +272,7 @@ program.append({
 	    inception_xform_default,
 	    {
 	    	'name': 'octave_scaler',
-	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.5}
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.6}
 	    }
 	],
 	'stepfx': [
@@ -279,6 +282,8 @@ program.append({
 		},
 	]
 })
+
+
 
 
 program.append({

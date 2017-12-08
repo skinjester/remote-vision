@@ -46,7 +46,6 @@ class Display(object):
 
 class Model(object):
     def __init__(self, current_layer=0, program_duration=10):
-        self.guide_features = None
         self.net = None
         self.net_fn = None
         self.param_fn = None
@@ -54,6 +53,7 @@ class Model(object):
         self.end = None
         self.models = data.models
         self.guides = data.guides
+        self.guide_features = self.guides[0]
 
         self.features = None
         self.current_feature = 0
@@ -81,8 +81,6 @@ class Model(object):
         self.package_name = None
 
         self.choose_model(data.program[self.current_program]['model'])
-        #self.set_endlayer(self.layers[self.current_layer])
-        #self.set_featuremap()
         self.cyclefx = None # contains cyclefx list for current program
         self.stepfx = None # contains stepfx list for current program
 
@@ -366,15 +364,15 @@ class FX(object):
         # octave scaling cycle each rem cycle, maybe
         # if (int(time.time()) % 2):
         model.octave_scale += step * self.direction
-        # hackish, but prevents values from getting stuck above or beneath min/max
+        # prevents values from getting stuck above or beneath min/max
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
         log.info('octave_scale: {}'.format(model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
-        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+        return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+        # return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
     def median_blur(self, image, kernel_shape):
         return cv2.medianBlur(image, kernel_shape)
@@ -559,19 +557,22 @@ def listener():
         log.critical('{}:{} {} {}'.format('A3',key,'HOME','***'))
         return
 
-    if key==87: # HOME
+    if key==87: # END
         log.critical('{}:{} {} {}'.format('A4',key,'END','RESET'))
         return
 
     # Row B
     # --------------------------------
 
-    if key==85: # PAGE UP
-        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','BANK-'))
+    if key==85: # PAGE UP : increase gamma 
+        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','GAMMA-'))
+        Webcam.get().gamma += 0.5
+
         return
 
-    if key==86: # PAGE DOWN
-        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','BANK+'))
+    if key==86: # PAGE DOWN decrease gamma
+        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA+'))
+        Webcam.get().gamma -= 0.5
         return
 
     if key == 81: # left-arrow key: previous program
@@ -719,7 +720,7 @@ def objective_guide(dst):
 # apply normalized ascent step upon the image in the networks data blob
 # supports Feature Map activation
 # -------
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1):
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1, objective=objective_L2):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
@@ -731,7 +732,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     # feature inspection
     if feature == -1:
-        dst.diff[:] = dst.data
+        objective(dst)
     else:
         dst.diff.fill(0.0)
         dst.diff[0,feature,:] = dst.data[0,feature,:]
@@ -827,8 +828,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.send(1, Webcam.get().read())
             ####
             # send the main mix to the viewport
-            Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
-            # Viewport.show( Composer.buffer[0] )
+            # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+            Viewport.show( Composer.buffer[0] )
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -917,8 +918,8 @@ def main():
         Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
-        # Viewport.show( Composer.buffer[0] )
-        Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+        Viewport.show( Composer.buffer[0] )
+        # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
         log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
@@ -939,7 +940,7 @@ def main():
             if Model.cyclefx is not None:
                 for fx in Model.cyclefx:
                     if fx['name'] == 'xform_array':
-                        FX.xform_array(Composer.buffer[0], **fx['params'])
+                        FX.xform_array(Composer.dreambuffer, **fx['params'])
 
                     if fx['name'] == 'octave_scaler':
                         FX.octave_scaler(model=Model, **fx['params'])
@@ -948,6 +949,7 @@ def main():
             Composer.dreambuffer = deepdream(
                 net,
                 Composer.dreambuffer,
+                objective=objective_L2,
                 iteration_max = Model.iterations,
                 octave_n = Model.octaves,
                 octave_scale = Model.octave_scale,
@@ -1028,7 +1030,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=500).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=500).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
