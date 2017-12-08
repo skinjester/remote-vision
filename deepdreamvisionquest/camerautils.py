@@ -79,6 +79,10 @@ class WebcamVideoStream(object):
         self.rawframe = np.zeros((self.height, self.width ,3), np.uint8) # empty img for initial diff
         (self.grabbed, self.frame) = self.stream.read() # initial frame to prime the queue
         self.frame = self.transpose(self.frame) # alignment correction
+        ###
+        self.t_minus = cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY)
+        self.t_now = cv2.cvtColor(self.stream.read()[1],cv2.COLOR_RGB2GRAY)
+        self.t_plus = cv2.cvtColor( self.stream.read()[1],cv2.COLOR_RGB2GRAY)
 
         # logging
         self.log = log # this contains reference to hud logging function in rem.py
@@ -97,11 +101,22 @@ class WebcamVideoStream(object):
 
             _, img = self.stream.read()
 
-            # motion detection
-            self.t_delta_framebuffer = cv2.subtract(img, self.rawframe)
-            self.t_delta_framebuffer = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
-            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 127, 255, cv2.THRESH_TOZERO)
+            ###
+            # update detection buffer queue
+            self.t_minus = self.t_now
+            self.t_now = self.t_plus
+            self.t_plus = cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(5,5))
+
+            self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
+            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 32, 255, cv2.THRESH_BINARY)
+            # self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
+
+            # motion detection
+            # self.t_delta_framebuffer = cv2.subtract(img, self.rawframe)
+            # self.t_delta_framebuffer = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
+            # _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 127, 255, cv2.THRESH_TOZERO)
+            # self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
             # dont process motion detection if paused
             if self.motiondetector.is_paused == False:
@@ -133,6 +148,11 @@ class WebcamVideoStream(object):
     def stop(self):
         self.stopped = True
 
+    def diffImg(self, t0, t1, t2):
+        d1 = cv2.absdiff(t2,t1)
+        d2 = cv2.absdiff(t1,t0)
+        return cv2.bitwise_and(d1,d2)
+
 class MotionDetector(object):
 
     def __init__(self, floor, log):
@@ -148,12 +168,12 @@ class MotionDetector(object):
         self.floor = floor
         self.update_hud_log = log
         self.history = []
-        self.history_queue_length = 50
+        self.history_queue_length = 10
         self.forced = False
         self.monitor_msg = '****'
 
         # dataexport
-        self.export = open("motiondata/motiondata-test-6.txt","w+")
+        self.export = open("motiondata/motiondata-test-11.txt","w+")
 
         # temp (?)
         self._counter_ = 0
@@ -170,7 +190,7 @@ class MotionDetector(object):
         self.delta_count = delta_count
 
         # scale delta trigger so it rides peak values to prevent sensitive triggering
-        self.delta_trigger = self.add_to_history(delta_count*2) + self.floor
+        self.delta_trigger = self.add_to_history(self.delta_count) + self.floor
 
         # logging
         # create local copies of this info
@@ -188,27 +208,30 @@ class MotionDetector(object):
             # reseting delta count here, for good reasons but not sure why. Possibly to force the current & previous values to be very different?
             #self.delta_count = 0
 
-        if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
+        # if (self.delta_count >= self.delta_trigger and self.delta_count_history < self.delta_trigger):
+        if (self.delta_count > self.delta_trigger):
             # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
-            self.detection_toggle = True
-            self.monitor_msg = '***'
+            self.detection_toggle = True #  gets reset from motion detector queries elsewhere
+            # self.monitor_msg = '***'
             self.update_hud_log('detect','*')
             threadlog.critical('movement detected')
 
 
 
-        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
-            self.wasMotionDetected = False
-            self.update_hud_log('detect','-')
-            log.debug('movement ended')
-            self.monitor_msg = '---'
+        # elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
+        #     self.wasMotionDetected = False
+        #     # self.monitor_msg = '---'
+        #     self.update_hud_log('detect','-')
+        #     log.debug('movement ended')
         else:
             self.wasMotionDetected = False
-            self.monitor_msg = '-'
-            # is this the resting condition?
+            # self.monitor_msg = '-'
             self.update_hud_log('detect','-')
             log.debug('all motion is beneath threshold:{}'.format(self.floor))
+
+        ###
+        self.monitor_msg = 'delta_count:{} delta_trigger:{}'.format(self.delta_count,self.delta_trigger)
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
         if self.elapsed > 5 and self.elapsed < 6:
@@ -230,7 +253,7 @@ class MotionDetector(object):
             b_condition
             ))
 
-        threadlog.warning('delta_trigger:{}'.format(self.delta_trigger))
+        threadlog.critical('delta_count:{} delta_trigger:{}'.format(self.delta_count,self.delta_trigger))
 
         self._counter_ += 1 # used to index delta_count_history
 
@@ -256,7 +279,8 @@ class MotionDetector(object):
         self.history.append(self.delta_count)
         if len(self.history) > self.history_queue_length:
             self.history.pop(0)
-        value = int((sum(self.history)*1.2)/(self.history_queue_length)) #GRB history multiplier
+        value = int(sum(self.history)/self.history_queue_length) #GRB history multiplier
+
         return value
 
     def force_detection(self):

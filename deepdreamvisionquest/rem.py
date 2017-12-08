@@ -41,6 +41,8 @@ class Display(object):
             self.width = height
             self.height = width
 
+        self.screensize = [self.width, self.height]
+
 
 class Model(object):
     def __init__(self, current_layer=0, program_duration=10):
@@ -214,6 +216,8 @@ class Viewport(object):
 
 
         image = Composer.update(image) # Render MASTER
+
+
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
         cv2.imshow(self.window_name, image) # draw to window
@@ -272,8 +276,8 @@ class Composer(object):
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
-        self.buffer1 = Webcam.get().read() # uses camera capture dimensions
-        self.buffer2 = Webcam.get().read() # uses camera capture dimensions
+        # self.buffer1 = Webcam.get().read() # uses camera capture dimensions
+        # self.buffer2 = Webcam.get().read() # uses camera capture dimensions
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
 
@@ -307,15 +311,16 @@ class Composer(object):
         return self.mixbuffer
 
     def update(self, image):
-        # if self.isDreaming:
-        #     if self.is_new_cycle:
-        #         for fx in Model.cyclefx:
-        #             if fx['name'] == 'inception_xform':
-        #                 self.buffer1 = FX.inception_xform(image, Webcam.get().capture_size, **fx['params'])
+        if self.isDreaming:
+            if self.is_new_cycle:
+                for fx in Model.cyclefx:
+                    if fx['name'] == 'inception_xform':
+                        image = FX.inception_xform(image, Display.screensize, **fx['params'])
+                        Composer.dreambuffer = image
 
 
-        #     self.isDreaming = False
-        #     self.is_compositing_enabled = False
+            self.isDreaming = False
+            # self.is_compositing_enabled = False
 
         # else:
         #     if self.is_new_cycle and Webcam.get().motiondetector.isResting() == False:
@@ -804,7 +809,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-                Viewport.force_refresh = False # this should get cleared on its own in the event loop, but let's see
+                # Viewport.force_refresh = False # this should get cleared on its own in the event loop, but let's see
                 return Webcam.get().read()
 
             # delegate gradient ascent to step function
@@ -910,8 +915,8 @@ def main():
         Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
-        Viewport.show( Composer.buffer[0] )
-        # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+        # Viewport.show( Composer.buffer[0] )
+        Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
         log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
@@ -948,9 +953,6 @@ def main():
                 end = Model.end,
                 feature = Model.features[Model.current_feature]
                 )
-
-            # are we always getting back a full rez buffer?
-            log.critical('dreambuffer shape:{}'.format(Composer.dreambuffer.shape))
 
             # commenting out this block allows unfiltered signal only
             if Viewport.force_refresh:
@@ -1024,7 +1026,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=0).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.75, floor=200).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
