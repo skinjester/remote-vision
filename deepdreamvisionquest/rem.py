@@ -496,7 +496,7 @@ def draw_HUD(image):
 
     # list setup
     x,xoff = 40,180
-    y,yoff = 150,35
+    y,yoff = 150,20
 
     data.counter = 0
     def write_Text(key):
@@ -507,14 +507,14 @@ def draw_HUD(image):
             color = GREEN
             hud_log[key][1] = hud_log[key][0] #  update history
         cv2.putText(overlay, key, (x, row), FONT, 0.5, WHITE)
-        cv2.putText(overlay, '{}'.format(hud_log[key][0]), (xoff, row), FONT, 1.0, color)
+        cv2.putText(overlay, '{}'.format(hud_log[key][0]), (xoff, row), FONT, 0.5, color)
 
         data.counter += 1
 
     # write text to overlay
     # col1
     cv2.putText(overlay, hud_log['detect'][0], (x, 40), FONT, 1.0, (0,255,0))
-    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), FONT, 0.5, WHITE)
+    cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), FONT, 1.0, WHITE)
     write_Text('program')
     write_Text('floor')
     write_Text('threshold')
