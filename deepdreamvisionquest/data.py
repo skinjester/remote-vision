@@ -11,6 +11,9 @@ capture_h = 720
 # capture_w = 960
 # capture_h = 720
 
+# capture_w = 864
+# capture_h = 480
+
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -215,24 +218,36 @@ program.append({
 })
 
 program.append({
-	'name':'wildlife-cambrian-1',
-	'iterations':10,
-	'step_size':3,
+	'name':'cambrian-implosion',
+	'iterations':20,
+	'step_size':2.4,
 	'octaves':5,
-	'octave_cutoff':4,
+	'octave_cutoff':5,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':-0.1,
 	'model':'googlenet',
 	'layers':[
 		'inception_4c/pool',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
 	],
 	'features':range(-1,256),
 	'cyclefx': [
 	    inception_xform_default,
 	],
 	'stepfx': [
-
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.5}
+	    },
+	    {
+	    	'name': 'bilateral_filter',
+	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
+	    },
 	]
 })
 
@@ -240,21 +255,21 @@ program.append({
 	'name':'strangerthing',
 	'iterations':5,
 	'step_size':2.4,
-	'octaves':5,
+	'octaves':6,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
+	'octave_scale':1.3,
 	'iteration_mult':-0.25,
-	'step_mult':0.02,
+	'step_mult':0.01,
 	'model':'vgg19',
 	'layers':[
 		'conv4_4'
 	],
-	'features':range(177,512),
+	'features':range(-1,512),
 	'cyclefx': [
 	    inception_xform_default,
 	    {
 	    	'name': 'octave_scaler',
-	    	'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.5}
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.5}
 	    }
 	],
 	'stepfx': [
@@ -297,19 +312,19 @@ program.append({
 })
 
 program.append({
-	'name':'riviera',
-	'iterations':20,
+	'name':'monaco',
+	'iterations':30,
 	'step_size':1.6,
-	'octaves':6,
+	'octaves':5,
 	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
-	'step_mult':0.001,
+	'step_mult':0.005,
 	'model':'places',
 	'layers':[
 		'inception_4c/output',
 	],
-	'features':range(33,100),
+	'features':range(39,100),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
@@ -443,7 +458,7 @@ program.append({
 	'iterations':20,
 	'step_size':2,
 	'octaves':5,
-	'octave_cutoff':3,
+	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
@@ -463,7 +478,7 @@ program.append({
 	'stepfx':[
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 5, 'sigma_color':64, 'sigma_xy': 60}
+		'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 60}
 		}
 	]
 })
