@@ -530,6 +530,7 @@ def draw_HUD(image):
     write_Text('iteration')
     write_Text('step_size')
     write_Text('cycle_time')
+    write_Text('gamma')
 
 
     # add overlay back to source
@@ -564,15 +565,16 @@ def listener():
     # Row B
     # --------------------------------
 
-    if key==85: # PAGE UP : increase gamma 
-        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','GAMMA-'))
-        Webcam.get().gamma += 0.5
-
+    if key==85: # PAGE UP : increase gamma
+        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','GAMMA+'))
+        Webcam.get().gamma += 0.1
+        Webcam.get().update_gamma(Webcam.get().gamma )
         return
 
     if key==86: # PAGE DOWN decrease gamma
-        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA+'))
-        Webcam.get().gamma -= 0.5
+        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA-'))
+        Webcam.get().gamma -= 0.1
+        Webcam.get().update_gamma(Webcam.get().gamma )
         return
 
     if key == 81: # left-arrow key: previous program
@@ -839,13 +841,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             i += 1
 
-            # logging
+            # HUD logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
             iterationmsg = '{:0>3}:{:0>3} x{}'.format(i,iteration_max,Model.iteration_mult)
             stepsizemsg = '{:02.3f} x{:02.3f}'.format(step_params['step_size'],Model.step_mult)
             thresholdmsg = '{:0>6}'.format(Webcam.get().motiondetector.delta_trigger)
             floormsg = '{:0>6}'.format(Webcam.get().motiondetector.floor)
+            gammamsg = '{}'.format(Webcam.get().gamma)
             update_HUD_log('octave',octavemsg)
             update_HUD_log('width',w)
             update_HUD_log('height',h)
@@ -856,6 +859,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('program',Model.package_name)
             update_HUD_log('threshold',thresholdmsg)
             update_HUD_log('floor',floormsg)
+            update_HUD_log('gamma',gammamsg)
 
 
 
@@ -1008,7 +1012,8 @@ hud_log = {
     'username': [None,None],
     'scale': [None,None],
     'program': [None,None],
-    'floor': [None,None]
+    'floor': [None,None],
+    'gamma':[None,None]
 }
 
 # opencv font and color

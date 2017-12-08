@@ -62,8 +62,7 @@ class WebcamVideoStream(object):
         # image transform and gamma
         self.portrait_alignment = portrait_alignment
         self.flip_h = flip_h
-        self.flip_v = flip_v    
- 
+        self.flip_v = flip_v
 
 
 
@@ -98,6 +97,11 @@ class WebcamVideoStream(object):
         Thread(target=self.update, args=()).start()
         threadlog.critical('started camera thread')
         return self
+
+    def update_gamma(self, gamma):
+        # generates internal table for gamma correction
+        self.table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
+        for i in np.arange(0, 256)]).astype("uint8")
 
     def update(self):
         # loop until the thread is stopped
