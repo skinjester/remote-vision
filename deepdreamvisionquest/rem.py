@@ -294,6 +294,7 @@ class Composer(object):
         self.ramp_toggle_flag = False
         self.ramp_counter = 0
         self.ramp_increment = 0
+        self.b_cycle = False
 
         # maybe ?
         self.force_refresh = True
@@ -312,6 +313,7 @@ class Composer(object):
         # log.critical(self.buffer)
 
     def mix(self, img_back, img_front):
+        self.mix_opacity = self.ramp_counter
         cv2.addWeighted(
             img_front,
             self.mix_opacity,
@@ -331,20 +333,7 @@ class Composer(object):
                         image = FX.inception_xform(image, Display.screensize, **fx['params'])
                         Composer.dreambuffer = image
 
-
             self.isDreaming = False
-            # self.is_compositing_enabled = False
-
-        # else:
-        #     if self.is_new_cycle and Webcam.get().motiondetector.isResting() == False:
-        #         self.is_compositing_enabled = True
-
-        #     if self.is_compositing_enabled:
-        #         image = cv2.addWeighted(self.buffer2, self.opacity, image, 1-self.opacity, 0, image)
-        #         self.opacity = self.opacity * 0.9
-        #         if self.opacity <= 0.01:
-        #             self.opacity = 1.0
-        #             self.is_compositing_enabled = False
 
         return image
 
@@ -355,24 +344,39 @@ class Composer(object):
 
     def ramp_update(self):
         # loop until the thread is stopped
+
         while True:
             if self.ramp_stopped:
                 log.critical('ramp stopped')
                 return
 
             if self.ramp_toggle_flag:
-                self.ramp_increment = 1
+                if self.ramp_counter >= 0.9:
+                    self.b_cycle = True
+                    log.critical('******************************************************')
+
+                if self.b_cycle:
+                    self.ramp_increment = -0.0001
+
+                if self.ramp_counter < 0.0:
+                    self.ramp_toggle_flag = False
             else:
                 self.ramp_increment = 0
-                self.ramp_counter = 0
+                self.ramp_counter = 0.0
+                self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
+            log.critical('{}:{}:{}'.format(self.ramp_toggle_flag,self.b_cycle,self.ramp_counter))
 
-            log.critical('{}:{}'.format(self.ramp_toggle_flag,self.ramp_counter))
         return
 
     def ramp_toggle(self, b_state=True):
         self.ramp_toggle_flag = b_state
+        # initialize entry into true state
+        if b_state:
+            self.b_cycle = False
+            self.ramp_increment = 0.01
+            self.ramp_counter = 0
 
     def ramp_stop(self):
         log.critical('ramp stop')
@@ -848,14 +852,16 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # check if motion detected
             if Webcam.get().motiondetector.detection_toggle:
-                # Composer.ramp_toggle(True)
+                Composer.ramp_toggle(True)
                 Viewport.force_refresh = True
                 Webcam.get().motiondetector.detection_toggle = False # reset the toggle
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-                return Webcam.get().read()
+                img = Webcam.get().read()
+                Composer.send(1, img)
+                return img
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
@@ -916,11 +922,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if Webcam.get().motiondetector.detection_toggle:
-            # Composer.ramp_stop()
-            # Composer.ramp_start()
+            Composer.ramp_toggle(True)
             Composer.isDreaming = False # no, we'll be refreshing the frane buffer
             Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
-            return Webcam.get().read()
+            img = Webcam.get().read()
+            Composer.send(1, img)
+            return img
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
@@ -961,7 +968,10 @@ def main():
     Composer.ramp_start()
 
     # the madness begins
-    Composer.dreambuffer = Webcam.get().read() # initial camera image for starting
+    img = Webcam.get().read()
+    Composer.send(1, img)
+    Composer.dreambuffer = img # initial camera image for starting
+
 
     while True:
         log.critical('new cycle')
@@ -977,10 +987,11 @@ def main():
         # trying out the detectiontoggle system in order to catch any detections
         # that happened while we weren't looking
         if Webcam.get().motiondetector.detection_toggle:
-            # Composer.ramp_stop()
-            # Composer.ramp_start()
+            Composer.ramp_toggle(True)
             Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
-            Composer.dreambuffer = Webcam.get().read() # get a new camera frame
+            img = Webcam.get().read()
+            Composer.send(1, img)
+            Composer.dreambuffer = img # get a new camera frame
             Composer.isDreaming = False
 
 
@@ -1083,7 +1094,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
