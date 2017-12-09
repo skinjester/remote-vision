@@ -290,6 +290,10 @@ class Composer(object):
 
         #
         self.mix_opacity = 0.0 # the mix between dreaming and webcam buffers, 1.0 = all webcam
+        self.ramp_stopped = False
+        self.ramp_toggle_flag = False
+        self.ramp_counter = 0
+        self.ramp_increment = 0
 
         # maybe ?
         self.force_refresh = True
@@ -344,11 +348,35 @@ class Composer(object):
 
         return image
 
-    def ramp(self):
-        log.critical('ramp started')
-        #  is timer already running?
-            # cancel timer
-        # start timer
+    def ramp_start(self):
+        Thread(target=self.ramp_update, args=()).start()
+        log.critical('ramp start')
+        return self
+
+    def ramp_update(self):
+        # loop until the thread is stopped
+        while True:
+            if self.ramp_stopped:
+                log.critical('ramp stopped')
+                return
+
+            if self.ramp_toggle_flag:
+                self.ramp_increment = 1
+            else:
+                self.ramp_increment = 0
+                self.ramp_counter = 0
+
+            self.ramp_counter += self.ramp_increment
+
+            log.critical('{}:{}'.format(self.ramp_toggle_flag,self.ramp_counter))
+        return
+
+    def ramp_toggle(self, b_state=True):
+        self.ramp_toggle_flag = b_state
+
+    def ramp_stop(self):
+        log.critical('ramp stop')
+        self.ramp_stopped = True
 
 
 
@@ -628,12 +656,14 @@ def listener():
 
     elif key==196: # F7: show network details
         log.critical('{}:{} {} {}'.format('D1',key,'F7','***'))
-        Model.show_network_details()
+        # Model.show_network_details()
+        Composer.ramp_toggle(True)
         return
 
     elif key==197: # F8
         log.critical('{}:{} {} {}'.format('D2',key,'F8','***'))
-
+        Composer.ramp_toggle(False)
+        return
 
     elif key == 44: # , key : previous featuremap
         log.critical('{}:{} {} {}'.format('D3',key,',','Feature-'))
@@ -698,12 +728,11 @@ def listener():
     # --------------------------------
 
     if key == 27: # ESC: Exit
+        ### the order of these operations is unreasonably specific
         log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
+        Composer.ramp_stop() # shutdown down the Composer ramp counter
         Viewport.shutdown()
-
-        # logging
-        # close the motion detector data export file
-        Webcam.get().motiondetector.export.close()
+        Webcam.get().motiondetector.export.close() # close the motion detector data export file
         return
 
 
@@ -819,7 +848,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # check if motion detected
             if Webcam.get().motiondetector.detection_toggle:
-                Composer.ramp()
+                # Composer.ramp_toggle(True)
                 Viewport.force_refresh = True
                 Webcam.get().motiondetector.detection_toggle = False # reset the toggle
 
@@ -887,7 +916,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp()
+            # Composer.ramp_stop()
+            # Composer.ramp_start()
             Composer.isDreaming = False # no, we'll be refreshing the frane buffer
             Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
             return Webcam.get().read()
@@ -927,6 +957,9 @@ def main():
     update_HUD_log('username',Viewport.username)
     update_HUD_log('settings',Model.package_name)
 
+    #
+    Composer.ramp_start()
+
     # the madness begins
     Composer.dreambuffer = Webcam.get().read() # initial camera image for starting
 
@@ -944,7 +977,8 @@ def main():
         # trying out the detectiontoggle system in order to catch any detections
         # that happened while we weren't looking
         if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp()
+            # Composer.ramp_stop()
+            # Composer.ramp_start()
             Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
             Composer.dreambuffer = Webcam.get().read() # get a new camera frame
             Composer.isDreaming = False
