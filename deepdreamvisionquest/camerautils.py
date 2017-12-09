@@ -48,7 +48,7 @@ class WebcamVideoStream(object):
 
     # the camera has to be provided with a basic landscape width, height
     # because the hardware doesn't capture arbitrary window sizes
-    def __init__(self, src, capture_width, capture_height, portrait_alignment, log,flip_h=False, flip_v=False, gamma=1.0, floor=1000):
+    def __init__(self, src, capture_width, capture_height, portrait_alignment, log,flip_h=False, flip_v=False, gamma=1.0, floor=1000, threshold_filter=32):
 
         # set camera dimensions before reading frames
         # requested size is rounded to nearest camera size if non-matching
@@ -64,10 +64,7 @@ class WebcamVideoStream(object):
         self.flip_h = flip_h
         self.flip_v = flip_v
 
-
-
-
-
+        #
         self.gamma = gamma
         self.stopped = False
 
@@ -79,6 +76,7 @@ class WebcamVideoStream(object):
         self.motiondetector = MotionDetector(floor, log)
         self.delta_count = 0 # difference between current frame and previous
         self.t_delta_framebuffer = np.zeros((self.height, self.width ,3), np.uint8) # framebuffer for image differencing operations
+        self.threshold_filter = threshold_filter
 
         # frame buffer housekeeping
         self.rawframe = np.zeros((self.height, self.width ,3), np.uint8) # empty img for initial diff
@@ -119,19 +117,14 @@ class WebcamVideoStream(object):
             self.t_plus = self.transpose(cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(5,5)))
 
             self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
-            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 32, 255, cv2.THRESH_BINARY)
+            _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, self.threshold_filter, 255, cv2.THRESH_BINARY)
             # self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
-
-            # motion detection
-            # self.t_delta_framebuffer = cv2.subtract(img, self.rawframe)
-            # self.t_delta_framebuffer = cv2.cvtColor(self.t_delta_framebuffer, cv2.COLOR_RGB2GRAY)
-            # _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, 127, 255, cv2.THRESH_TOZERO)
-            # self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
             # dont process motion detection if paused
             if self.motiondetector.is_paused == False:
                 self.motiondetector.process(self.delta_count)
+
             # update internal buffers w camera frame
             self.rawframe = img # unprocessed camera img
             self.frame = self.gamma_correct(self.transpose(img)) # processed camera img
@@ -226,7 +219,7 @@ class MotionDetector(object):
             self.update_hud_log('detect','-')
 
         # for detection monitor window overlay
-        self.monitor_msg += '{}:{}'.format(self.delta_count, self.delta_trigger)
+        self.monitor_msg += ' | {}:{}'.format(self.delta_count, self.delta_trigger)
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
         if self.elapsed > 5 and self.elapsed < 6:

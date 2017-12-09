@@ -25,7 +25,10 @@ sys.path.append('../bin') #  point to directory containing LogSettings
 import LogSettings # global log settings templ
 
 import math
-from collections import deque
+from collections import deque # no idea. still valid?
+
+# multithreading for Composer
+from threading import Thread
 
 
 
@@ -285,6 +288,9 @@ class Composer(object):
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
 
+        #
+        self.mix_opacity = 0.1 # the mix between dreaming and webcam buffers
+
         # maybe ?
         self.force_refresh = True
 
@@ -301,13 +307,12 @@ class Composer(object):
 
         # log.critical(self.buffer)
 
-    def mix(self, img_front, img_back):
-        opacity = 0.5
+    def mix(self, img_back, img_front):
         cv2.addWeighted(
             img_front,
-            opacity,
+            self.mix_opacity,
             img_back,
-            1-opacity,
+            1-self.mix_opacity,
             0,
             self.mixbuffer
             )
@@ -338,6 +343,13 @@ class Composer(object):
         #             self.is_compositing_enabled = False
 
         return image
+
+    def ramp(self):
+        log.critical('ramp started')
+        #  is timer already running?
+            # cancel timer
+        # start timer
+
 
 
 class FX(object):
@@ -807,6 +819,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # check if motion detected
             if Webcam.get().motiondetector.detection_toggle:
+                Composer.ramp()
                 Viewport.force_refresh = True
                 Webcam.get().motiondetector.detection_toggle = False # reset the toggle
 
@@ -829,7 +842,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             ####
             # send the main mix to the viewport
             # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
-            Viewport.show( Composer.buffer[0] )
+            # Viewport.show( Composer.buffer[0] )
+            Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) )) # front img, back img
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -873,6 +887,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
         if Webcam.get().motiondetector.detection_toggle:
+            Composer.ramp()
             Composer.isDreaming = False # no, we'll be refreshing the frane buffer
             Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
             return Webcam.get().read()
@@ -920,8 +935,8 @@ def main():
         Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
-        Viewport.show( Composer.buffer[0] )
-        # Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+        # Viewport.show( Composer.buffer[0] )
+        Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
         log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
@@ -929,6 +944,7 @@ def main():
         # trying out the detectiontoggle system in order to catch any detections
         # that happened while we weren't looking
         if Webcam.get().motiondetector.detection_toggle:
+            Composer.ramp()
             Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
             Composer.dreambuffer = Webcam.get().read() # get a new camera frame
             Composer.isDreaming = False
@@ -1033,7 +1049,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.8, floor=500).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
