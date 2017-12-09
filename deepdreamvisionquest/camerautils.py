@@ -114,11 +114,11 @@ class WebcamVideoStream(object):
             # update detection buffer queue
             self.t_minus = self.t_now
             self.t_now = self.t_plus
-            self.t_plus = self.transpose(cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(5,5)))
+            self.t_plus = self.transpose(cv2.blur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),(9,9)))
 
             self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
+            self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, self.threshold_filter, 255, cv2.THRESH_BINARY)
-            # self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
             # dont process motion detection if paused

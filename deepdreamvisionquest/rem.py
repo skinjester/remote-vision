@@ -289,7 +289,7 @@ class Composer(object):
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
 
         #
-        self.mix_opacity = 0.1 # the mix between dreaming and webcam buffers
+        self.mix_opacity = 0.0 # the mix between dreaming and webcam buffers, 1.0 = all webcam
 
         # maybe ?
         self.force_refresh = True
