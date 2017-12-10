@@ -233,7 +233,7 @@ class Viewport(object):
         self.listener() # listen for keyboard events
 
         # GRB: temp structure for saving fully rendered frames
-        if self.time_counter > 10 and self.username != 'silent':
+        if self.time_counter > 1 and self.username != 'silent':
             self.export(image)
             self.time_counter = 0
         self.image = image
@@ -351,12 +351,11 @@ class Composer(object):
                 return
 
             if self.ramp_toggle_flag:
-                if self.ramp_counter >= 0.9:
+                if self.ramp_counter >= 0.95:
                     self.b_cycle = True
-                    log.critical('******************************************************')
 
                 if self.b_cycle:
-                    self.ramp_increment = -0.0001
+                    self.ramp_increment = -0.1
 
                 if self.ramp_counter < 0.0:
                     self.ramp_toggle_flag = False
@@ -366,7 +365,7 @@ class Composer(object):
                 self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
-            log.critical('{}:{}:{}'.format(self.ramp_toggle_flag,self.b_cycle,self.ramp_counter))
+            log.critical('{}'.format(self.ramp_counter))
 
         return
 
@@ -375,8 +374,9 @@ class Composer(object):
         # initialize entry into true state
         if b_state:
             self.b_cycle = False
-            self.ramp_increment = 0.01
-            self.ramp_counter = 0
+            self.ramp_increment = 0.1
+            self.ramp_counter = 0.1
+
 
     def ramp_stop(self):
         log.critical('ramp stop')
@@ -1094,7 +1094,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
@@ -1103,9 +1103,9 @@ Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
 # disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','silent', listener)
+Viewport = Viewport('deepdreamvisionquest','noizefloor', listener)
 Composer = Composer()
-Model = Model(program_duration=9999) # seconds
+Model = Model(program_duration=60) # seconds
 FX = FX()
 
 Model.set_program(0)

@@ -288,13 +288,13 @@ program.append({
 
 program.append({
 	'name':'wildlife',
-	'iterations':20,
+	'iterations':10,
 	'step_size':1.2,
 	'octaves':6,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.1,
-	'step_mult':0.05,
+	'octave_scale':1.2,
+	'iteration_mult':0.0,
+	'step_mult':0.1,
 	'model':'vgg19',
 	'layers':[
 		'conv5_3'
@@ -303,7 +303,7 @@ program.append({
 	'cyclefx':[
 			{
 				'name': 'octave_scaler',
-				'params': {'step':0.1, 'min_scale':1.2, 'max_scale':1.4}
+				'params': {'step':0.01, 'min_scale':1.2, 'max_scale':1.4}
 			}
 		],
 	'stepfx': [
