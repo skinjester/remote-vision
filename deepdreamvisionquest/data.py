@@ -316,38 +316,38 @@ program.append({
 	]
 })
 
-program.append({
-	'name':'monaco',
-	'iterations':30,
-	'step_size':1.6,
-	'octaves':5,
-	'octave_cutoff':4,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.005,
-	'model':'places',
-	'layers':[
-		'inception_4c/output',
-	],
-	'features':range(39,100),
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':1.7}
-		},
-		{
-			'name': 'inception_xform',
-			'params': {'scale':0.1}
-		}
-	],
-	'stepfx':[
+# program.append({
+# 	'name':'monaco',
+# 	'iterations':30,
+# 	'step_size':1.6,
+# 	'octaves':5,
+# 	'octave_cutoff':4,
+# 	'octave_scale':1.5,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.005,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4c/output',
+# 	],
+# 	'features':range(39,100),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':1.7}
+# 		},
+# 		{
+# 			'name': 'inception_xform',
+# 			'params': {'scale':0.1}
+# 		}
+# 	],
+# 	'stepfx':[
 
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':5, 'sigma_xy': 0}
-		}
-	]
-})
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':5, 'sigma_xy': 0}
+# 		}
+# 	]
+# })
 
 
 program.append({
@@ -489,74 +489,71 @@ program.append({
 })
 
 
-program.append({
-	'name':'geo',
-	'iterations':10,
-	'step_size':2.2,
-	'octaves':4,
-	'octave_cutoff':3,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.04,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/5x5',
-	],
-	'features':range(33,64),
-	'cyclefx':[
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':2, 'wavelength':100}
-		},
-	],
-	'stepfx':[
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':2.0}
-		},
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':64, 'sigma_xy': 60}
-		},
-	]
-})
+# program.append({
+# 	'name':'geo',
+# 	'iterations':40,
+# 	'step_size':2.2,
+# 	'octaves':5,
+# 	'octave_cutoff':5,
+# 	'octave_scale':1.4,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.01,
+# 	'model':'googlenet',
+# 	'layers':[
+# 		'inception_3b/5x5',
+# 	],
+# 	'features':range(33,64),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'xform_array',
+# 			'params': {'amplitude':2, 'wavelength':100}
+# 		},
+# 	],
+# 	'stepfx':[
+
+# 		{
+# 			'name': 'bilateral_filter',
+# 			'params': {'radius': 3, 'sigma_color':24, 'sigma_xy': 20}
+# 		},
+# 	]
+# })
 
 
 
 
 
-program.append({
-	'name':'alien-human hybrid',
-	'iterations':40,
-	'step_size':2,
-	'octaves':5,
-	'octave_cutoff':3,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4a/1x1'
-	],
-	'features':[0],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.05, 'min_scale':1.1, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.3, 'order':0}
-		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
-		}
-	]
-})
+# program.append({
+# 	'name':'alien-human hybrid',
+# 	'iterations':40,
+# 	'step_size':2,
+# 	'octaves':5,
+# 	'octave_cutoff':3,
+# 	'octave_scale':1.5,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.01,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4a/1x1'
+# 	],
+# 	'features':[0],
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.05, 'min_scale':1.1, 'max_scale':1.7}
+# 		},
+# 		inception_xform_default
+# 	],
+# 	'stepfx':[
+# 		{
+# 			'name': 'nd_gaussian',
+# 			'params': {'sigma': 0.3, 'order':0}
+# 		},
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
+# 		}
+# 	]
+# })
 
 
 
@@ -632,38 +629,38 @@ program.append({
 })
 
 
-program.append({
-	'name':'Kobol2',
-	'iterations':30,
-	'step_size':3,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.00,
-	'model':'places',
-	'layers':[
-		'inception_4b/3x3',
-	],
-	'features':range(3,64),
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.4, 'order':0}
-		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 100}
-		}
-	]
-})
+# program.append({
+# 	'name':'Kobol2',
+# 	'iterations':30,
+# 	'step_size':3,
+# 	'octaves':5,
+# 	'octave_cutoff':5,
+# 	'octave_scale':1.4,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.00,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4b/3x3',
+# 	],
+# 	'features':range(3,64),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+# 		},
+# 		inception_xform_default
+# 	],
+# 	'stepfx':[
+# 		{
+# 			'name': 'nd_gaussian',
+# 			'params': {'sigma': 0.4, 'order':0}
+# 		},
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 100}
+# 		}
+# 	]
+# })
 
 
 program.append({

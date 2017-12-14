@@ -374,7 +374,7 @@ class Composer(object):
         # initialize entry into true state
         if b_state:
             self.b_cycle = False
-            self.ramp_increment = 0.1
+            self.ramp_increment = 0.01
             self.ramp_counter = 0.1
 
 
