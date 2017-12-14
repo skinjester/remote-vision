@@ -2,8 +2,17 @@ import numpy as np
 import cv2
 
 # processing resolution
-capture_w = 1280
-capture_h = 720
+# capture_w = 1280
+# capture_h = 720
+
+# capture_w = 1920
+# capture_h = 1080
+
+# capture_w = 960
+# capture_h = 720
+
+capture_w = 864
+capture_h = 480
 
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
@@ -178,8 +187,8 @@ program.append({
   'octaves':5,
   'octave_cutoff':4,
   'octave_scale':1.2,
-  'iteration_mult':0.5,
-  'step_mult':0.1,
+  'iteration_mult':0.0,
+  'step_mult':0.001,
   'model':'vgg19',
   'layers':[
 	'conv3_1',
@@ -197,7 +206,10 @@ program.append({
 	],
   'features':range(-1,255),
   'cyclefx':[
-    inception_xform_default,
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
     {
     	'name': 'octave_scaler',
     	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.5}
@@ -209,68 +221,93 @@ program.append({
 })
 
 program.append({
-	'name':'wildlife',
+	'name':'cambrian-implosion',
 	'iterations':20,
-	'step_size':3,
+	'step_size':2.4,
 	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.2,
-	'step_mult':-0.01,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':-0.1,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/pool',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
+	],
+	'features':range(-1,256),
+	'cyclefx': [
+	    inception_xform_default,
+	],
+	'stepfx': [
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.5}
+	    },
+	    {
+	    	'name': 'bilateral_filter',
+	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
+	    },
+	]
+})
+
+program.append({
+	'name':'strangerthing',
+	'iterations':5,
+	'step_size':3,
+	'octaves':6,
+	'octave_cutoff':6,
+	'octave_scale':1.3,
+	'iteration_mult':-0.25,
+	'step_mult':0.02,
 	'model':'vgg19',
 	'layers':[
-		'conv5_3',
+		'conv4_4'
 	],
-	'features':range(128,256),
+	'features':range(-1,512),
 	'cyclefx': [
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':20, 'wavelength':100}
-		},
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.2, 'max_scale':1.5}
-		}
+	    inception_xform_default,
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.6}
+	    }
 	],
 	'stepfx': [
 		{
 			'name': 'bilateral_filter',
-			'params': {'radius': 9, 'sigma_color':32, 'sigma_xy': 200}
-		},
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.1, 'order':0}
+			'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 70}
 		},
 	]
 })
 
 
+
+
 program.append({
-	'name':'violaceous',
-	'iterations':20,
-	'step_size':2,
-	'octaves':5,
+	'name':'wildlife',
+	'iterations':10,
+	'step_size':1.2,
+	'octaves':6,
 	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.2,
-	'step_mult':0.01,
+	'octave_scale':1.2,
+	'iteration_mult':0.0,
+	'step_mult':0.1,
 	'model':'vgg19',
 	'layers':[
 		'conv5_3'
 	],
 	'features':range(104,256),
 	'cyclefx':[
-		xform_array_default,
 			{
 				'name': 'octave_scaler',
-				'params': {'step':0.1, 'min_scale':1.2, 'max_scale':1.6}
+				'params': {'step':0.01, 'min_scale':1.2, 'max_scale':1.4}
 			}
 		],
 	'stepfx': [
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 7, 'sigma_color':50, 'sigma_xy': 3}
-		},
+
 		{
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.2, 'order':0}
@@ -279,24 +316,89 @@ program.append({
 	]
 })
 
+# program.append({
+# 	'name':'monaco',
+# 	'iterations':30,
+# 	'step_size':1.6,
+# 	'octaves':5,
+# 	'octave_cutoff':4,
+# 	'octave_scale':1.5,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.005,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4c/output',
+# 	],
+# 	'features':range(39,100),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':1.7}
+# 		},
+# 		{
+# 			'name': 'inception_xform',
+# 			'params': {'scale':0.1}
+# 		}
+# 	],
+# 	'stepfx':[
 
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':5, 'sigma_xy': 0}
+# 		}
+# 	]
+# })
 
 
 program.append({
-	'name':'castle',
-	'iterations':30,
-	'step_size':2,
+	'name':'cafe',
+	'iterations':20,
+	'step_size':1.6,
 	'octaves':6,
 	'octave_cutoff':4,
 	'octave_scale':1.5,
-	'iteration_mult':0.1,
-	'step_mult':0.0,
+	'iteration_mult':0.0,
+	'step_mult':0.001,
 	'model':'places',
 	'layers':[
+		'inception_4d/5x5',
 		'inception_4c/output',
 		'inception_4c/pool',
-		'inception_4d/3x3',
-		'inception_4d/5x5'
+		'inception_4d/3x3'
+	],
+	'features':range(5,100),
+	'cyclefx':[
+		# {
+		# 	'name': 'octave_scaler',
+		# 	'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+		# },
+		{
+			'name': 'inception_xform',
+			'params': {'scale':0.1}
+		}
+	],
+	'stepfx':[
+
+		{
+		'name': 'bilateral_filter',
+		'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 60}
+		}
+	]
+})
+
+
+program.append({
+	'name':'neomorph-neo-2',
+	'iterations':40,
+	'step_size':2,
+	'octaves':5,
+	'octave_cutoff':3,
+	'octave_scale':1.5,
+	'iteration_mult':0.0,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/5x5'
 	],
 	'features':[7],
 	'cyclefx':[
@@ -307,14 +409,16 @@ program.append({
 		inception_xform_default
 	],
 	'stepfx':[
-
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 60}
+		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
 		}
 	]
 })
-
 
 program.append({
 	'name':'neomorph-neo',
@@ -359,7 +463,7 @@ program.append({
 	'iterations':20,
 	'step_size':2,
 	'octaves':5,
-	'octave_cutoff':3,
+	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':0.01,
@@ -379,80 +483,77 @@ program.append({
 	'stepfx':[
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 5, 'sigma_color':64, 'sigma_xy': 60}
+		'params': {'radius': 5, 'sigma_color':30, 'sigma_xy': 60}
 		}
 	]
 })
 
 
-program.append({
-	'name':'geo',
-	'iterations':10,
-	'step_size':2.2,
-	'octaves':4,
-	'octave_cutoff':3,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.04,
-	'model':'googlenet',
-	'layers':[
-		'inception_3b/5x5',
-	],
-	'features':range(33,64),
-	'cyclefx':[
-		{
-			'name': 'xform_array',
-			'params': {'amplitude':2, 'wavelength':100}
-		},
-	],
-	'stepfx':[
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':2.0}
-		},
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':64, 'sigma_xy': 60}
-		},
-	]
-})
+# program.append({
+# 	'name':'geo',
+# 	'iterations':40,
+# 	'step_size':2.2,
+# 	'octaves':5,
+# 	'octave_cutoff':5,
+# 	'octave_scale':1.4,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.01,
+# 	'model':'googlenet',
+# 	'layers':[
+# 		'inception_3b/5x5',
+# 	],
+# 	'features':range(33,64),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'xform_array',
+# 			'params': {'amplitude':2, 'wavelength':100}
+# 		},
+# 	],
+# 	'stepfx':[
+
+# 		{
+# 			'name': 'bilateral_filter',
+# 			'params': {'radius': 3, 'sigma_color':24, 'sigma_xy': 20}
+# 		},
+# 	]
+# })
 
 
 
 
 
-program.append({
-	'name':'alien-human hybrid',
-	'iterations':40,
-	'step_size':2,
-	'octaves':5,
-	'octave_cutoff':3,
-	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':0.01,
-	'model':'places',
-	'layers':[
-		'inception_4a/1x1'
-	],
-	'features':[0],
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.05, 'min_scale':1.1, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.3, 'order':0}
-		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
-		}
-	]
-})
+# program.append({
+# 	'name':'alien-human hybrid',
+# 	'iterations':40,
+# 	'step_size':2,
+# 	'octaves':5,
+# 	'octave_cutoff':3,
+# 	'octave_scale':1.5,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.01,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4a/1x1'
+# 	],
+# 	'features':[0],
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.05, 'min_scale':1.1, 'max_scale':1.7}
+# 		},
+# 		inception_xform_default
+# 	],
+# 	'stepfx':[
+# 		{
+# 			'name': 'nd_gaussian',
+# 			'params': {'sigma': 0.3, 'order':0}
+# 		},
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
+# 		}
+# 	]
+# })
 
 
 
@@ -528,38 +629,38 @@ program.append({
 })
 
 
-program.append({
-	'name':'Kobol2',
-	'iterations':30,
-	'step_size':3,
-	'octaves':5,
-	'octave_cutoff':5,
-	'octave_scale':1.4,
-	'iteration_mult':0.0,
-	'step_mult':0.00,
-	'model':'places',
-	'layers':[
-		'inception_4b/3x3',
-	],
-	'features':range(3,64),
-	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
-		},
-		inception_xform_default
-	],
-	'stepfx':[
-		{
-			'name': 'nd_gaussian',
-			'params': {'sigma': 0.4, 'order':0}
-		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 100}
-		}
-	]
-})
+# program.append({
+# 	'name':'Kobol2',
+# 	'iterations':30,
+# 	'step_size':3,
+# 	'octaves':5,
+# 	'octave_cutoff':5,
+# 	'octave_scale':1.4,
+# 	'iteration_mult':0.0,
+# 	'step_mult':0.00,
+# 	'model':'places',
+# 	'layers':[
+# 		'inception_4b/3x3',
+# 	],
+# 	'features':range(3,64),
+# 	'cyclefx':[
+# 		{
+# 			'name': 'octave_scaler',
+# 			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+# 		},
+# 		inception_xform_default
+# 	],
+# 	'stepfx':[
+# 		{
+# 			'name': 'nd_gaussian',
+# 			'params': {'sigma': 0.4, 'order':0}
+# 		},
+# 		{
+# 		'name': 'bilateral_filter',
+# 		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 100}
+# 		}
+# 	]
+# })
 
 
 program.append({
@@ -580,26 +681,26 @@ program.append({
 	'stepfx':stepfx_default
 })
 
-
-
 program.append({
-	'name':'pebble beach yall',
-	'iterations':60,
+	'name':'therapod',
+	'iterations':100,
 	'step_size':1.0,
 	'octaves':5,
-	'octave_cutoff':4,
+	'octave_cutoff':5,
 	'octave_scale':1.4,
-	'iteration_mult':0.0,
+	'iteration_mult':0.5,
 	'step_mult':0.01,
 	'model':'googlenet',
 	'layers':[
+		'inception_4b/3x3_reduce',
+		'inception_4d/3x3_reduce',
 		'inception_4c/3x3_reduce',
 	],
-	'features':[8],
+	'features':range(63,128),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.5, 'max_scale':1.7}
+			'params': {'step':0.01, 'min_scale':1.3, 'max_scale':1.7}
 		},
 		inception_xform_default
 	],
@@ -608,13 +709,46 @@ program.append({
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.4, 'order':0}
 		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':10, 'sigma_xy': 10}
-		},
+
 		{
 			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
+			'params': {'duration':5.0}
+		},
+	]
+})
+
+program.append({
+	'name':'pebble beach yall',
+	'iterations':100,
+	'step_size':1.0,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.4,
+	'iteration_mult':0.5,
+	'step_mult':0.01,
+	'model':'googlenet',
+	'layers':[
+		'inception_4b/3x3_reduce',
+		'inception_4d/3x3_reduce',
+		'inception_4c/3x3_reduce',
+	],
+	'features':range(63,128),
+	'cyclefx':[
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.01, 'min_scale':1.3, 'max_scale':1.7}
+		},
+		inception_xform_default
+	],
+	'stepfx':[
+		{
+			'name': 'nd_gaussian',
+			'params': {'sigma': 0.4, 'order':0}
+		},
+
+		{
+			'name': 'duration_cutoff',
+			'params': {'duration':5.0}
 		},
 	]
 })
@@ -625,24 +759,24 @@ program.append({
 
 program.append({
 	'name':'hifi-featuremap',
-	'iterations':20,
-	'step_size':1.5,
+	'iterations':5,
+	'step_size':2,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.4,
 	'iteration_mult':0.0,
-	'step_mult':0.0,
+	'step_mult':0.01,
 	'model':'places',
 	'layers':[
-		'inception_4b/3x3_reduce'
+		'inception_4b/3x3_reduce',
+		'inception_4c/3x3_reduce'
 	],
-	'features':[-1],
+	'features':range(54,100),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':1.7}
+			'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.7}
 		},
-		inception_xform_default
 	],
 	'stepfx':[
 		# {
@@ -651,12 +785,13 @@ program.append({
 		# },
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 200}
 		},
 		{
 			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
-		}
+			'params': {'duration':5.0}
+		},
+
 	]
 })
 
