@@ -1,35 +1,48 @@
 # rem.py
 
+# file handling
 import os
 import os.path
 import argparse
 import sys
 import errno
-import time
-import numpy as np
+
+# image processing
 import scipy.ndimage as nd
 import PIL.Image
-from google.protobuf import text_format
 import cv2
-import data
-import tweepy
+
+# math
+import math
+import numpy as np
+from random import randint
+
+# communication
+import tweepy # was used to post the framebuffer to twitter
+
+# neural network stuff
 os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caffe import
 import caffe
-from camerautils import WebcamVideoStream
-from camerautils import Cameras
-from random import randint
-import inspect
+from google.protobuf import text_format
+
+''' apparently unused '''
+# import inspect
+# from collections import deque # no idea. still valid?
+
+# logging
 import logging
 import logging.config
 sys.path.append('../bin') #  point to directory containing LogSettings
 import LogSettings # global log settings templ
 
-import math
-from collections import deque # no idea. still valid?
-
-# multithreading for Composer
+# system
 from threading import Thread
+import time
 
+# program modules
+import data
+from camerautils import WebcamVideoStream
+from camerautils import Cameras
 
 
 # using this to index some values with dot notation in their own namespace
@@ -1042,7 +1055,7 @@ def main():
 
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
-log = logging.getLogger('logtest-debug')
+log = logging.getLogger('logtest-simple')
 log.setLevel(logging.WARNING)
 
 
@@ -1094,7 +1107,7 @@ Device = [0,1] # debug
 w = data.capture_w
 h = data.capture_h
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
@@ -1103,7 +1116,7 @@ Webcam = Cameras(source=Camera, current=Device[0])
 Display = Display(width=w, height=h, camera=Webcam.get())
 
 # disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','noizefloor', listener)
+Viewport = Viewport('deepdreamvisionquest','silent', listener)
 Composer = Composer()
 Model = Model(program_duration=60) # seconds
 FX = FX()
