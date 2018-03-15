@@ -55,3 +55,7 @@ deepdreamvisionquest/AI-1/
 deepdreamvisionquest/AI-2/
 
 models/
+
+deepdreamvisionquest/motiondata/
+
+bin/
