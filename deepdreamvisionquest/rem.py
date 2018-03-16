@@ -1,8 +1,8 @@
-# rem.py
+#!/usr/bin python
+
 
 # file handling
 import os
-import os.path
 import argparse
 import sys
 import errno
@@ -28,6 +28,7 @@ from google.protobuf import text_format
 ''' apparently unused '''
 # import inspect
 # from collections import deque # no idea. still valid?
+# import os.path # redundant
 
 # logging
 import logging
@@ -153,13 +154,13 @@ class Model(object):
         self.cyclefx = data.program[index]['cyclefx']
         self.stepfx = data.program[index]['stepfx']
         self.program_start_time = time.time()
-        log.critical('program:{} started:{}'.format(self.program[self.current_program]['name'], self.program_start_time))
+        log.warning('program:{} started:{}'.format(self.program[self.current_program]['name'], self.program_start_time))
 
 
     def set_endlayer(self,end):
         self.end = end
         Viewport.force_refresh = True
-        log.critical('layer: {} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
+        log.warning('layer: {} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
         update_HUD_log('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
 
     def prev_layer(self):
@@ -177,7 +178,7 @@ class Model(object):
     def set_featuremap(self):
         Viewport.force_refresh = True
         # featuremap = self.features[self.current_feature]
-        log.critical('featuremap:{}'.format(self.features[self.current_feature]))
+        log.warning('featuremap:{}'.format(self.features[self.current_feature]))
         update_HUD_log('featuremap',self.features[self.current_feature])
 
     def prev_feature(self):
@@ -253,7 +254,7 @@ class Viewport(object):
 
     def export(self,image):
         make_sure_path_exists(self.imagesavepath)
-        log.debug('{}:{}'.format('export image',self.imagesavepath))
+        log.warning('{}:{}'.format('export image',self.imagesavepath))
         export_path = '{}/{}.jpg'.format(
             self.imagesavepath,
             time.strftime('%m-%d-%H-%M-%s')
@@ -304,9 +305,10 @@ class Composer(object):
         #
         self.mix_opacity = 0.0 # the mix between dreaming and webcam buffers, 1.0 = all webcam
         self.ramp_stopped = False
-        self.ramp_toggle_flag = False
-        self.ramp_counter = 0
-        self.ramp_increment = 0
+        self.ramp_paused = True
+        self.ramp_activated = False
+        self.ramp_counter = 1.0
+        self.ramp_increment = -0.01
         self.b_cycle = False
 
         # maybe ?
@@ -350,49 +352,44 @@ class Composer(object):
 
         return image
 
-    def ramp_start(self):
+    def start_ramp_thread(self):
+        log.warning('starting compositor ramping thread')
         Thread(target=self.ramp_update, args=()).start()
-        log.critical('ramp start')
         return self
 
     def ramp_update(self):
-        # loop until the thread is stopped
-
         while True:
             if self.ramp_stopped:
-                log.critical('ramp stopped')
+                log.warning('stopped compositor ramping thread')
                 return
 
-            if self.ramp_toggle_flag:
-                if self.ramp_counter >= 0.95:
-                    self.b_cycle = True
 
-                if self.b_cycle:
-                    self.ramp_increment = -0.1
+            if not self.ramp_paused:
+                self.ramp_counter += self.ramp_increment
+                self.ramp_counter = round(self.ramp_counter,15) # smooth floating point values
+                # self.ramp_counter = 0.5
+                log.warning('ramp counter: {}'.format(self.ramp_counter))
 
-                if self.ramp_counter < 0.0:
-                    self.ramp_toggle_flag = False
-            else:
-                self.ramp_increment = 0
-                self.ramp_counter = 0.0
-                self.b_cycle = False
+                if self.ramp_counter <= abs(self.ramp_increment):
+                    log.warning('ramp counter is out of bounds')
+                    self.ramp_counter = 1.0
 
-            self.ramp_counter += self.ramp_increment
-            log.critical('{}'.format(self.ramp_counter))
+                    log.warning('pausing ramp')
+                    self.ramp_paused = True
 
-        return
+                    # done with ramping, reopen detection gate
+                    log.info('INFO: opening detection gate (ramp_update)')
+                    Webcam.get().motiondetector.detection_gated = False
 
-    def ramp_toggle(self, b_state=True):
-        self.ramp_toggle_flag = b_state
-        # initialize entry into true state
-        if b_state:
-            self.b_cycle = False
-            self.ramp_increment = 0.01
-            self.ramp_counter = 0.1
+
+    def ramp_start(self):
+        self.ramp_paused = False
+        self.ramp_counter = 1.0
+        log.warning('starting ramp')
 
 
     def ramp_stop(self):
-        log.critical('ramp stop')
+        log.warning('stopping ramp')
         self.ramp_stopped = True
 
 
@@ -425,7 +422,7 @@ class FX(object):
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
-        log.info('octave_scale: {}'.format(model.octave_scale))
+        log.warning('octave_scale: {}'.format(model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
         return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
@@ -448,7 +445,7 @@ class FX(object):
         if elapsed >= duration:
             Webcam.get().motiondetector.force_detection()
             Viewport.refresh()
-        log.debug('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
+        log.warning('cycle_start_time:{} duration:{} elapsed:{}'.format(self.cycle_start_time, duration, elapsed))
 
     # called by main() at start of each cycle
     def set_cycle_start_time(self, start_time):
@@ -505,7 +502,7 @@ def sobel(img):
     ygrad = nd.filters.sobel(img, 1)
     combined = np.hypot(xgrad, ygrad)
     sob = 255 * combined / np.max(combined) # normalize
-    log.debug('@@@@@@@@@@ sobel{}'.format(sobel.shape))
+    log.warning('@@@@@@@@@@ sobel{}'.format(sobel.shape))
     return sob
 
 
@@ -537,7 +534,7 @@ def update_HUD_log(key,new_value):
 
 
 def show_stats(image):
-    log.critical('show stats')
+    log.warning('show stats')
     stats_overlay = image.copy()
     opacity = 1.0
     cv2.putText(stats_overlay, 'show_stats()', (30, 40), font, 0.5, RED)
@@ -603,45 +600,45 @@ def listener():
     # --------------------------------
 
     if key==10: # ENTER key: save picture
-        log.critical('{}:{} {} {}'.format('A1',key,'ENTER','SAVE IMAGE'))
+        log.warning('{}:{} {} {}'.format('A1',key,'ENTER','SAVE IMAGE'))
         Viewport.export()
         return
 
     if key==32: # SPACE
-        log.critical('{}:{} {} {}'.format('A2',key,'SPACE','***'))
+        log.warning('{}:{} {} {}'.format('A2',key,'SPACE','***'))
         return
 
     if key==80: # HOME
-        log.critical('{}:{} {} {}'.format('A3',key,'HOME','***'))
+        log.warning('{}:{} {} {}'.format('A3',key,'HOME','***'))
         return
 
     if key==87: # END
-        log.critical('{}:{} {} {}'.format('A4',key,'END','RESET'))
+        log.warning('{}:{} {} {}'.format('A4',key,'END','RESET'))
         return
 
     # Row B
     # --------------------------------
 
     if key==85: # PAGE UP : increase gamma
-        log.critical('{}:{} {} {}'.format('B1',key,'PAGEUP','GAMMA+'))
+        log.warning('{}:{} {} {}'.format('B1',key,'PAGEUP','GAMMA+'))
         Webcam.get().gamma += 0.1
         Webcam.get().update_gamma(Webcam.get().gamma )
         return
 
     if key==86: # PAGE DOWN decrease gamma
-        log.critical('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA-'))
+        log.warning('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA-'))
         Webcam.get().gamma -= 0.1
         Webcam.get().update_gamma(Webcam.get().gamma )
         return
 
     if key == 81: # left-arrow key: previous program
-        log.critical('x{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
+        log.warning('x{}:{} {} {}'.format('B3',key,'ARROWL','PROGRAM-'))
         Model.prev_program()
         Model.reset_feature()
         return
 
     if key == 83: # right-arrow key: next program
-        log.critical('{}:{} {} {}'.format('B4',key,'ARROWR','PROGRAM+'))
+        log.warning('{}:{} {} {}'.format('B4',key,'ARROWR','PROGRAM+'))
         Model.next_program()
         Model.reset_feature()
         return
@@ -649,21 +646,21 @@ def listener():
     # Row C
     # --------------------------------
     if key==194: # F5
-        log.critical('{}:{} {} {}'.format('C1',key,'F5','***'))
+        log.warning('{}:{} {} {}'.format('C1',key,'F5','***'))
         return
 
     if key==195: # F6
-        log.critical('{}:{} {} {}'.format('C2',key,'F6','***'))
+        log.warning('{}:{} {} {}'.format('C2',key,'F6','***'))
         return
 
     if key == 122: # z key: next network layer
-        log.critical('{}:{} {} {}'.format('C3',key,'Z','LAYER-'))
+        log.warning('{}:{} {} {}'.format('C3',key,'Z','LAYER-'))
         Model.prev_layer()
         Model.reset_feature()
         return
 
     if key == 120: # x key: previous network layer
-        log.critical('{}:{} {} {}'.format('C4',key,'X','LAYER+'))
+        log.warning('{}:{} {} {}'.format('C4',key,'X','LAYER+'))
         Model.next_layer()
         Model.reset_feature()
         return
@@ -672,45 +669,45 @@ def listener():
     # --------------------------------
 
     elif key==196: # F7: show network details
-        log.critical('{}:{} {} {}'.format('D1',key,'F7','***'))
+        log.warning('{}:{} {} {}'.format('D1',key,'F7','***'))
         # Model.show_network_details()
-        Composer.ramp_toggle(True)
+        Composer.ramp_start(True)
         return
 
     elif key==197: # F8
-        log.critical('{}:{} {} {}'.format('D2',key,'F8','***'))
-        Composer.ramp_toggle(False)
+        log.warning('{}:{} {} {}'.format('D2',key,'F8','***'))
+        Composer.ramp_start(False)
         return
 
     elif key == 44: # , key : previous featuremap
-        log.critical('{}:{} {} {}'.format('D3',key,',','Feature-'))
+        log.warning('{}:{} {} {}'.format('D3',key,',','Feature-'))
         Model.prev_feature()
 
     elif key == 46: # . key : next featuremap
-        log.critical('{}:{} {} {}'.format('D4',key,'.','Feature+'))
+        log.warning('{}:{} {} {}'.format('D4',key,'.','Feature+'))
         Model.next_feature()
 
     # Row E
     # --------------------------------
 
     if key==91: # [
-        log.critical('{}:{} {} {}'.format('E1',key,'[','***'))
+        log.warning('{}:{} {} {}'.format('E1',key,'[','***'))
 
     if key==93: # ]
-        log.critical('{}:{} {} {}'.format('E2',key,']','***'))
+        log.warning('{}:{} {} {}'.format('E2',key,']','***'))
 
     if key == 45: # _ key (underscore) : decrease detection floor
         Webcam.get().motiondetector.floor -= 10
         if Webcam.get().motiondetector.floor < 0:
             Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
-        log.critical('{}:{} {} {} :{}'.format('E3',key,'-','FLOOR-',Webcam.get().motiondetector.floor))
+        log.warning('{}:{} {} {} :{}'.format('E3',key,'-','FLOOR-',Webcam.get().motiondetector.floor))
         return
 
     if key == 61: # = key (equals): increase detection floor
         Webcam.get().motiondetector.floor += 10
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
-        log.critical('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
+        log.warning('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
         return
 
     # Row F
@@ -720,17 +717,17 @@ def listener():
     # if key == 190: # F1 key: Toggle Camera
     #     index = (Webcam.current + 1) % 2 # hardcoded for 2 cameras
     #     Webcam.get().motiondetector.camera = Webcam.set(Device[index])
-    #     log.critical('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
+    #     log.warning('{}:{} {} {}'.format('F1',key,'F1','TOGGLE CAMERA'))
     #     return
 
     if key == 112: # p key : pause/unpause motion detection
         Webcam.get().motiondetector.is_paused = not Webcam.get().motiondetector.is_paused
-        log.critical('{}:{} {} {}:{}'.format('F2',key,'P','PAUSE',Webcam.get().motiondetector.is_paused))
+        log.warning('{}:{} {} {}:{}'.format('F2',key,'P','PAUSE',Webcam.get().motiondetector.is_paused))
         return
 
     if key == 96: # `(tilde) key: toggle HUD
         Viewport.b_show_HUD = not Viewport.b_show_HUD
-        log.critical('{}:{} {} {}'.format('F3',key,'`','TOGGLE HUD'))
+        log.warning('{}:{} {} {}'.format('F3',key,'`','TOGGLE HUD'))
         return
 
     if key == 49: # 1 key : toggle motion detect window
@@ -739,14 +736,14 @@ def listener():
             cv2.namedWindow('delta',cv2.WINDOW_AUTOSIZE)
         else:
             cv2.destroyWindow('delta')
-        log.critical('{}:{} {} {}'.format('F4',key,'1','MOTION MONITOR'))
+        log.warning('{}:{} {} {}'.format('F4',key,'1','MOTION MONITOR'))
         return
 
     # --------------------------------
 
     if key == 27: # ESC: Exit
         ### the order of these operations is unreasonably specific
-        log.critical('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
+        log.warning('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
         Composer.ramp_stop() # shutdown down the Composer ramp counter
         Viewport.shutdown()
         Webcam.get().motiondetector.export.close() # close the motion detector data export file
@@ -780,7 +777,7 @@ def objective_guide(dst):
 # -------
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1, objective=objective_L2):
 
-    log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
+    log.warning('step_size: {} feature: {} end: {}\n{}'.format(step_size, feature, end,'-'*10))
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
     dst = net.blobs[end]
 
@@ -864,21 +861,32 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
 
             # check if motion detected
-            if Webcam.get().motiondetector.detection_toggle:
-                Composer.ramp_toggle(True)
-                Viewport.force_refresh = True
-                Webcam.get().motiondetector.detection_toggle = False # reset the toggle
+            if Webcam.get().motiondetector.detection_init:
+                log.info('INFO: motion detected (iteration)')
 
-            # handle vieport refresh per iteration
+                # is the detection gate open?
+                if Webcam.get().motiondetector.detection_gated:
+                    # no the gate is closed
+                    log.info('INFO: motion detection gate is closed (iteration)')
+                else:
+                    # yes the gate is open
+                    log.info('INFO: motion detection gate is open (iteration)')
+                    # close detection gate
+                    Webcam.get().motiondetector.detection_gated = True
+                    # start composer ramp
+                    Composer.ramp_start()
+                    Viewport.force_refresh = True
+
+            # handle viewport refresh per iteration
             if Viewport.force_refresh:
-                Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+                Composer.isDreaming = False # no, we'll be refreshing the frane buffer from the webcam
                 img = Webcam.get().read()
                 Composer.send(1, img)
                 return img
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
-            log.info('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
+            log.warning('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
 
             # write netblob to Composer - channel 0
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
@@ -934,13 +942,37 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
-        if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp_toggle(True)
-            Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-            Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
-            img = Webcam.get().read()
-            Composer.send(1, img)
-            return img
+
+        # check if motion detected
+            if Webcam.get().motiondetector.detection_init:
+                log.info('INFO: motion detected (iteration)')
+
+                # is the detection gate open?
+                if Webcam.get().motiondetector.detection_gated:
+                    # no the gate is closed
+                    log.info('INFO: motion detection gate is closed (iteration)')
+                else:
+                    # yes the gate is open
+                    log.info('INFO: motion detection gate is open (iteration)')
+                    # close detection gate
+                    Webcam.get().motiondetector.detection_gated = True
+                    # start composer ramp
+                    Composer.ramp_start()
+                    Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+                    Viewport.force_refresh = True
+                    img = Webcam.get().read()
+                    Composer.send(1, img)
+                    return img
+
+        # if Webcam.get().motiondetector.detection_init:
+        #     if not Webcam.get().detection_gated:
+        #         log.info('INFO: detection triggered (early exit)')
+        #         Composer.ramp_start()
+        #         Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+        #         Webcam.get().motiondetector.detection_init = False # reset the detection flag
+        #         img = Webcam.get().read()
+        #         Composer.send(1, img)
+        #         return img
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
@@ -977,8 +1009,8 @@ def main():
     update_HUD_log('username',Viewport.username)
     update_HUD_log('settings',Model.package_name)
 
-    #
-    Composer.ramp_start()
+    # starts composer ramping thread
+    Composer.start_ramp_thread()
 
     # the madness begins
     img = Webcam.get().read()
@@ -987,7 +1019,7 @@ def main():
 
 
     while True:
-        log.critical('new cycle')
+        log.warning('new cycle')
         Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
         # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
@@ -995,17 +1027,19 @@ def main():
         Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
-        log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
+        # log.warning('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
 
         # trying out the detectiontoggle system in order to catch any detections
         # that happened while we weren't looking
-        if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp_toggle(True)
-            Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
-            img = Webcam.get().read()
-            Composer.send(1, img)
-            Composer.dreambuffer = img # get a new camera frame
-            Composer.isDreaming = False
+        # if Webcam.get().motiondetector.detection_init:
+        #     if not Webcam.get().detection_gated:
+        #         log.info('INFO: detection triggered (new cycle)')
+        #         Composer.ramp_start()
+        #         Webcam.get().motiondetector.detection_init = False # toggle the flag to off
+        #         img = Webcam.get().read()
+        #         Composer.send(1, img)
+        #         Composer.dreambuffer = img # get a new camera frame
+        #         Composer.isDreaming = False
 
 
         ### handle viewport refresh per cycle
@@ -1046,7 +1080,7 @@ def main():
 
         # logging
         update_HUD_log('cycle_time',duration_msg) # HUD
-        log.critical('cycle time: {}\n{}'.format(duration_msg,'-'*80))
+        log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
 
 # --------
@@ -1055,8 +1089,8 @@ def main():
 
 # setup system logging facilities
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
-log = logging.getLogger('logtest-simple')
-log.setLevel(logging.WARNING)
+log = logging.getLogger('logtest-debug')
+log.setLevel(logging.INFO)
 
 
 # log.debug('debug message!')
@@ -1064,6 +1098,8 @@ log.setLevel(logging.WARNING)
 # log.error('error message')
 # log.warning('warning message')
 # log.critical('critical message')
+
+# sys.exit()
 
 # HUD
 # dictionary contains the key/values we'll be logging
@@ -1118,7 +1154,7 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 # disable screen export when usename specified is 'silent'
 Viewport = Viewport('deepdreamvisionquest','silent', listener)
 Composer = Composer()
-Model = Model(program_duration=60) # seconds
+Model = Model(program_duration=600) # program setting durationm
 FX = FX()
 
 Model.set_program(0)

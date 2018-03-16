@@ -93,14 +93,14 @@ class WebcamVideoStream(object):
 
     def start(self):
         Thread(target=self.update, args=()).start()
-        threadlog.critical('started camera thread')
+        threadlog.warning('started camera thread')
         return self
 
     def update_gamma(self, gamma):
         # generates internal table for gamma correction
         self.table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
         for i in np.arange(0, 256)]).astype("uint8")
-        threadlog.critical('gamma: {}'.format(gamma))
+        threadlog.warning('gamma: {}'.format(gamma))
 
     def update(self):
         # loop until the thread is stopped
@@ -162,7 +162,8 @@ class MotionDetector(object):
     def __init__(self, floor, log):
 
         self.wasMotionDetected = False
-        self.detection_toggle = False
+        self.detection_gated = False
+        self.detection_active = False
         self.delta_count_history = 0
         self.delta_trigger = 0
         self.delta_count = 0
@@ -203,16 +204,16 @@ class MotionDetector(object):
         if (self.delta_count > self.delta_trigger):
             # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
-            self.detection_toggle = True #  gets reset from motion detector queries elsewhere
+            self.detection_init = True # detection toggle persists until reset elsewhere finishes
             self.monitor_msg = '***'
             self.update_hud_log('detect','***')
-            threadlog.critical('movement detected')
+            threadlog.info('movement detected')
 
         elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
             self.wasMotionDetected = False
             self.monitor_msg = '---'
             self.update_hud_log('detect','-')
-            threadlog.critical('movement ended')
+            threadlog.info('movement ended')
         else:
             self.wasMotionDetected = False
             self.monitor_msg = '-'
@@ -261,7 +262,7 @@ class MotionDetector(object):
 
     def force_detection(self): 
         self.wasMotionDetected = True
-        self.detection_toggle = True 
+        self.detection_init = True 
 
 # --------
 # INIT.
@@ -272,7 +273,7 @@ logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
 log.setLevel(logging.CRITICAL)
 threadlog = logging.getLogger('logtest-debug-thread')
-threadlog.setLevel(logging.CRITICAL)
+threadlog.setLevel(logging.WARNING)
 
 '''
 Camera Manager collects any Camera Objects
