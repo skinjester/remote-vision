@@ -863,19 +863,20 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
-            log.warning('{:02d} {:02d} {:02d}'.format(octave,i,iteration_max))
+            log.warning('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
             # why is this stored here?
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
 
             # write netblob to Composer - channel 0
-            Composer.send(0, caffe2rgb(Model.net, src.data[0]))
+            Composer.send(0, Composer.dreambuffer)
 
             # write webcam to Composer - channel 1
             Composer.send(1, Webcam.get().read())
 
             # send the main mix to the viewport
             Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
+            # Viewport.show(Composer.buffer[0])
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -977,20 +978,20 @@ def main():
         log.warning('new cycle')
         Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-        # Viewport.show(Composer.buffer1) # show whatever is in buffer 1
+
         # Viewport.show( Composer.buffer[0] )
         Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
 
 
         log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
 
-        if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp_toggle(True)
-            Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
-            img = Webcam.get().read()
-            Composer.send(1, img)
-            Composer.dreambuffer = img # get a new camera frame
-            Composer.isDreaming = False
+        # if Webcam.get().motiondetector.detection_toggle:
+        #     Composer.ramp_toggle(True)
+        #     Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
+        #     img = Webcam.get().read()
+        #     Composer.send(1, img)
+        #     Composer.dreambuffer = img # get a new camera frame
+        #     Composer.isDreaming = False
 
 
         ### handle viewport refresh per cycle
