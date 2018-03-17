@@ -363,31 +363,35 @@ class Composer(object):
                 return
 
             if self.ramp_toggle_flag:
-                if self.ramp_counter >= 0.5:
-                    self.b_cycle = True
+                # self.ramp_counter = 1.0
+                # self.b_cycle = True
 
-                if self.b_cycle:
-                    self.ramp_increment = -0.01
+                # if self.b_cycle:
+                self.ramp_increment = -0.1
+                time.sleep(0.1)
 
-                if self.ramp_counter < 0.0:
+                if self.ramp_counter <= 0.0:
+                    log.critical('!!!!')
                     self.ramp_toggle_flag = False
             else:
                 self.ramp_increment = 0
-                self.ramp_counter = 0.3
+                self.ramp_counter = 0.0
                 self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
-            log.debug('{}'.format(self.ramp_counter))
+            # if self.ramp_counter > 0.0:
+            #     log.critical('{}'.format(self.ramp_counter))
 
         return
 
     def ramp_toggle(self, b_state=True):
         self.ramp_toggle_flag = b_state
+        self.ramp_counter = 1.0
         # initialize entry into true state
-        if b_state:
-            self.b_cycle = False
-            self.ramp_increment = 0.01
-            self.ramp_counter = 0.1
+        # if b_state:
+        #     self.b_cycle = False
+        #     self.ramp_increment = 0.0
+        #     self.ramp_counter = 0.0
 
 
     def ramp_stop(self):
