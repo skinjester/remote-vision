@@ -2,17 +2,24 @@ import numpy as np
 import cv2
 
 # processing resolution
-# capture_w = 1280
-# capture_h = 720
+capture_w = 1280
+capture_h = 720
 
+# crashy
 # capture_w = 1920
 # capture_h = 1080
 
 # capture_w = 960
 # capture_h = 720
 
-capture_w = 864
-capture_h = 480
+# 4K camera doesn't support this display size
+# capture_w = 864
+# capture_h = 480
+
+# capture_w = 640
+# capture_h = 360
+
+
 
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack

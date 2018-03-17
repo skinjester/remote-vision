@@ -61,7 +61,7 @@ class Display(object):
 
 
 class Model(object):
-    def __init__(self, current_layer=0, program_duration=10):
+    def __init__(self, current_layer=0, program_duration=-1):
         self.net = None
         self.net_fn = None
         self.param_fn = None
@@ -83,6 +83,7 @@ class Model(object):
         self.current_program = 0
         self.program_duration = program_duration
         self.program_start_time = time.time()
+        self.installation_startup = time.time() # keep track of runtime
 
         # amplification
         self.iterations = None
@@ -364,17 +365,17 @@ class Composer(object):
                 return
 
             if self.ramp_toggle_flag:
-                if self.ramp_counter >= 0.95:
+                if self.ramp_counter >= 0.5:
                     self.b_cycle = True
 
                 if self.b_cycle:
-                    self.ramp_increment = -0.1
+                    self.ramp_increment = -0.01
 
                 if self.ramp_counter < 0.0:
                     self.ramp_toggle_flag = False
             else:
                 self.ramp_increment = 0
-                self.ramp_counter = 0.0
+                self.ramp_counter = 0.3
                 self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
@@ -572,7 +573,9 @@ def draw_HUD(image):
     # col1
     cv2.putText(overlay, hud_log['detect'][0], (x, 40), FONT, 1.0, (0,255,0))
     cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), FONT, 1.0, WHITE)
+    write_Text('runtime')
     write_Text('program')
+    write_Text('interval')
     write_Text('floor')
     write_Text('threshold')
     write_Text('last')
@@ -810,31 +813,18 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
     # postprocessor
     src.data[0] = iterationPostProcess(net, src.data[0])
 
-    # sequencer
+    # sequencer. don't run if program_duration is -1 though
     program_elapsed_time = time.time() - Model.program_start_time
-    if program_elapsed_time > Model.program_duration:
-        Model.next_program()
-
+    if Model.program_duration == -1:
+        log.critical('manual program settings')
+    else:
+        if program_elapsed_time > Model.program_duration:
+            Model.next_program()
 
 # -------
 # REM CYCLE
 # -------
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
-    # COOLDOWN
-    # returns the camera on the first update of a new cycle
-    # after previously being kicked out of deepdream
-    # effectively keeps the Composer in sync
-        # disabling this prevents the previous camera capture from being flushed
-        # (we end up seeing it as a ghost image before hallucination begins on the new camera)
-
-    # GRB: Not entirely sure why this condition gets triggered
-    # noticing it when the system starts up. does it appear at other times? when?
-    # if Webcam.get().motiondetector.wasMotionDetected:
-    #     Composer.write_buffer2(Webcam.get().read())
-    #     Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-    #     return Webcam.get().read()
-
-
 
     # SETUPOCTAVES---
     Composer.is_new_cycle = False
@@ -922,6 +912,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('threshold',thresholdmsg)
             update_HUD_log('floor',floormsg)
             update_HUD_log('gamma',gammamsg)
+            update_HUD_log('interval',round(time.time() - Model.program_start_time, 2))
+            update_HUD_log('runtime', round(time.time() - Model.installation_startup, 2))
 
 
 
@@ -934,13 +926,13 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
         # EARLY EXIT
         # motion detected so we're ending this REM cycle
-        if Webcam.get().motiondetector.detection_toggle:
-            Composer.ramp_toggle(True)
-            Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-            Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
-            img = Webcam.get().read()
-            Composer.send(1, img)
-            return img
+        # if Webcam.get().motiondetector.detection_toggle:
+        #     Composer.ramp_toggle(True)
+        #     Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+        #     Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
+        #     img = Webcam.get().read()
+        #     Composer.send(1, img)
+        #     return img
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
@@ -960,6 +952,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 def main():
 
     now = time.time() # start timer
+
 
     # set GPU mode
     caffe.set_device(0)
@@ -1053,41 +1046,44 @@ def main():
 # INIT
 # --------
 
-# setup system logging facilities
+# --- LOGGING ---
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
-log = logging.getLogger('logtest-simple')
+log = logging.getLogger('logtest-debug')
 log.setLevel(logging.WARNING)
 
 
 # log.debug('debug message!')
 # log.info('info message!')
-# log.error('error message')
 # log.warning('warning message')
+# log.error('error message')
 # log.critical('critical message')
+# sys.exit(0)
 
-# HUD
-# dictionary contains the key/values we'll be logging
+# --- HUD ---
+# dictionary contains the key/values we'll be logging 
 hud_log = {
-    'octave': [None,None],
-    'width': [None,None],
-    'height': [None,None],
-    'guide': [None,None],
-    'layer': [None,None],
-    'last': [None,None],
-    'now': [None,None],
-    'iteration': [None,None],
-    'step_size': [None,None],
-    'settings': [None,None],
-    'threshold': [None,None],
-    'detect': [None,None],
-    'cycle_time': [None,None],
-    'featuremap': [None,None],
-    'model': [None,None],
-    'username': [None,None],
-    'scale': [None,None],
-    'program': [None,None],
-    'floor': [None,None],
-    'gamma':[None,None]
+    'octave': [None, None],
+    'width': [None, None],
+    'height': [None, None],
+    'guide': [None, None],
+    'layer': [None, None],
+    'last': [None, None],
+    'now': [None, None],
+    'iteration': [None, None],
+    'step_size': [None, None],
+    'settings': [None, None],
+    'threshold': [None, None],
+    'detect': [None, None],
+    'cycle_time': [None, None],
+    'featuremap': [None, None],
+    'model': [None, None],
+    'username': [None, None],
+    'scale': [None, None],
+    'program': [None, None],
+    'interval': [None, None],
+    'runtime': [None, None],
+    'floor': [None, None],
+    'gamma':[None, None]
 }
 
 # opencv font and color
@@ -1096,32 +1092,32 @@ WHITE = (255, 255, 255)
 GREEN = (0,255,0)
 RED = (255,0,0)
 
-
+# --- NEURAL NET ---
 net = None # global reference to the neural network object
+
+# --- CAMERA ---
 Camera = [] # global reference to camera collection
 
-# note that camera index changes if a webcam is unplugged
+# store the camera device ID's here. camera ID changes if webcam is unplugged
 # default values are  [0,1] for 2 camera setup
 Device = [0,1] # debug
-
-w = data.capture_w
-h = data.capture_h
+w = data.capture_w  # capture width
+h = data.capture_h # capture height
 
 Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
-
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
-
 Webcam = Cameras(source=Camera, current=Device[0])
+
+# --- DISPLAY ---
 Display = Display(width=w, height=h, camera=Webcam.get())
-
-# disable screen export when usename specified is 'silent'
-Viewport = Viewport('deepdreamvisionquest','silent', listener)
+Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots if username 'silent'
 Composer = Composer()
-Model = Model(program_duration=60) # seconds
-FX = FX()
 
-Model.set_program(0)
+# --- PERFORMANCE SETTINGS AND FX ---
+Model = Model(program_duration=10) # seconds each program will run, -1 is manual
+Model.set_program(0) # start with program[0]
+FX = FX()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
