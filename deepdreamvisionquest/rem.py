@@ -370,28 +370,20 @@ class Composer(object):
                 self.ramp_increment = -0.1
                 time.sleep(0.1)
 
-                if self.ramp_counter <= 0.0:
-                    log.critical('!!!!')
+                if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
             else:
-                self.ramp_increment = 0
+                # self.ramp_increment = 0
                 self.ramp_counter = 0.0
                 self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
-            # if self.ramp_counter > 0.0:
-            #     log.critical('{}'.format(self.ramp_counter))
 
         return
 
     def ramp_toggle(self, b_state=True):
         self.ramp_toggle_flag = b_state
         self.ramp_counter = 1.0
-        # initialize entry into true state
-        # if b_state:
-        #     self.b_cycle = False
-        #     self.ramp_increment = 0.0
-        #     self.ramp_counter = 0.0
 
 
     def ramp_stop(self):
@@ -704,7 +696,7 @@ def listener():
         log.warning('{}:{} {} {}'.format('E2',key,']','***'))
 
     if key == 45: # _ key (underscore) : decrease detection floor
-        Webcam.get().motiondetector.floor -= 10
+        Webcam.get().motiondetector.floor -= 100
         if Webcam.get().motiondetector.floor < 0:
             Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
@@ -712,7 +704,7 @@ def listener():
         return
 
     if key == 61: # = key (equals): increase detection floor
-        Webcam.get().motiondetector.floor += 10
+        Webcam.get().motiondetector.floor += 100
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.warning('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
         return
@@ -862,7 +854,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
-                Composer.send(1, img)
+                Composer.send(1, Composer.dreambuffer)
                 return img
 
             # delegate gradient ascent to step function
@@ -984,7 +976,7 @@ def main():
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
 
         # Viewport.show( Composer.buffer[0] )
-        Viewport.show( Composer.mix( Composer.buffer[0], (Composer.buffer[1]) ))
+        Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
 
 
         log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
@@ -1101,7 +1093,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=5000, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
@@ -1111,7 +1103,7 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots if username 'silent'
 Composer = Composer()
 
-# --- PERFORMANCE SETTINGS AND FX ---
+# --- PERFORMANCE SETTINGS AND rFX ---
 Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
 Model.set_program(0) # start with program[0]
 FX = FX()
