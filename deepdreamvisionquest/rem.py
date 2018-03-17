@@ -573,9 +573,9 @@ def draw_HUD(image):
     # col1
     cv2.putText(overlay, hud_log['detect'][0], (x, 40), FONT, 1.0, (0,255,0))
     cv2.putText(overlay, 'DEEPDREAMVISIONQUEST', (x, 100), FONT, 1.0, WHITE)
-    write_Text('runtime')
     write_Text('program')
     write_Text('interval')
+    write_Text('runtime')
     write_Text('floor')
     write_Text('threshold')
     write_Text('last')
@@ -901,6 +901,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             thresholdmsg = '{:0>6}'.format(Webcam.get().motiondetector.delta_trigger)
             floormsg = '{:0>6}'.format(Webcam.get().motiondetector.floor)
             gammamsg = '{}'.format(Webcam.get().gamma)
+            intervalmsg = '{:01.2f}/{:01.2f}'.format(round(time.time() - Model.program_start_time, 2), Model.program_duration)
             update_HUD_log('octave',octavemsg)
             update_HUD_log('width',w)
             update_HUD_log('height',h)
@@ -912,7 +913,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('threshold',thresholdmsg)
             update_HUD_log('floor',floormsg)
             update_HUD_log('gamma',gammamsg)
-            update_HUD_log('interval',round(time.time() - Model.program_start_time, 2))
+            update_HUD_log('interval', intervalmsg)
             update_HUD_log('runtime', round(time.time() - Model.installation_startup, 2))
 
 
