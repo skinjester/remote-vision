@@ -50,7 +50,6 @@ models = {
 	'vgg19': ('VGG_ILSVRC_19','deploy.prototxt','VGG_ILSVRC_19_layers.caffemodel')
 }
 
-
 layers = [
 	'inception_4d/5x5_reduce',
 	'conv2/3x3',
@@ -396,18 +395,23 @@ program.append({
 
 program.append({
 	'name':'neomorph-neo-2',
-	'iterations':40,
+	'iterations':10,
 	'step_size':2,
 	'octaves':5,
-	'octave_cutoff':3,
+	'octave_cutoff':4,
 	'octave_scale':1.5,
 	'iteration_mult':0.0,
-	'step_mult':0.01,
+	'step_mult':0.0,
 	'model':'googlenet',
 	'layers':[
-		'inception_4c/5x5'
+		'inception_4c/5x5',
+		'inception_4d/output',
+		'inception_4d/pool',
+		'inception_4e/1x1',
+		'inception_4e/3x3',
+		'inception_4e/3x3_reduce'
 	],
-	'features':[7],
+	'features':range(64),
 	'cyclefx':[
 		{
 			'name': 'octave_scaler',
@@ -420,10 +424,10 @@ program.append({
 			'name': 'nd_gaussian',
 			'params': {'sigma': 0.4, 'order':0}
 		},
-		{
-		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
-		}
+		# {
+		# 'name': 'bilateral_filter',
+		# 'params': {'radius': 7, 'sigma_color':16, 'sigma_xy': 60}
+		# }
 	]
 })
 
@@ -883,11 +887,11 @@ program.append({
 
 program.append({
 	'name':'Shpongled',
-	'iterations':20,
-	'step_size':3,
+	'iterations':10,
+	'step_size':2,
 	'octaves':5,
 	'octave_cutoff':5,
-	'octave_scale':1.7,
+	'octave_scale':1.5,
 	'iteration_mult':0.0,
 	'step_mult':-0.02,
 	'model':'googlenet',
@@ -896,10 +900,10 @@ program.append({
 	],
 	'features':range(10,24),
 	'cyclefx':[
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.5, 'max_scale':1.7}
-		},
+		# {
+		# 	'name': 'octave_scaler',
+		# 	'params': {'step':0.01, 'min_scale':1.5, 'max_scale':1.7}
+		# },
 		inception_xform_default
 	],
 	'stepfx':[
@@ -909,12 +913,12 @@ program.append({
 		},
 		{
 		'name': 'bilateral_filter',
-		'params': {'radius': 7, 'sigma_color':30, 'sigma_xy': 60}
+		'params': {'radius': 7, 'sigma_color':10, 'sigma_xy': 20}
 		},
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':10.0}
-		}
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':10.0}
+		# }
 	]
 })
 
