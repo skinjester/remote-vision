@@ -854,7 +854,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frame buffer
                 img = Webcam.get().read()
-                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
+                Composer.send(1, img)
                 return img
 
             # delegate gradient ascent to step function
