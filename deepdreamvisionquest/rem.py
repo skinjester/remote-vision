@@ -373,8 +373,8 @@ class Composer(object):
                 if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
             else:
-                # self.ramp_increment = 0
-                self.ramp_counter = 0.0
+                self.ramp_increment = 0
+                self.ramp_counter = 0.3
                 self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
@@ -852,9 +852,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
-                Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+                Composer.isDreaming = False # no, we'll be refreshing the frame buffer
                 img = Webcam.get().read()
-                Composer.send(1, Composer.dreambuffer)
+                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
                 return img
 
             # delegate gradient ascent to step function
@@ -1093,7 +1093,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=5000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
