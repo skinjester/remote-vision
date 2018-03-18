@@ -189,6 +189,46 @@ stepfx_default = [
 program.append({
   'name':'peyoteworld',
   'iterations':4,
+  'step_size':1.5,
+  'octaves':5,
+  'octave_cutoff':3,
+  'octave_scale':1.2,
+  'iteration_mult':0.0,
+  'step_mult':0.2,
+  'model':'vgg19',
+  'layers':[
+	'conv3_1',
+	'conv3_2',
+	'conv3_3',
+	'conv3_4',
+	'conv4_1',
+	'conv4_2',
+	'conv4_3',
+	'conv4_4',
+	'conv5_1',
+	'conv5_2',
+	'conv5_3',
+	'conv5_4'
+	],
+  'features':range(-1,255),
+  'cyclefx':[
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
+    {
+    	'name': 'octave_scaler',
+    	'params': {'step':0.1, 'min_scale':1.1, 'max_scale':1.6}
+    }
+  ],
+  'stepfx':[
+
+  ]
+})
+
+program.append({
+  'name':'peyoteworld-original',
+  'iterations':4,
   'step_size':2,
   'octaves':5,
   'octave_cutoff':4,
