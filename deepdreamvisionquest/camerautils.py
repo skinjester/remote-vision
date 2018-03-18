@@ -128,6 +128,7 @@ class WebcamVideoStream(object):
             # update internal buffers w camera frame
             self.rawframe = img # unprocessed camera img
             self.frame = self.gamma_correct(self.transpose(img)) # processed camera img
+            self.frame = self.crop(self.frame)
 
 
     def read(self):
@@ -148,6 +149,10 @@ class WebcamVideoStream(object):
         if self.gamma == 1.0:
             return img
         return cv2.LUT(img, self.table)
+
+    def crop(sel, img):
+        log.critical('cropping')
+        return img
 
     def stop(self):
         self.stopped = True
