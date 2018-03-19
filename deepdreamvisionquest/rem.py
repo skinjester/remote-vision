@@ -25,10 +25,6 @@ os.environ['GLOG_minloglevel'] = '2' # suppress verbose caffe logging before caf
 import caffe
 from google.protobuf import text_format
 
-''' apparently unused '''
-# import inspect
-# from collections import deque # no idea. still valid?
-
 # logging
 import logging
 import logging.config
@@ -266,16 +262,7 @@ class Viewport(object):
     def monitor(self):
         if self.motiondetect_log_enabled:
             img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
-
-
-            resizedimg = img.copy()
-
-            # ### resize channel to match viewport dimensions
-            # if img.shape[1] != Display.width:
-            #     resizedimg = cv2.resize(resizedimg, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
-
-            # composite motion stats here
-            overlay = img.copy()
+            overlay = img.copy() # composite motion stats here
             opacity = 1.0
             cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
             img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
@@ -299,25 +286,15 @@ class Composer(object):
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
-        # self.buffer1 = Webcam.get().read() # uses camera capture dimensions
-        # self.buffer2 = Webcam.get().read() # uses camera capture dimensions
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
-
-        #
-        self.mix_opacity = 0.0 # the mix between dreaming and webcam buffers, 1.0 = all webcam
         self.ramp_stopped = False
         self.ramp_toggle_flag = False
         self.ramp_counter = 0
         self.ramp_increment = 0
         self.b_cycle = False
 
-        # maybe ?
-        self.force_refresh = True
-
     def send(self, channel, img):
-         # route input img to channel
-
         self.buffer[channel] = img
         log.critical('#324 self.buffer[{}] shape: {}'.format(channel, self.buffer[channel].shape))
 
@@ -329,12 +306,11 @@ class Composer(object):
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
 
     def mix(self, img_back, img_front, mix_opacity):
-        self.mix_opacity = self.ramp_counter
         cv2.addWeighted(
             img_front,
-            self.mix_opacity,#
+            mix_opacity,#
             img_back,
-            1-self.mix_opacity,
+            1-mix_opacity,
             0,
             self.mixbuffer
             )
