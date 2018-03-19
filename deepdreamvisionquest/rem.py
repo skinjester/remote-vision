@@ -271,12 +271,19 @@ class Viewport(object):
         if self.motiondetect_log_enabled:
             img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
 
+
+            resizedimg = img.copy()
+
+            ### resize channel to match viewport dimensions
+            if img.shape[1] != Display.width:
+                resizedimg = cv2.resize(resizedimg, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+
             # composite motion stats here
-            overlay = img.copy()
+            overlay = resizedimg.copy()
             opacity = 1.0
             cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
-            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
-            cv2.imshow('delta', img)
+            img = cv2.addWeighted(overlay, opacity, resizedimg, 1-opacity, 0, resizedimg) # add overlay back to source
+            cv2.imshow('delta', resizedimg)
 
 
     def shutdown(self):
@@ -373,7 +380,7 @@ class Composer(object):
                 if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
             else:
-                # self.ramp_increment = 0
+                self.ramp_increment = 0
                 self.ramp_counter = 0.0
                 self.b_cycle = False
 
@@ -872,7 +879,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             make_step(Model.net, end=end, **step_params)
             log.warning('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
-            # why is this stored here?
+            # stored here for postproduction fx
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
 
             # write netblob to Composer - channel 0
@@ -977,6 +984,15 @@ def main():
 
     # the madness begins
     img = Webcam.get().read()
+    log.critical('#980 webcam.get().read() shape: {}'.format(img.shape))
+
+    # force shutdown
+    # Composer.ramp_stop() # shutdown down the Composer ramp counter
+    # Viewport.shutdown()
+    # Webcam.get().motiondetector.export.close() # close the motion detector data export file
+    # sys.exit(0)
+
+
     Composer.send(1, img)
     Composer.dreambuffer = img # initial camera image for starting
 
