@@ -859,15 +859,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
 
-                # these compositing methods seem to draw their differences
-                # from the "phase" or time at which the neural net blob is 
-                # registered. From what I can tell, dreambuffer is the past
-                # andd caffe2rgb(Model.net, src.data[0]) is the present
-
-                # standard method
-                # Composer.send(1, Composer.dreambuffer)
-
-                # alt method
+                # alt method - more responsive but a bit less hallucinogenic
                 # Composer.send(1, caffe2rgb(Model.net, src.data[0]))
 
                 return img
