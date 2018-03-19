@@ -861,10 +861,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 # andd caffe2rgb(Model.net, src.data[0]) is the present
 
                 # standard method
-                Composer.send(1, Composer.dreambuffer)
+                # Composer.send(1, Composer.dreambuffer)
 
                 # alt method
-                # Composer.send(1, caffe2rgb(Model.net, src.data[0]))
+                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
 
                 return img
 
