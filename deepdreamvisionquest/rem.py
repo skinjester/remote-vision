@@ -262,7 +262,7 @@ class Viewport(object):
     def monitor(self):
         if self.motiondetect_log_enabled:
             img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
-            overlay = img.copy() # composite motion stats here
+            overlay = img # composite motion stats here
             opacity = 1.0
             cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
             img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
@@ -296,7 +296,6 @@ class Composer(object):
 
     def send(self, channel, img):
         self.buffer[channel] = img
-        log.critical('#324 self.buffer[{}] shape: {}'.format(channel, self.buffer[channel].shape))
 
         ### resize channel to match viewport dimensions
         if img.shape[1] != Display.width:
@@ -347,7 +346,7 @@ class Composer(object):
 
                 # if self.b_cycle:
                 self.ramp_increment = -0.1
-                time.sleep(0.2)
+                time.sleep(0.1)
 
                 if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
@@ -433,7 +432,7 @@ class FX(object):
 # then after processing, takes the caffe image and converts back to caffe
 def iterationPostProcess(net, net_data_blob):
     img = caffe2rgb(net, net_data_blob)
-    img2 = img.copy()
+    img2 = img
 
     #  apply stepfx, assuming they've been defined
     if Model.stepfx is not None:
@@ -833,6 +832,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
 
+                # older method
+                # Composer.send(1, Composer.dreambuffer)
+
                 # alt method - more responsive but a bit less hallucinogenic?
                 Composer.send(1, caffe2rgb(Model.net, src.data[0]))
 
@@ -1061,7 +1063,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.7, floor=500, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
