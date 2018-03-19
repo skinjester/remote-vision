@@ -330,7 +330,7 @@ class Composer(object):
         # convert and clip any floating point values into RGB bounds as integers
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
 
-    def mix(self, img_back, img_front):
+    def mix(self, img_back, img_front, mix_opacity):
         self.mix_opacity = self.ramp_counter
         cv2.addWeighted(
             img_front,
@@ -859,8 +859,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
 
-                # alt method - more responsive but a bit less hallucinogenic
-                # Composer.send(1, caffe2rgb(Model.net, src.data[0]))
+                # alt method - more responsive but a bit less hallucinogenic?
+                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
 
                 return img
 
@@ -878,7 +878,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.send(1, Webcam.get().read())
 
             # send the main mix to the viewport
-            Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
+            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
             # Viewport.show(Composer.buffer[0])
 
             # attenuate step size over rem cycle
@@ -973,13 +973,6 @@ def main():
 
     # the madness begins
     img = Webcam.get().read()
-    log.critical('#980 webcam.get().read() shape: {}'.format(img.shape))
-
-    # force shutdown
-    # Composer.ramp_stop() # shutdown down the Composer ramp counter
-    # Viewport.shutdown()
-    # Webcam.get().motiondetector.export.close() # close the motion detector data export file
-    # sys.exit(0)
 
 
     Composer.send(1, img)
@@ -989,7 +982,7 @@ def main():
     while True:
         log.warning('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-        Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
+        Viewport.show(Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
 
         ### handle viewport refresh per cycle
         if Composer.isDreaming == False:

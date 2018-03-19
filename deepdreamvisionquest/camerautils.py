@@ -119,7 +119,7 @@ class WebcamVideoStream(object):
             self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
             self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             _, self.t_delta_framebuffer = cv2.threshold(self.crop(self.t_delta_framebuffer), self.threshold_filter, 255, cv2.THRESH_BINARY)
-            log.critical('t_delta_framebuffer shape: {}'.format(self.t_delta_framebuffer.shape))
+            log.debug('t_delta_framebuffer shape: {}'.format(self.t_delta_framebuffer.shape))
 
             # just get delta crount from cropped area though
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
@@ -134,7 +134,7 @@ class WebcamVideoStream(object):
 
 
     def read(self):
-        log.critical('camera buffer RGB:{}'.format(self.frame.shape))
+        log.debug('camera buffer RGB:{}'.format(self.frame.shape))
         return self.frame
 
     def transpose(self, img):
@@ -153,7 +153,6 @@ class WebcamVideoStream(object):
         return cv2.LUT(img, self.table)
 
     def crop(sel, img):
-        log.critical('cropping')
         cropped = img[0:720, 0:640] # assuming 1280 x 720 capture
         # mirrored = cv2.flip(cropped, 1)
         # mixed = np.concatenate((cropped, mirrored), axis=1)
