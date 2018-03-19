@@ -153,7 +153,7 @@ class WebcamVideoStream(object):
         return cv2.LUT(img, self.table)
 
     def crop(sel, img):
-        cropped = img[0:720, 0:640] # assuming 1280 x 720 capture
+        cropped = img[0:1080, 0:960] # assuming 1280 x 720 capture
         # mirrored = cv2.flip(cropped, 1)
         # mixed = np.concatenate((cropped, mirrored), axis=1)
 

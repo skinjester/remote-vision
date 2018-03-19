@@ -232,12 +232,8 @@ class Viewport(object):
 
     def show(self, image):
         self.time_counter += 1
-        # convert and clip floating point matrix into RGB bounds as integers
-        image = np.uint8(np.clip(image, 0, 255))
-
-
-        image = Composer.update(image) # Render MASTER
-
+        image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
+        image = Composer.update(image) # post process with cycleFX
 
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
@@ -270,13 +266,14 @@ class Viewport(object):
     def monitor(self):
         if self.motiondetect_log_enabled:
             img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
+            log.critical('#269 t_delta_framebuffer shape: {}'.format(Webcam.get().t_delta_framebuffer.shape))
 
 
             resizedimg = img.copy()
 
-            ### resize channel to match viewport dimensions
-            if img.shape[1] != Display.width:
-                resizedimg = cv2.resize(resizedimg, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+            # ### resize channel to match viewport dimensions
+            # if img.shape[1] != Display.width:
+            #     resizedimg = cv2.resize(resizedimg, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
             # composite motion stats here
             overlay = resizedimg.copy()
@@ -321,7 +318,13 @@ class Composer(object):
 
     def send(self, channel, img):
          # route input img to channel
-        self.buffer[channel] = img.copy()
+
+        if img.shape[1] != Display.width:
+            # flipped = cv2.flip(img, 1)
+            self.buffer[channel] = np.concatenate((img, img), axis=1)
+        else:
+            self.buffer[channel] = img
+        log.critical('#324 self.buffer[{}] shape: {}'.format(channel, self.buffer[channel].shape))
 
         ### resize channel to match viewport dimensions
         if img.shape[1] != Display.width:
@@ -1087,7 +1090,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=400, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
