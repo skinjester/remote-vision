@@ -216,13 +216,13 @@ class Model(object):
 class Viewport(object):
 
     def __init__(self, window_name, username, listener):
-        self.window_name = window_name
+        self.window_name = '{}/{}'.format(window_name, username)
+        self.username = username
         self.b_show_HUD = False
         self.keypress_mult = 3 # accelerate value changes when key held
         self.b_show_stats = True
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
-        self.username = username
         self.imagesavepath = '/home/gary/Pictures/'+self.username
         self.listener = listener
         self.force_refresh = True
@@ -375,7 +375,7 @@ class Composer(object):
 
                 # if self.b_cycle:
                 self.ramp_increment = -0.1
-                time.sleep(0.1)
+                time.sleep(0.2)
 
                 if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
@@ -1120,7 +1120,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=400, threshold_filter=32).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=400, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
