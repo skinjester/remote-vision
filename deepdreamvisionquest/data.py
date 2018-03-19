@@ -138,7 +138,7 @@ octave_scaler_default = {
 
 inception_xform_default = {
 	'name': 'inception_xform',
-	'params': {'scale':0.05}
+	'params': {'scale':0.1}
 }
 
 cyclefx_default = [
@@ -214,7 +214,7 @@ program.append({
   'cyclefx':[
     {
     	'name': 'inception_xform',
-    	'params': {'scale':0.025}
+    	'params': {'scale':0.1}
     },
     {
     	'name': 'octave_scaler',
@@ -299,6 +299,7 @@ program.append({
 	    },
 	]
 })
+
 
 program.append({
 	'name':'strangerthing',
