@@ -119,6 +119,8 @@ class WebcamVideoStream(object):
             self.t_delta_framebuffer = self.diffImg(self.t_minus, self.t_now, self.t_plus)
             self.t_delta_framebuffer = cv2.dilate(self.t_delta_framebuffer, None, iterations=2)
             _, self.t_delta_framebuffer = cv2.threshold(self.t_delta_framebuffer, self.threshold_filter, 255, cv2.THRESH_BINARY)
+            log.debug('t_delta_framebuffer shape: {}'.format(self.t_delta_framebuffer.shape))
+
             self.delta_count = cv2.countNonZero(self.t_delta_framebuffer)
 
             # dont process motion detection if paused

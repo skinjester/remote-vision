@@ -216,13 +216,13 @@ class Model(object):
 class Viewport(object):
 
     def __init__(self, window_name, username, listener):
-        self.window_name = window_name
+        self.window_name = '{}/{}'.format(window_name, username)
+        self.username = username
         self.b_show_HUD = False
         self.keypress_mult = 3 # accelerate value changes when key held
         self.b_show_stats = True
         self.motiondetect_log_enabled = False
         self.blend_ratio = 0.0
-        self.username = username
         self.imagesavepath = '/home/gary/Pictures/'+self.username
         self.listener = listener
         self.force_refresh = True
@@ -232,12 +232,8 @@ class Viewport(object):
 
     def show(self, image):
         self.time_counter += 1
-        # convert and clip floating point matrix into RGB bounds as integers
-        image = np.uint8(np.clip(image, 0, 255))
-
-
-        image = Composer.update(image) # Render MASTER
-
+        image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
+        image = Composer.update(image) # post process with cycleFX
 
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
@@ -271,6 +267,13 @@ class Viewport(object):
         if self.motiondetect_log_enabled:
             img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
 
+
+            resizedimg = img.copy()
+
+            # ### resize channel to match viewport dimensions
+            # if img.shape[1] != Display.width:
+            #     resizedimg = cv2.resize(resizedimg, (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+
             # composite motion stats here
             overlay = img.copy()
             opacity = 1.0
@@ -289,8 +292,7 @@ class Composer(object):
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
     def __init__(self):
-        self.isDreaming = False # the type of frame in buffer1. dirty when recycling clean when refreshing
-        self.is_new_cycle = True
+        self.isDreaming = False
         self.opacity = 1.0
         self.is_compositing_enabled = False
         self.xform_scale = 0.03
@@ -315,7 +317,9 @@ class Composer(object):
 
     def send(self, channel, img):
          # route input img to channel
-        self.buffer[channel] = img.copy()
+
+        self.buffer[channel] = img
+        log.critical('#324 self.buffer[{}] shape: {}'.format(channel, self.buffer[channel].shape))
 
         ### resize channel to match viewport dimensions
         if img.shape[1] != Display.width:
@@ -324,11 +328,11 @@ class Composer(object):
         # convert and clip any floating point values into RGB bounds as integers
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
 
-    def mix(self, img_back, img_front):
+    def mix(self, img_back, img_front, mix_opacity):
         self.mix_opacity = self.ramp_counter
         cv2.addWeighted(
             img_front,
-            self.mix_opacity,
+            self.mix_opacity,#
             img_back,
             1-self.mix_opacity,
             0,
@@ -339,11 +343,10 @@ class Composer(object):
 
     def update(self, image):
         if self.isDreaming:
-            if self.is_new_cycle:
-                for fx in Model.cyclefx:
-                    if fx['name'] == 'inception_xform':
-                        image = FX.inception_xform(image, Display.screensize, **fx['params'])
-                        Composer.dreambuffer = image
+            for fx in Model.cyclefx:
+                if fx['name'] == 'inception_xform':
+                    image = FX.inception_xform(image, Display.screensize, **fx['params'])
+                    Composer.dreambuffer = image
 
             self.isDreaming = False
 
@@ -368,12 +371,12 @@ class Composer(object):
 
                 # if self.b_cycle:
                 self.ramp_increment = -0.1
-                time.sleep(0.1)
+                time.sleep(0.2)
 
                 if self.ramp_counter <= 0.1:
                     self.ramp_toggle_flag = False
             else:
-                # self.ramp_increment = 0
+                self.ramp_increment = 0
                 self.ramp_counter = 0.0
                 self.b_cycle = False
 
@@ -818,7 +821,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
 
     # SETUPOCTAVES---
-    Composer.is_new_cycle = False
     src = Model.net.blobs['data']
     octaves = [rgb2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
@@ -855,15 +857,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
 
-                # these compositing methods seem to draw their differences
-                # from the "phase" or time at which the neural net blob is 
-                # registered. From what I can tell, dreambuffer is the past
-                # andd caffe2rgb(Model.net, src.data[0]) is the present
-
-                # standard method
-                # Composer.send(1, Composer.dreambuffer)
-
-                # alt method
+                # alt method - more responsive but a bit less hallucinogenic?
                 Composer.send(1, caffe2rgb(Model.net, src.data[0]))
 
                 return img
@@ -872,7 +866,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             make_step(Model.net, end=end, **step_params)
             log.warning('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
-            # why is this stored here?
+            # stored here for postproduction fx
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
 
             # write netblob to Composer - channel 0
@@ -882,7 +876,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.send(1, Webcam.get().read())
 
             # send the main mix to the viewport
-            Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
+            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
             # Viewport.show(Composer.buffer[0])
 
             # attenuate step size over rem cycle
@@ -977,32 +971,19 @@ def main():
 
     # the madness begins
     img = Webcam.get().read()
+
+
     Composer.send(1, img)
     Composer.dreambuffer = img # initial camera image for starting
 
 
     while True:
         log.warning('new cycle')
-        Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-
-        # Viewport.show( Composer.buffer[0] )
-        Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
-
-
-        log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
-
-        # if Webcam.get().motiondetector.detection_toggle:
-        #     Composer.ramp_toggle(True)
-        #     Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
-        #     img = Webcam.get().read()
-        #     Composer.send(1, img)
-        #     Composer.dreambuffer = img # get a new camera frame
-        #     Composer.isDreaming = False
-
+        Viewport.show(Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
 
         ### handle viewport refresh per cycle
-        if Composer.isDreaming == False or Viewport.force_refresh:
+        if Composer.isDreaming == False:
             # Viewport.save_next_frame = True
 
             #  apply cyclefx, assuming they've been defined
@@ -1104,7 +1085,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=400, threshold_filter=32).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
 # temp disable cam 2 for show setup
 # Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, flip_h=False, flip_v=True, gamma=0.8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
@@ -1114,7 +1095,7 @@ Display = Display(width=w, height=h, camera=Webcam.get())
 Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots if username 'silent'
 Composer = Composer()
 
-# --- PERFORMANCE SETTINGS AND rFX ---
+# --- PERFORMANCE SETTINGS AND rFX ---c
 Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
 Model.set_program(0) # start with program[0]
 FX = FX()
