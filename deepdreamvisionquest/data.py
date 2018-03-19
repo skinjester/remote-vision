@@ -138,7 +138,7 @@ octave_scaler_default = {
 
 inception_xform_default = {
 	'name': 'inception_xform',
-	'params': {'scale':0.1}
+	'params': {'scale':0.05}
 }
 
 cyclefx_default = [
@@ -268,13 +268,13 @@ program.append({
 
 program.append({
 	'name':'cambrian-implosion',
-	'iterations':20,
-	'step_size':2.4,
+	'iterations':10,
+	'step_size':1.8,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.5,
-	'iteration_mult':0.0,
-	'step_mult':-0.1,
+	'iteration_mult':0.25,
+	'step_mult':-0.05,
 	'model':'googlenet',
 	'layers':[
 		'inception_4c/pool',
@@ -291,7 +291,7 @@ program.append({
 	'stepfx': [
 	    {
 	    	'name': 'octave_scaler',
-	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.5}
+	    	'params': {'step':0., 'min_scale':1.3, 'max_scale':1.5}
 	    },
 	    {
 	    	'name': 'bilateral_filter',
