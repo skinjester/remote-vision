@@ -997,12 +997,10 @@ def main():
     while True:
         log.warning('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-
-        # Viewport.show( Composer.buffer[0] )
         Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
 
         ### handle viewport refresh per cycle
-        if Composer.isDreaming == False or Viewport.force_refresh:
+        if Composer.isDreaming == False:
             # Viewport.save_next_frame = True
 
             #  apply cyclefx, assuming they've been defined
