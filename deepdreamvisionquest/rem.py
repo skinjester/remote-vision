@@ -296,8 +296,7 @@ class Composer(object):
     # both self.buffer1 and self.buffer2 look to data.capture_size for their dimensions
     # this happens on init
     def __init__(self):
-        self.isDreaming = False # the type of frame in buffer1. dirty when recycling clean when refreshing
-        self.is_new_cycle = True
+        self.isDreaming = False
         self.opacity = 1.0
         self.is_compositing_enabled = False
         self.xform_scale = 0.03
@@ -335,7 +334,7 @@ class Composer(object):
         self.mix_opacity = self.ramp_counter
         cv2.addWeighted(
             img_front,
-            self.mix_opacity,
+            self.mix_opacity,#
             img_back,
             1-self.mix_opacity,
             0,
@@ -346,11 +345,10 @@ class Composer(object):
 
     def update(self, image):
         if self.isDreaming:
-            if self.is_new_cycle:
-                for fx in Model.cyclefx:
-                    if fx['name'] == 'inception_xform':
-                        image = FX.inception_xform(image, Display.screensize, **fx['params'])
-                        Composer.dreambuffer = image
+            for fx in Model.cyclefx:
+                if fx['name'] == 'inception_xform':
+                    image = FX.inception_xform(image, Display.screensize, **fx['params'])
+                    Composer.dreambuffer = image
 
             self.isDreaming = False
 
@@ -825,7 +823,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
 
     # SETUPOCTAVES---
-    Composer.is_new_cycle = False
     src = Model.net.blobs['data']
     octaves = [rgb2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
@@ -999,23 +996,10 @@ def main():
 
     while True:
         log.warning('new cycle')
-        Composer.is_new_cycle = True
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
 
         # Viewport.show( Composer.buffer[0] )
         Viewport.show(Composer.mix(Composer.buffer[0], (Composer.buffer[1])))
-
-
-        log.critical('motion detected:{}'.format(Webcam.get().motiondetector.wasMotionDetected))
-
-        # if Webcam.get().motiondetector.detection_toggle:
-        #     Composer.ramp_toggle(True)
-        #     Webcam.get().motiondetector.detection_toggle = False # toggle the flag to off
-        #     img = Webcam.get().read()
-        #     Composer.send(1, img)
-        #     Composer.dreambuffer = img # get a new camera frame
-        #     Composer.isDreaming = False
-
 
         ### handle viewport refresh per cycle
         if Composer.isDreaming == False or Viewport.force_refresh:
