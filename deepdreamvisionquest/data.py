@@ -227,6 +227,49 @@ program.append({
 })
 
 program.append({
+  'name':'peyoteworld-filter',
+  'iterations':10,
+  'step_size':2,
+  'octaves':5,
+  'octave_cutoff':4,
+  'octave_scale':1.2,
+  'iteration_mult':0.5,
+  'step_mult':0.01,
+  'model':'vgg19',
+  'layers':[
+	'conv3_1',
+	'conv3_2',
+	'conv3_3',
+	'conv3_4',
+	'conv4_1',
+	'conv4_2',
+	'conv4_3',
+	'conv4_4',
+	'conv5_1',
+	'conv5_2',
+	'conv5_3',
+	'conv5_4'
+	],
+  'features':range(21,255),
+  'cyclefx':[
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
+    {
+    	'name': 'octave_scaler',
+    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.8}
+    }
+  ],
+  'stepfx':[
+	  {
+	  	'name': 'bilateral_filter',
+	  	'params': {'radius': 3, 'sigma_color':100, 'sigma_xy': 100}
+	  },
+  ]
+})
+
+program.append({
   'name':'peyoteworld-original',
   'iterations':4,
   'step_size':2,
@@ -287,12 +330,13 @@ program.append({
 	'features':range(-1,256),
 	'cyclefx': [
 	    inception_xform_default,
-	],
-	'stepfx': [
 	    {
 	    	'name': 'octave_scaler',
-	    	'params': {'step':0., 'min_scale':1.3, 'max_scale':1.5}
-	    },
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.6}
+	    }
+	],
+	'stepfx': [
+
 	    {
 	    	'name': 'bilateral_filter',
 	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
