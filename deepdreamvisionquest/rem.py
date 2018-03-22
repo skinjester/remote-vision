@@ -674,7 +674,7 @@ def listener():
         log.warning('{}:{} {} {}'.format('E2',key,']','***'))
 
     if key == 45: # _ key (underscore) : decrease detection floor
-        Webcam.get().motiondetector.floor -= 100
+        Webcam.get().motiondetector.floor -= 500
         if Webcam.get().motiondetector.floor < 0:
             Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
@@ -682,7 +682,7 @@ def listener():
         return
 
     if key == 61: # = key (equals): increase detection floor
-        Webcam.get().motiondetector.floor += 100
+        Webcam.get().motiondetector.floor += 500
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.warning('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
         return

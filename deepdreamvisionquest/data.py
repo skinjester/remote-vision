@@ -270,7 +270,7 @@ program.append({
 })
 
 program.append({
-  'name':'peyoteworld-filter2',
+  'name':'Accio',
   'iterations':10,
   'step_size':2,
   'octaves':4,
@@ -280,20 +280,20 @@ program.append({
   'step_mult':0.01,
   'model':'vgg19',
   'layers':[
+	'conv4_3',
 	'conv3_3',
 	'conv4_2',
 	'conv3_1',
 	'conv3_2',
 	'conv3_4',
 	'conv4_1',
-	'conv4_3',
 	'conv4_4',
 	'conv5_1',
 	'conv5_2',
 	'conv5_3',
 	'conv5_4'
 	],
-  'features':range(29,255),
+  'features':range(34,255),
   'cyclefx':[
     {
     	'name': 'inception_xform',
