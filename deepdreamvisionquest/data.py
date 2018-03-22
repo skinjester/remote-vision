@@ -227,22 +227,22 @@ program.append({
 })
 
 program.append({
-  'name':'peyoteworld-filter',
+  'name':'peyoteworld-filter1',
   'iterations':10,
   'step_size':2,
-  'octaves':5,
+  'octaves':4,
   'octave_cutoff':4,
-  'octave_scale':1.2,
+  'octave_scale':1.7,
   'iteration_mult':0.5,
   'step_mult':0.01,
   'model':'vgg19',
   'layers':[
+	'conv4_2',
 	'conv3_1',
 	'conv3_2',
 	'conv3_3',
 	'conv3_4',
 	'conv4_1',
-	'conv4_2',
 	'conv4_3',
 	'conv4_4',
 	'conv5_1',
@@ -250,21 +250,107 @@ program.append({
 	'conv5_3',
 	'conv5_4'
 	],
-  'features':range(21,255),
+  'features':range(29,255),
   'cyclefx':[
     {
     	'name': 'inception_xform',
     	'params': {'scale':0.025}
     },
-    {
-    	'name': 'octave_scaler',
-    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.8}
-    }
+    # {
+    # 	'name': 'octave_scaler',
+    # 	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.8}
+    # }
   ],
   'stepfx':[
 	  {
 	  	'name': 'bilateral_filter',
-	  	'params': {'radius': 3, 'sigma_color':100, 'sigma_xy': 100}
+	  	'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 100}
+	  },
+  ]
+})
+
+program.append({
+  'name':'peyoteworld-filter2',
+  'iterations':10,
+  'step_size':2,
+  'octaves':4,
+  'octave_cutoff':4,
+  'octave_scale':1.7,
+  'iteration_mult':0.5,
+  'step_mult':0.01,
+  'model':'vgg19',
+  'layers':[
+	'conv3_3',
+	'conv4_2',
+	'conv3_1',
+	'conv3_2',
+	'conv3_4',
+	'conv4_1',
+	'conv4_3',
+	'conv4_4',
+	'conv5_1',
+	'conv5_2',
+	'conv5_3',
+	'conv5_4'
+	],
+  'features':range(29,255),
+  'cyclefx':[
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
+    # {
+    # 	'name': 'octave_scaler',
+    # 	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.8}
+    # }
+  ],
+  'stepfx':[
+	  {
+	  	'name': 'bilateral_filter',
+	  	'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 100}
+	  },
+  ]
+})
+
+program.append({
+  'name':'peyoteworld-filter2',
+  'iterations':10,
+  'step_size':2,
+  'octaves':4,
+  'octave_cutoff':4,
+  'octave_scale':1.7,
+  'iteration_mult':0.5,
+  'step_mult':0.01,
+  'model':'vgg19',
+  'layers':[
+	'conv3_3',
+	'conv4_2',
+	'conv3_1',
+	'conv3_2',
+	'conv3_4',
+	'conv4_1',
+	'conv4_3',
+	'conv4_4',
+	'conv5_1',
+	'conv5_2',
+	'conv5_3',
+	'conv5_4'
+	],
+  'features':range(43,255),
+  'cyclefx':[
+    {
+    	'name': 'inception_xform',
+    	'params': {'scale':0.025}
+    },
+    # {
+    # 	'name': 'octave_scaler',
+    # 	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.8}
+    # }
+  ],
+  'stepfx':[
+	  {
+	  	'name': 'bilateral_filter',
+	  	'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 100}
 	  },
   ]
 })
