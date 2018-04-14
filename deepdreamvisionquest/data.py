@@ -183,6 +183,41 @@ stepfx_default = [
 # ___ Initial program ___
 
 program.append({
+	'name':'cambrian-implosion-copy',
+	'iterations':10,
+	'step_size':1.8,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.25,
+	'step_mult':-0.05,
+	'model':'googlenet',
+	'layers':[
+		'inception_4c/pool',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
+	],
+	'features':range(-1,256),
+	'cyclefx': [
+	    inception_xform_default,
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.1, 'min_scale':1.3, 'max_scale':1.6}
+	    }
+	],
+	'stepfx': [
+
+	    {
+	    	'name': 'bilateral_filter',
+	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
+	    },
+	]
+})
+
+program.append({
   'name':'JOI.00',
   'iterations':10,
   'step_size':2.2,
