@@ -261,25 +261,25 @@ program.append({
 program.append({
   'name':'JOI.01',
   'iterations':10,
-  'step_size':2.2,
+  'step_size':1.8,
   'octaves':6,
   'octave_cutoff':6,
-  'octave_scale':1.7,
-  'iteration_mult':0.0,
+  'octave_scale':1.5,
+  'iteration_mult':0.25,
   'step_mult':0.05,
   'model':'vgg19',
   'layers':[
 	'conv4_1'
 	],
-  'features':[96,157,147,145,137,114,98, 107],
+  'features':[145,96,137,114,98, 107],
   'cyclefx':[
+  	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.3, 'max_scale':1.5}
+	    },
 	    {
 	    	'name': 'inception_xform',
 	    	'params': {'scale':0.2}
-	    },
-	    {
-	    	'name': 'octave_scaler',
-	    	'params': {'step':0.05, 'min_scale':1.3, 'max_scale':1.7}
 	    },
 
   ],
@@ -288,14 +288,14 @@ program.append({
 		# 	'name': 'bilateral_filter',
 		# 	'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 100}
 		# },
-		{
-			'name': 'median_blur',
-			'params': {'kernel_shape':3}
-		},
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':3.0}
-		}
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':4.0}
+		# }
   ]
 })
 
