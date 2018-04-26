@@ -524,7 +524,7 @@ def draw_HUD(image):
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
-    x,xoff = 40,180
+    x,xoff = 140,280
     y,yoff = 150,20
 
     data.counter = 0
