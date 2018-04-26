@@ -183,6 +183,570 @@ stepfx_default = [
 # ___ Initial program ___
 
 program.append({
+  'name':'plush19',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',`
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+  ],
+  'features':range(11,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'console``',
+  'iterations':10,
+  'step_size':1.8,
+  'octaves':6,
+  'octave_cutoff':4,
+  'octave_scale':1.2,
+  'iteration_mult':0.0,
+  'step_mult':0.03,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_3',
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_3',
+	  'conv5_1',
+	],
+  'features':range(109,512),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 5, 'sigma_color':40, 'sigma_xy': 50}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'cube`',
+  'iterations':20,
+  'step_size':1.8,
+  'octaves':5,
+  'octave_cutoff':4,
+  'octave_scale':1.1,
+  'iteration_mult':0.5,
+  'step_mult':0.03,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_2',
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_3',
+	  'conv5_1',
+	],
+  'features':range(70,512),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 5, 'sigma_color':40, 'sigma_xy': 10}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+
+program.append({
+  'name':'metamachine',
+  'iterations':20,
+  'step_size':1.8,
+  'octaves':5,
+  'octave_cutoff':4,
+  'octave_scale':1.1,
+  'iteration_mult':0.5,
+  'step_mult':0.03,
+  'model':'vgg19',
+  'layers':[
+  	  'conv5_1',
+	  'conv5_2',
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_3',
+	],
+  'features':range(70,512),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 5, 'sigma_color':40, 'sigma_xy': 10}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+
+program.append({
+  'name':'Robot Lover',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':5,
+  'octave_cutoff':5,
+  'octave_scale':1.1,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(8,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 5, 'sigma_color':20, 'sigma_xy': 10}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'JOI.00',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(-1,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'avian',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',`
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(21,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'0430',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',`
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(26,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'Starship Maybe',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',`
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(77,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+program.append({
+  'name':'Starship Maybe',
+  'iterations':40,
+  'step_size':1.2,
+  'octaves':6,
+  'octave_cutoff':5,
+  'octave_scale':1.3,
+  'iteration_mult':0.5,
+  'step_mult':0.02,
+  'model':'vgg19',
+  'layers':[
+	  'conv5_4',
+	  'conv3_1',
+	  'conv3_2',
+	  'conv3_3',
+	  'conv3_4',
+	  'conv4_1',`
+	  'conv4_2',
+	  'conv4_3',
+	  'conv4_4',
+	  'conv5_1',
+	  'conv5_2',
+	  'conv5_3',
+	],
+  'features':range(117,256),
+  'cyclefx':[
+	    {
+	    	'name': 'inception_xform',
+	    	'params': {'scale':0.1}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.05, 'min_scale':1.2, 'max_scale':1.5}
+	    },
+	    # {
+	    # 	'name': 'xform_array',
+	    # 	'params': {'amplitude':220, 'wavelength':200}
+	    # }
+
+  ],
+  'stepfx':[
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':80, 'sigma_xy': 20}
+		},
+		# {
+		# 	'name': 'median_blur',
+		# 	'params': {'kernel_shape':3}
+		# },
+		# {
+		# 	'name': 'duration_cutoff',
+		# 	'params': {'duration':3.0}
+		# }
+  ]
+})
+
+
+
+program.append({
 	'name':'cambrian-implosion-copy',
 	'iterations':10,
 	'step_size':1.8,
@@ -214,49 +778,10 @@ program.append({
 	    	'name': 'bilateral_filter',
 	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
 	    },
+
 	]
 })
 
-program.append({
-  'name':'JOI.00',
-  'iterations':10,
-  'step_size':2.2,
-  'octaves':6,
-  'octave_cutoff':6,
-  'octave_scale':1.7,
-  'iteration_mult':0.0,
-  'step_mult':0.05,
-  'model':'vgg19',
-  'layers':[
-	'conv4_1'
-	],
-  'features':[107, 96,157,147,145,137,114,98],
-  'cyclefx':[
-	    {
-	    	'name': 'inception_xform',
-	    	'params': {'scale':0.2}
-	    },
-	    {
-	    	'name': 'octave_scaler',
-	    	'params': {'step':0.05, 'min_scale':1.3, 'max_scale':1.7}
-	    },
-
-  ],
-  'stepfx':[
-		# {
-		# 	'name': 'bilateral_filter',
-		# 	'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 100}
-		# },
-		{
-			'name': 'median_blur',
-			'params': {'kernel_shape':3}
-		},
-		{
-			'name': 'duration_cutoff',
-			'params': {'duration':3.0}
-		}
-  ]
-})
 
 program.append({
   'name':'JOI.01',
@@ -279,7 +804,7 @@ program.append({
 	    },
 	    {
 	    	'name': 'inception_xform',
-	    	'params': {'scale':0.2}
+	    	'params': {'scale':0.1}
 	    },
 
   ],
