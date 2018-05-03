@@ -1072,7 +1072,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
@@ -1081,7 +1081,7 @@ Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots 
 Composer = Composer()
 
 # --- PERFORMANCE SETTINGS AND rFX ---c
-Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
+Model = Model(program_duration=30) # seconds each program will run, -1 is manual
 Model.set_program(0) # start with program[0]``
 FX = FX()
 

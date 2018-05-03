@@ -238,61 +238,61 @@ stepfx_default = [
 #   ]
 # })
 
-program.append({
-  'name':'console',
-  'iterations':10,
-  'step_size':1.8,
-  'octaves':6,
-  'octave_cutoff':4,
-  'octave_scale':1.2,
-  'iteration_mult':0.0,
-  'step_mult':0.03,
-  'model':'vgg19',
-  'layers':[
-	  'conv5_3',
-	  'conv5_4',
-	  'conv3_1',
-	  'conv3_2',
-	  'conv3_3',
-	  'conv3_4',
-	  'conv4_1',
-	  'conv4_2',
-	  'conv4_3',
-	  'conv4_4',
-	  'conv5_3',
-	  'conv5_1',
-	],
-  'features':range(109,512),
-  'cyclefx':[
-	    {
-	    	'name': 'inception_xform',
-	    	'params': {'scale':0.1}
-	    },
-	    {
-	    	'name': 'octave_scaler',
-	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
-	    },
-	    # {
-	    # 	'name': 'xform_array',
-	    # 	'params': {'amplitude':220, 'wavelength':200}
-	    # }
+# program.append({
+#   'name':'console',
+#   'iterations':10,
+#   'step_size':1.8,
+#   'octaves':6,
+#   'octave_cutoff':4,
+#   'octave_scale':1.2,
+#   'iteration_mult':0.0,
+#   'step_mult':0.03,
+#   'model':'vgg19',
+#   'layers':[
+# 	  'conv5_3',
+# 	  'conv5_4',
+# 	  'conv3_1',
+# 	  'conv3_2',
+# 	  'conv3_3',
+# 	  'conv3_4',
+# 	  'conv4_1',
+# 	  'conv4_2',
+# 	  'conv4_3',
+# 	  'conv4_4',
+# 	  'conv5_3',
+# 	  'conv5_1',
+# 	],
+#   'features':range(109,512),
+#   'cyclefx':[
+# 	    {
+# 	    	'name': 'inception_xform',
+# 	    	'params': {'scale':0.1}
+# 	    },
+# 	    {
+# 	    	'name': 'octave_scaler',
+# 	    	'params': {'step':0.02, 'min_scale':1.1, 'max_scale':1.3}
+# 	    },
+# 	    # {
+# 	    # 	'name': 'xform_array',
+# 	    # 	'params': {'amplitude':220, 'wavelength':200}
+# 	    # }
 
-  ],
-  'stepfx':[
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 5, 'sigma_color':40, 'sigma_xy': 50}
-		},
-		# {
-		# 	'name': 'median_blur',
-		# 	'params': {'kernel_shape':3}
-		# },
-		# {
-		# 	'name': 'duration_cutoff',
-		# 	'params': {'duration':3.0}
-		# }
-  ]
-})
+#   ],
+#   'stepfx':[
+# 		{
+# 			'name': 'bilateral_filter',
+# 			'params': {'radius': 5, 'sigma_color':40, 'sigma_xy': 50}
+# 		},
+# 		# {
+# 		# 	'name': 'median_blur',
+# 		# 	'params': {'kernel_shape':3}
+# 		# },
+# 		# {
+# 		# 	'name': 'duration_cutoff',
+# 		# 	'params': {'duration':3.0}
+# 		# }
+#   ]
+# })
 
 program.append({
   'name':'cube`',
