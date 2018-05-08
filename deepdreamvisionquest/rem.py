@@ -328,8 +328,8 @@ class Composer(object):
         return image
 
     def ramp_start(self):
-        Thread(target=self.ramp_update, args=()).start()
         log.debug('ramp start')
+        Thread(target=self.ramp_update, args=()).start()
         return self
 
     def ramp_update(self):
@@ -341,14 +341,15 @@ class Composer(object):
                 return
 
             if self.ramp_toggle_flag:
-                # self.ramp_counter = 1.0
+                log.critical('!!!!!!!!! ramp toggle: True')
+                self.ramp_counter = 0.3
                 # self.b_cycle = True
 
                 # if self.b_cycle:
                 self.ramp_increment = -0.1
-                time.sleep(0.1)
+                # time.sleep(0.1)
 
-                if self.ramp_counter <= 0.1:
+                if self.ramp_counter <= 0.0:
                     self.ramp_toggle_flag = False
             else:
                 self.ramp_increment = 0
@@ -358,6 +359,7 @@ class Composer(object):
             self.ramp_counter += self.ramp_increment
 
         return
+        # Where does this return to?
 
     def ramp_toggle(self, b_state=True):
         self.ramp_toggle_flag = b_state
@@ -401,8 +403,8 @@ class FX(object):
         log.warning('octave_scale: {}'.format(model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
-        return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        # return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
+        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
 
     def median_blur(self, image, kernel_shape):
         return cv2.medianBlur(image, kernel_shape)
@@ -1072,7 +1074,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.7, floor=4000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=16).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
@@ -1081,8 +1083,8 @@ Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots 
 Composer = Composer()
 
 # --- PERFORMANCE SETTINGS AND rFX ---c
-Model = Model(program_duration=30) # seconds each program will run, -1 is manual
-Model.set_program(0) # start with program[0]``
+Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
+Model.set_program(11) # start with program[0]``
 FX = FX()
 
 if __name__ == "__main__":
