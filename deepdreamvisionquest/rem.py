@@ -286,6 +286,7 @@ class Composer(object):
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
         self.ramp_stopped = False
@@ -297,9 +298,8 @@ class Composer(object):
     def send(self, channel, img):
         self.buffer[channel] = img
 
-        ### resize channel to match viewport dimensions
-        if img.shape[1] != Display.width:
-            self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+        ### any input is resized to match viewport dimensions
+        self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
         # convert and clip any floating point values into RGB bounds as integers
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
@@ -322,7 +322,6 @@ class Composer(object):
                 if fx['name'] == 'inception_xform':
                     image = FX.inception_xform(image, Display.screensize, **fx['params'])
                     Composer.dreambuffer = image
-
             self.isDreaming = False
 
         return image
@@ -341,15 +340,15 @@ class Composer(object):
                 return
 
             if self.ramp_toggle_flag:
-                log.critical('!!!!!!!!! ramp toggle: True')
                 self.ramp_counter = 0.3
                 # self.b_cycle = True
 
                 # if self.b_cycle:
-                self.ramp_increment = -0.1
+                # self.ramp_increment = -0.1
                 # time.sleep(0.1)
 
                 if self.ramp_counter <= 0.0:
+                    self.ramp_counter = 0.0
                     self.ramp_toggle_flag = False
             else:
                 self.ramp_increment = 0
@@ -404,7 +403,7 @@ class FX(object):
 
     def inception_xform(self, image, capture_size, scale):
         # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
 
     def median_blur(self, image, kernel_shape):
         return cv2.medianBlur(image, kernel_shape)
@@ -526,7 +525,7 @@ def draw_HUD(image):
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
-    x,xoff = 140,280
+    x,xoff = 40,180
     y,yoff = 150,20
 
     data.counter = 0
@@ -730,7 +729,6 @@ def listener():
     # --------------------------------
 
     if key == 27: # ESC: Exit
-        ### the order of these operations is unreasonably specific
         log.warning('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
         Composer.ramp_stop() # shutdown down the Composer ramp counter
         Viewport.shutdown()
@@ -836,19 +834,13 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if Webcam.get().motiondetector.detection_toggle:
                 Composer.ramp_toggle(True)
                 Viewport.force_refresh = True
-                Webcam.get().motiondetector.detection_toggle = False # reset the toggle
+                # Webcam.get().motiondetector.detection_toggle = False # reset the toggle
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
                 img = Webcam.get().read()
-
-                # older method
-                # Composer.send(1, Composer.dreambuffer)
-
-                # alt method - more responsive but a bit less hallucinogenic?
                 Composer.send(1, caffe2rgb(Model.net, src.data[0]))
-
                 return img
 
             # delegate gradient ascent to step function
@@ -858,21 +850,17 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # stored here for postproduction fx
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
 
-            # write netblob to Composer - channel 0
             Composer.send(0, Composer.dreambuffer)
-
-            # write webcam to Composer - channel 1
             Composer.send(1, Webcam.get().read())
 
             # send the main mix to the viewport
             Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
-            # Viewport.show(Composer.buffer[0])
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
             step_params['step_size'] += x * Model.step_mult * 1.0
 
-            # set a floor for any cyuclefx step modification
+            # set a floor for any cyclefx step modification
             if step_params['step_size'] < 1.1:
                 step_params['step_size'] = 1.1
 
@@ -901,24 +889,11 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('interval', intervalmsg)
             update_HUD_log('runtime', round(time.time() - Model.installation_startup, 2))
 
-
-
-
         # CUTOFF
         # this turned out to be the last octave calculated in the series
         if octave == Model.octave_cutoff:
             Composer.isDreaming = True
             return caffe2rgb(Model.net, src.data[0])
-
-        # EARLY EXIT
-        # motion detected so we're ending this REM cycle
-        # if Webcam.get().motiondetector.detection_toggle:
-        #     Composer.ramp_toggle(True)
-        #     Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-        #     Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
-        #     img = Webcam.get().read()
-        #     Composer.send(1, img)
-        #     return img
 
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
@@ -969,7 +944,6 @@ def main():
     while True:
         log.warning('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-        Viewport.show(Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
 
         ### handle viewport refresh per cycle
         if Composer.isDreaming == False:
@@ -1011,6 +985,13 @@ def main():
         update_HUD_log('cycle_time',duration_msg) # HUD
         log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
+        # print Composer.dreambuffer.shape
+        # Composer.ramp_stop() # shutdown down the Composer ramp counter
+        # Viewport.shutdown()
+        # sys.exit()
+
+        Composer.send(2, Composer.dreambuffer)
+        Viewport.show( Composer.mix(Composer.buffer[2], Composer.buffer[1], Composer.ramp_counter))
 
 # --------
 # INIT
@@ -1074,7 +1055,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=16).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
@@ -1084,7 +1065,7 @@ Composer = Composer()
 
 # --- PERFORMANCE SETTINGS AND rFX ---c
 Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
-Model.set_program(11) # start with program[0]``
+Model.set_program(0)
 FX = FX()
 
 if __name__ == "__main__":

@@ -202,7 +202,7 @@ class MotionDetector(object):
         _delta_count_history = self.delta_count_history
         _delta_trigger = self.delta_trigger
 
-        if (self.delta_count > self.delta_trigger):
+        if (self.delta_count > self.delta_trigger) and self.detection_toggle == False:
             # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
             self.detection_toggle = True #  gets reset from motion detector queries elsewhere
@@ -210,18 +210,19 @@ class MotionDetector(object):
             self.update_hud_log('detect','***')
             threadlog.critical('movement detected')
 
-        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
+        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger) and self.detection_toggle == True:
             self.wasMotionDetected = False
             self.monitor_msg = '---'
             self.update_hud_log('detect','-')
             threadlog.critical('movement ended')
         else:
             self.wasMotionDetected = False
+            self.detection_toggle = False
             self.monitor_msg = '-'
             self.update_hud_log('detect','-')
 
         # for detection monitor window overlay
-        self.monitor_msg += ' | {}:{}'.format(self.delta_count, self.delta_trigger)
+        self.monitor_msg += ' | {}:{}:{}'.format(self.delta_count, self.delta_trigger,self.delta_count_history)
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
         if self.elapsed > 5 and self.elapsed < 6:
