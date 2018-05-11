@@ -291,7 +291,7 @@ class Composer(object):
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
         self.ramp_stopped = False
-        self.ramp_toggle_flag = False
+        self.ramp_started = False
         self.ramp_counter = 0
         self.ramp_increment = 0
         self.b_cycle = False
@@ -327,7 +327,7 @@ class Composer(object):
 
         return image
 
-    def ramp_start(self):
+    def ramp_init(self):
         log.debug('ramp start')
         Thread(target=self.ramp_update, args=()).start()
         return self
@@ -340,30 +340,30 @@ class Composer(object):
                 log.debug('ramp stopped')
                 return
 
-            if self.ramp_toggle_flag:
-                self.ramp_counter = 0.3
-                # self.b_cycle = True
-
-                # if self.b_cycle:
-                # self.ramp_increment = -0.1
-                # time.sleep(0.1)
-
-                if self.ramp_counter <= 0.0:
-                    self.ramp_counter = 0.0
-                    self.ramp_toggle_flag = False
+            if self.ramp_started:
+                self.ramp_increment = -0.1
+                time.sleep(0.1)
             else:
                 self.ramp_increment = 0
                 self.ramp_counter = 0.0
-                self.b_cycle = False
 
             self.ramp_counter += self.ramp_increment
+            if self.ramp_counter < 0.0:
+                self.ramp_counter = 0.0
+                self.ramp_started = False
+
+            log.warning('ramp_counter: {}'.format(self.ramp_counter))
 
         return
         # Where does this return to?
 
-    def ramp_toggle(self, b_state=True):
-        self.ramp_toggle_flag = b_state
-        self.ramp_counter = 1.0
+    def ramp_start(self):
+        if not self.ramp_started:
+            self.ramp_started = True
+            self.ramp_counter = 1.0
+
+    def ramp_pause(self):
+        pass
 
 
     def ramp_stop(self):
@@ -650,12 +650,12 @@ def listener():
     elif key==196: # F7: show network details
         log.warning('{}:{} {} {}'.format('D1',key,'F7','***'))
         # Model.show_network_details()
-        Composer.ramp_toggle(True)
+        Composer.ramp_start(True)
         return
 
     elif key==197: # F8
         log.warning('{}:{} {} {}'.format('D2',key,'F8','***'))
-        Composer.ramp_toggle(False)
+        Composer.ramp_start(False)
         return
 
     elif key == 44: # , key : previous featuremap
@@ -833,16 +833,13 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # check if motion detected
             if Webcam.get().motiondetector.wasMotionDetected:
-                Composer.ramp_toggle(True)
                 Viewport.force_refresh = True
-                # Webcam.get().motiondetector.wasMotionDetected = False # reset the toggle
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-                img = Webcam.get().read()
-                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
-                return img
+                Composer.ramp_start()
+                return Webcam.get().read()
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
@@ -932,7 +929,7 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
     #
-    Composer.ramp_start()
+    Composer.ramp_init()
 
     # the madness begins
     img = Webcam.get().read()
@@ -947,33 +944,33 @@ def main():
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
 
         ### handle viewport refresh per cycle
-        if Composer.isDreaming == False:
-            # Viewport.save_next_frame = True
+        # if Composer.isDreaming == False:
 
-            if Model.cyclefx is not None:
-                for fx in Model.cyclefx:
-                    if fx['name'] == 'xform_array':
-                        FX.xform_array(Composer.dreambuffer, **fx['params'])
+        if Model.cyclefx is not None:
+            for fx in Model.cyclefx:
+                if fx['name'] == 'xform_array':
+                    FX.xform_array(Composer.dreambuffer, **fx['params'])
 
-                    if fx['name'] == 'octave_scaler':
-                        FX.octave_scaler(model=Model, **fx['params'])
+                if fx['name'] == 'octave_scaler':
+                    FX.octave_scaler(model=Model, **fx['params'])
 
-            # kicks off rem sleep
-            Composer.dreambuffer = deepdream(
-                net,
-                Composer.dreambuffer,
-                objective=objective_L2,
-                iteration_max = Model.iterations,
-                octave_n = Model.octaves,
-                octave_scale = Model.octave_scale,
-                step_size = Model.stepsize_base,
-                end = Model.end,
-                feature = Model.features[Model.current_feature]
-                )
+        # kicks off rem sleep
+        Composer.dreambuffer = deepdream(
+            net,
+            Composer.dreambuffer,
+            objective=objective_L2,
+            iteration_max = Model.iterations,
+            octave_n = Model.octaves,
+            octave_scale = Model.octave_scale,
+            step_size = Model.stepsize_base,
+            end = Model.end,
+            feature = Model.features[Model.current_feature]
+            )
 
-            # commenting out this block allows unfiltered signal only
-            if Viewport.force_refresh:
-                Viewport.force_refresh = False
+        # commenting out this block allows unfiltered signal only
+        if Viewport.force_refresh:
+            Viewport.force_refresh = False
+            Composer.ramp_start()
 
         # post-cycle composite
         Composer.send(2, Composer.dreambuffer) # return value from deepdream
