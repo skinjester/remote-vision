@@ -209,12 +209,6 @@ class MotionDetector(object):
             self.monitor_msg = '***'
             self.update_hud_log('detect','***')
             threadlog.critical('movement detected')
-
-        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger) and self.detection_toggle == True:
-            self.wasMotionDetected = False
-            self.monitor_msg = '---'
-            self.update_hud_log('detect','-')
-            threadlog.critical('movement ended')
         else:
             self.wasMotionDetected = False
             self.detection_toggle = False
