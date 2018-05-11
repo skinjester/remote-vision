@@ -789,7 +789,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     if clip:
         bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 240-bias)
+        src.data[:] = np.clip(src.data, -bias, 255-bias)
 
     # postprocessor
     src.data[0] = iterationPostProcess(net, src.data[0])
