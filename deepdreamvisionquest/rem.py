@@ -261,11 +261,12 @@ class Viewport(object):
 
     def monitor(self):
         if self.motiondetect_log_enabled:
-            img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
-            overlay = img # composite motion stats here
-            opacity = 1.0
-            cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
-            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
+            img = Webcam.get().t_delta_framebuffer
+            msg = Webcam.get().motiondetector.monitor_msg
+            # overlay = img # composite motion stats here
+            # opacity = 1.0
+            cv2.putText(img, msg, (20, 20), FONT, 0.5, WHITE)
+            # img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
             cv2.imshow('delta', img)
 
 
@@ -831,10 +832,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
 
             # check if motion detected
-            if Webcam.get().motiondetector.detection_toggle:
+            if Webcam.get().motiondetector.wasMotionDetected:
                 Composer.ramp_toggle(True)
                 Viewport.force_refresh = True
-                # Webcam.get().motiondetector.detection_toggle = False # reset the toggle
+                # Webcam.get().motiondetector.wasMotionDetected = False # reset the toggle
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
@@ -949,7 +950,6 @@ def main():
         if Composer.isDreaming == False:
             # Viewport.save_next_frame = True
 
-            #  apply cyclefx, assuming they've been defined
             if Model.cyclefx is not None:
                 for fx in Model.cyclefx:
                     if fx['name'] == 'xform_array':
@@ -975,23 +975,18 @@ def main():
             if Viewport.force_refresh:
                 Viewport.force_refresh = False
 
-        # a bit later
-        later = time.time()
-        difference = later - now
-        duration_msg = '{:.2f}s'.format(difference)
-        now = time.time() # the new now
+        # post-cycle composite
+        Composer.send(2, Composer.dreambuffer) # return value from deepdream
+        Viewport.show( Composer.mix(Composer.buffer[2], Composer.buffer[1], Composer.ramp_counter))
 
         # logging
-        update_HUD_log('cycle_time',duration_msg) # HUD
+        later = time.time()
+        duration_msg = '{:.2f}s'.format(later - now)
+        now = time.time() # the new now
+        update_HUD_log('cycle_time',duration_msg)
         log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
-        # print Composer.dreambuffer.shape
-        # Composer.ramp_stop() # shutdown down the Composer ramp counter
-        # Viewport.shutdown()
-        # sys.exit()
 
-        Composer.send(2, Composer.dreambuffer)
-        Viewport.show( Composer.mix(Composer.buffer[2], Composer.buffer[1], Composer.ramp_counter))
 
 # --------
 # INIT
