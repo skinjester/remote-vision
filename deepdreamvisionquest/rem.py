@@ -323,7 +323,7 @@ class Composer(object):
                 if fx['name'] == 'inception_xform':
                     image = FX.inception_xform(image, Display.screensize, **fx['params'])
                     Composer.dreambuffer = image
-            self.isDreaming = False
+        self.isDreaming = False
 
         return image
 
@@ -342,17 +342,15 @@ class Composer(object):
 
             if self.ramp_started:
                 self.ramp_increment = -0.1
-                time.sleep(0.1)
+                time.sleep(0.2)
             else:
                 self.ramp_increment = 0
                 self.ramp_counter = 0.0
 
             self.ramp_counter += self.ramp_increment
             if self.ramp_counter <= 0.0:
-                self.ramp_counter = 0.3
+                self.ramp_counter = 0.0
                 self.ramp_started = False
-
-            log.warning('ramp_counter: {}'.format(self.ramp_counter))
 
         return
         # Where does this return to?
@@ -360,7 +358,7 @@ class Composer(object):
     def ramp_start(self):
         if not self.ramp_started:
             self.ramp_started = True
-            self.ramp_counter = 1.0
+            self.ramp_counter = 0.5
 
     def ramp_pause(self):
         pass
@@ -430,32 +428,7 @@ class FX(object):
         self.cycle_start_time = start_time
 
 
-# stepfx wrapper takes neural net data blob and converts to caffe image
-# then after processing, takes the caffe image and converts back to caffe
-def iterationPostProcess(net, net_data_blob):
-    img = caffe2rgb(net, net_data_blob)
-    img2 = img
 
-    #  apply stepfx, assuming they've been defined
-    if Model.stepfx is not None:
-        for fx in Model.stepfx:
-            if fx['name'] == 'median_blur':
-                img2 = FX.median_blur(img2, **fx['params'])
-
-            if fx['name'] == 'bilateral_filter':
-                img2 = FX.bilateral_filter(img2, **fx['params'])
-
-            if fx['name'] == 'nd_gaussian':
-                img2 = FX.nd_gaussian(img2, **fx['params'])
-
-            if fx['name'] == 'step_opacity':
-                FX.step_mixer(**fx['params'])
-
-            if fx['name'] == 'duration_cutoff':
-                FX.duration_cutoff(**fx['params'])
-
-    img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
-    return rgb2caffe(Model.net, img)
 
 
 # rename this function plz
@@ -736,7 +709,6 @@ def listener():
         Webcam.get().motiondetector.export.close() # close the motion detector data export file
         return
 
-
 # a couple of utility functions for converting to and from Caffe's input image layout
 def rgb2caffe(net, img):
     return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
@@ -756,12 +728,33 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one that matches best
 
+def postprocess_step(net, net_data_blob):
+# takes neural net data blob and converts to RGB
+# then after processing, takes the RGB image and converts back to caffe
+    img = caffe2rgb(net, net_data_blob)
+    img2 = img
 
-# -------
-# implements forward and backward passes thru the network
-# apply normalized ascent step upon the image in the networks data blob
-# supports Feature Map activation
-# -------
+    #  apply any defined stepFX
+    if Model.stepfx is not None:
+        for fx in Model.stepfx:
+            if fx['name'] == 'median_blur':
+                img2 = FX.median_blur(img2, **fx['params'])
+
+            if fx['name'] == 'bilateral_filter':
+                img2 = FX.bilateral_filter(img2, **fx['params'])
+
+            if fx['name'] == 'nd_gaussian':
+                img2 = FX.nd_gaussian(img2, **fx['params'])
+
+            if fx['name'] == 'step_opacity':
+                FX.step_mixer(**fx['params'])
+
+            if fx['name'] == 'duration_cutoff':
+                FX.duration_cutoff(**fx['params'])
+
+    img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
+    return rgb2caffe(Model.net, img)
+
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1, objective=objective_L2):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
@@ -772,7 +765,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
     src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # shift image (jitter)
     net.forward(end=end)
 
-    # feature inspection
     if feature == -1:
         objective(dst)
     else:
@@ -781,10 +773,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     net.backward(start=end)
     g = src.diff[0]
-
-    # apply normalized ascent step to the input image
     src.data[:] += step_size/np.abs(g).mean() * (g*step_size)
-
     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
 
     if clip:
@@ -792,7 +781,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
         src.data[:] = np.clip(src.data, -bias, 255-bias)
 
     # postprocessor
-    src.data[0] = iterationPostProcess(net, src.data[0])
+    src.data[0] = postprocess_step(net, src.data[0])
 
     # sequencer. don't run if program_duration is -1 though
     program_elapsed_time = time.time() - Model.program_start_time
@@ -845,13 +834,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # delegate gradient ascent to step function
             make_step(Model.net, end=end, **step_params)
-            log.warning('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
+            log.debug('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
             # stored here for postproduction fx
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
 
             Composer.send(0, Composer.dreambuffer)
             Composer.send(1, Webcam.get().read())
+            log.error('delta:{}'.format(Webcam.get().motiondetector.delta_count_history))
 
             # send the main mix to the viewport
             Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
@@ -942,7 +932,7 @@ def main():
 
 
     while True:
-        log.warning('new cycle')
+        log.debug('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
 
         if Model.cyclefx is not None:
@@ -980,7 +970,7 @@ def main():
         duration_msg = '{:.2f}s'.format(later - now)
         now = time.time() # the new now
         update_HUD_log('cycle_time',duration_msg)
-        log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
+        log.debug('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
 
 
@@ -1046,7 +1036,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
