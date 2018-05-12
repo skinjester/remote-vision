@@ -228,7 +228,7 @@ class Viewport(object):
 
     def show(self, image):
         self.time_counter += 1
-        image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
+        # image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
         image = Composer.update(image) # post process with cycleFX
 
         if self.b_show_HUD: # HUD overlay
@@ -348,8 +348,8 @@ class Composer(object):
                 self.ramp_counter = 0.0
 
             self.ramp_counter += self.ramp_increment
-            if self.ramp_counter < 0.0:
-                self.ramp_counter = 0.0
+            if self.ramp_counter <= 0.0:
+                self.ramp_counter = 0.3
                 self.ramp_started = False
 
             log.warning('ramp_counter: {}'.format(self.ramp_counter))
@@ -837,8 +837,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
-                Composer.isDreaming = False # no, we'll be refreshing the frane buffer
+                Composer.isDreaming = False
                 Composer.ramp_start()
+
+                 # return webcam to refresh neural net next cycle
                 return Webcam.get().read()
 
             # delegate gradient ascent to step function
@@ -943,9 +945,6 @@ def main():
         log.warning('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
 
-        ### handle viewport refresh per cycle
-        # if Composer.isDreaming == False:
-
         if Model.cyclefx is not None:
             for fx in Model.cyclefx:
                 if fx['name'] == 'xform_array':
@@ -1047,7 +1046,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=16).start())
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---

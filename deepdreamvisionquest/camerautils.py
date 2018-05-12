@@ -157,14 +157,14 @@ class WebcamVideoStream(object):
     def diffImg(self, t0, t1, t2):
         d1 = cv2.absdiff(t2,t1)
         d2 = cv2.absdiff(t1,t0)
-        return cv2.bitwise_and(d1,d2)
+        return cv2.bitwise_or(d1,d2)
 
 class MotionDetector(object):
 
     def __init__(self, floor, log):
 
         self.wasMotionDetected = False
-        self.detection_toggle = False
+        self.wasMotionDetected = False
         self.delta_count_history = 0
         self.delta_trigger = 0
         self.delta_count = 0
@@ -202,16 +202,14 @@ class MotionDetector(object):
         _delta_count_history = self.delta_count_history
         _delta_trigger = self.delta_trigger
 
-        if (self.delta_count > self.delta_trigger) and self.detection_toggle == False:
+        if (self.delta_count > self.delta_trigger) and self.wasMotionDetected == False:
             # self.delta_count -= int(self.delta_count/2)
             self.wasMotionDetected = True
-            self.detection_toggle = True #  gets reset from motion detector queries elsewhere
             self.monitor_msg = '***'
             self.update_hud_log('detect','***')
             threadlog.critical('movement detected')
         else:
             self.wasMotionDetected = False
-            self.detection_toggle = False
             self.monitor_msg = '-'
             self.update_hud_log('detect','-')
 
@@ -258,7 +256,6 @@ class MotionDetector(object):
 
     def force_detection(self): 
         self.wasMotionDetected = True
-        self.detection_toggle = True 
 
 # --------
 # INIT.
