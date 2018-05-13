@@ -292,7 +292,7 @@ class Composer(object):
         self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
         self.ramp_stopped = False
         self.ramp_started = False
-        self.ramp_counter = 0
+        self.opacity = 0
         self.ramp_increment = 0
         self.b_cycle = False
 
@@ -342,14 +342,14 @@ class Composer(object):
 
             if self.ramp_started:
                 self.ramp_increment = -0.1
-                time.sleep(0.2)
+                # time.sleep(0.2)
             else:
                 self.ramp_increment = 0
-                self.ramp_counter = 0.0
+                self.opacity = 0.3
 
-            self.ramp_counter += self.ramp_increment
-            if self.ramp_counter <= 0.0:
-                self.ramp_counter = 0.0
+            self.opacity += self.ramp_increment
+            if self.opacity <= 0.0:
+                self.opacity = 0.0
                 self.ramp_started = False
 
         return
@@ -358,7 +358,7 @@ class Composer(object):
     def ramp_start(self):
         if not self.ramp_started:
             self.ramp_started = True
-            self.ramp_counter = 0.5
+            self.opacity = 0.5
 
     def ramp_pause(self):
         pass
@@ -789,10 +789,20 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
         if program_elapsed_time > Model.program_duration:
             Model.next_program()
 
+def remapValuetoRange(val, src, dst):
+    # src [min,max] old range
+    # dst [min,max] new range
+    if src[1] == 0:
+        src[1] = 0.1
+    return ((val-src[0])/(src[1]-src[0]))*(dst[1]-dst[0])+dst[0]
+
 # -------
 # REM CYCLE
 # -------
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
+
+    # point to webcam
+    motion = Webcam.get().motiondetector
 
     # SETUPOCTAVES---
     src = Model.net.blobs['data']
@@ -821,13 +831,14 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         while i < iteration_max:
 
             # check if motion detected
-            if Webcam.get().motiondetector.wasMotionDetected:
+            if motion.wasMotionDetected:
                 Viewport.force_refresh = True
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 Composer.isDreaming = False
-                Composer.ramp_start()
+                Viewport.force_refresh = False
+                # Composer.ramp_start()
 
                  # return webcam to refresh neural net next cycle
                 return Webcam.get().read()
@@ -841,10 +852,28 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             Composer.send(0, Composer.dreambuffer)
             Composer.send(1, Webcam.get().read())
-            log.error('delta:{}'.format(Webcam.get().motiondetector.delta_count_history))
+
+            peak = motion.delta_count_history_peak
+            if peak < motion.floor:
+                peak = 10000.0
+            opacity = remapValuetoRange(
+                motion.delta_count_history,
+                [0.0, peak],
+                [0.0, 1.0]
+            )
+
+            log.error(
+                'history:{:06} peak:{:06} opacity:{:03.2}'
+                .format(
+                    motion.delta_count_history,
+                    motion.delta_count_history_peak,
+                    opacity
+                )
+            )
+
 
             # send the main mix to the viewport
-            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
+            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], opacity))
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -861,8 +890,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
             iterationmsg = '{:0>3}:{:0>3} x{}'.format(i,iteration_max,Model.iteration_mult)
             stepsizemsg = '{:02.3f} x{:02.3f}'.format(step_params['step_size'],Model.step_mult)
-            thresholdmsg = '{:0>6}'.format(Webcam.get().motiondetector.delta_trigger)
-            floormsg = '{:0>6}'.format(Webcam.get().motiondetector.floor)
+            thresholdmsg = '{:0>6}'.format(motion.delta_trigger)
+            floormsg = '{:0>6}'.format(motion.floor)
             gammamsg = '{}'.format(Webcam.get().gamma)
             intervalmsg = '{:01.2f}/{:01.2f}'.format(round(time.time() - Model.program_start_time, 2), Model.program_duration)
             update_HUD_log('octave',octavemsg)
@@ -897,6 +926,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
     return caffe2rgb(Model.net, src.data[0])
 
 
+
 # -------
 # MAIN
 # -------
@@ -921,7 +951,7 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
     #
-    Composer.ramp_init()
+    # Composer.ramp_init()
 
     # the madness begins
     img = Webcam.get().read()
@@ -957,13 +987,13 @@ def main():
             )
 
         # commenting out this block allows unfiltered signal only
-        if Viewport.force_refresh:
-            Viewport.force_refresh = False
-            Composer.ramp_start()
+        # if Viewport.force_refresh:
+        #     Viewport.force_refresh = False
+        #     Composer.ramp_start()
 
         # post-cycle composite
-        Composer.send(2, Composer.dreambuffer) # return value from deepdream
-        Viewport.show( Composer.mix(Composer.buffer[2], Composer.buffer[1], Composer.ramp_counter))
+        Composer.send(0, Composer.dreambuffer) # return value from deepdream
+        Viewport.show( Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.opacity))
 
         # logging
         later = time.time()
@@ -1036,6 +1066,7 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
+
 Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
@@ -1052,7 +1083,11 @@ FX = FX()
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--username',help='twitter userid for sharing')
+    parser.add_argument('--cameraID',help='camera device ID to use as video input')
     args = parser.parse_args()
     if args.username:
         Viewport.username = '@{}'.format(args.username)
+    # if args.cameraID:
+
+
     main()
