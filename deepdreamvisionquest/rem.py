@@ -855,7 +855,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             peak = motion.delta_count_history_peak
             if peak < motion.floor:
-                peak = 10000.0
+                peak = 100000.0
             opacity = remapValuetoRange(
                 motion.delta_count_history,
                 [0.0, peak],
@@ -1011,7 +1011,7 @@ def main():
 # --- LOGGING ---
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
-log.setLevel(logging.WARNING)
+log.setLevel(logging.INFO)
 
 
 # log.debug('debug message!')
@@ -1067,7 +1067,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
