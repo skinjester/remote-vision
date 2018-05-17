@@ -323,6 +323,9 @@ class Composer(object):
                 if fx['name'] == 'inception_xform':
                     image = FX.inception_xform(image, Display.screensize, **fx['params'])
                     Composer.dreambuffer = image
+            Composer.opacity = 0.0
+        # else:
+        #     motion.dream_offset = 0
         self.isDreaming = False
 
         return image
@@ -410,8 +413,12 @@ class FX(object):
     def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
-    def nd_gaussian(self, image, sigma, order):
-        return nd.filters.gaussian_filter(image, sigma, order)
+    def nd_gaussian(self, img, sigma, order):
+        img[0] = nd.filters.gaussian_filter(img[0], sigma, order=0)
+        img[1] = nd.filters.gaussian_filter(img[1], sigma, order=0)
+        img[2] = nd.filters.gaussian_filter(img[2], sigma, order=0)
+        # img = nd.filters.gaussian_filter(img, sigma, order=0)
+        return img
 
     def step_mixer(self,opacity):
         self.stepfx_opacity = opacity
@@ -623,12 +630,12 @@ def listener():
     elif key==196: # F7: show network details
         log.warning('{}:{} {} {}'.format('D1',key,'F7','***'))
         # Model.show_network_details()
-        Composer.ramp_start(True)
+        # Composer.ramp_start(True)
         return
 
     elif key==197: # F8
         log.warning('{}:{} {} {}'.format('D2',key,'F8','***'))
-        Composer.ramp_start(False)
+        # Composer.ramp_start(False)
         return
 
     elif key == 44: # , key : previous featuremap
@@ -732,30 +739,34 @@ def postprocess_step(net, net_data_blob):
 # takes neural net data blob and converts to RGB
 # then after processing, takes the RGB image and converts back to caffe
     img = caffe2rgb(net, net_data_blob)
-    img2 = img
 
     #  apply any defined stepFX
     if Model.stepfx is not None:
         for fx in Model.stepfx:
             if fx['name'] == 'median_blur':
-                img2 = FX.median_blur(img2, **fx['params'])
+                img = FX.median_blur(img, **fx['params'])
 
             if fx['name'] == 'bilateral_filter':
-                img2 = FX.bilateral_filter(img2, **fx['params'])
+                img = FX.bilateral_filter(img, **fx['params'])
 
-            if fx['name'] == 'nd_gaussian':
-                img2 = FX.nd_gaussian(img2, **fx['params'])
+            # if fx['name'] == 'nd_gaussian':
+            #     img = net_data_blob
+            #     img = FX.nd_gaussian(img, **fx['params'])
 
-            if fx['name'] == 'step_opacity':
-                FX.step_mixer(**fx['params'])
+            # if fx['name'] == 'step_opacity':
+            #     FX.step_mixer(**fx['params'])
 
             if fx['name'] == 'duration_cutoff':
                 FX.duration_cutoff(**fx['params'])
 
-    img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
+            if fx['name'] == 'octave_scaler':
+                FX.octave_scaler(model=Model, **fx['params'])
+
+    # img = cv2.addWeighted(img, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
     return rgb2caffe(Model.net, img)
 
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1, objective=objective_L2):
+
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1, objective=objective_L2):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
     src = net.blobs['data'] # input image is stored in Net's 'data' blob
@@ -773,15 +784,16 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     net.backward(start=end)
     g = src.diff[0]
-    src.data[:] += step_size/np.abs(g).mean() * (g*step_size)
+    src.data[:] += step_size/np.abs(g).mean() * g
     src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
 
-    if clip:
-        bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 255-bias)
+    # if clip:
+    bias = net.transformer.mean['data']
+    src.data[:] = np.clip(src.data, -bias, 200-bias)
 
     # postprocessor
     src.data[0] = postprocess_step(net, src.data[0])
+    # src.data[0] = postprocess_step(net, src.data[0])
 
     # sequencer. don't run if program_duration is -1 though
     program_elapsed_time = time.time() - Model.program_start_time
@@ -830,9 +842,51 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         i=0
         while i < iteration_max:
 
+
+
+            # delegate gradient ascent to step function
+            make_step(Model.net, end=end, **step_params)
+            log.debug('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
+
+            # stored here for postproduction fx
+            Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
+            # Composer.dreambuffer = Composer.dreambuffer*(255.0/np.percentile(Composer.dreambuffer, 98.0))
+
+            Composer.send(0, Composer.dreambuffer)
+            if Composer.isDreaming == False:
+                Composer.send(2, Webcam.get().read())
+                Composer.send(0, Composer.mix( Composer.buffer[0], Composer.buffer[2], Composer.opacity))
+
+            peak = motion.delta_count_history_peak
+            if peak < motion.floor * 2:
+                peak = 100000.0
+                Composer.send(1, Composer.dreambuffer)
+            Composer.opacity = remapValuetoRange(
+                motion.delta_count_history,
+                [0.0, peak],
+                [0.0, 0.5]
+            )
+            # if peak < 10:
+            #     Composer.send(1, Composer.dreambuffer)
+
+
+            log.error(
+                'history:{:06} peak:{:06} opacity:{:03.2}'
+                .format(
+                    motion.delta_count_history,
+                    motion.delta_count_history_peak,
+                    Composer.opacity
+                )
+            )
+
+
+            # send the main mix to the viewport
+            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity))
+
             # check if motion detected
             if motion.wasMotionDetected:
                 Viewport.force_refresh = True
+                Composer.send(1, Webcam.get().read())
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
@@ -842,38 +896,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
                  # return webcam to refresh neural net next cycle
                 return Webcam.get().read()
-
-            # delegate gradient ascent to step function
-            make_step(Model.net, end=end, **step_params)
-            log.debug('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
-
-            # stored here for postproduction fx
-            Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
-
-            Composer.send(0, Composer.dreambuffer)
-            Composer.send(1, Webcam.get().read())
-
-            peak = motion.delta_count_history_peak
-            if peak < motion.floor:
-                peak = 100000.0
-            opacity = remapValuetoRange(
-                motion.delta_count_history,
-                [0.0, peak],
-                [0.0, 1.0]
-            )
-
-            log.error(
-                'history:{:06} peak:{:06} opacity:{:03.2}'
-                .format(
-                    motion.delta_count_history,
-                    motion.delta_count_history_peak,
-                    opacity
-                )
-            )
-
-
-            # send the main mix to the viewport
-            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], opacity))
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -991,8 +1013,10 @@ def main():
         #     Viewport.force_refresh = False
         #     Composer.ramp_start()
 
+
         # post-cycle composite
-        Composer.send(0, Composer.dreambuffer) # return value from deepdream
+        if Composer.isDreaming:
+            Composer.send(0, Composer.dreambuffer) # return value from deepdream
         Viewport.show( Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.opacity))
 
         # logging
@@ -1011,7 +1035,7 @@ def main():
 # --- LOGGING ---
 logging.config.dictConfig(LogSettings.LOGGING_CONFIG)
 log = logging.getLogger('logtest-debug')
-log.setLevel(logging.INFO)
+log.setLevel(logging.WARNING)
 
 
 # log.debug('debug message!')
@@ -1067,7 +1091,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.7, floor=4000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.5, floor=4000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
