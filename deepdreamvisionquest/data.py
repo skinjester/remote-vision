@@ -13,8 +13,8 @@ capture_h = 720
 # capture_h = 720
 
 # 4K camera doesn't support this display size
-capture_w = 864
-capture_h = 480
+# capture_w = 864
+# capture_h = 480
 
 # capture_w = 640
 # capture_h = 360
@@ -50,7 +50,8 @@ models = {
 	'cars': ('cars','deploy.prototxt','googlenet_finetune_web_car_iter_10000.caffemodel'),
 	'googlenet': ('bvlc_googlenet','deploy.prototxt','bvlc_googlenet.caffemodel'),
 	'places': ('googlenet_places205','deploy.prototxt','places205_train_iter_2400000.caffemodel'),
-	'vgg19': ('VGG_ILSVRC_16','deploy.prototxt','VGG_ILSVRC_16_layers.caffemodel')
+	'places365': ('googlenet_places365','deploy.prototxt','googlenet_places365.caffemodel'),
+	'vgg19': ('VGG_ILSVRC_19','deploy.prototxt','VGG_ILSVRC_19_layers.caffemodel')
 }
 
 layers = [
