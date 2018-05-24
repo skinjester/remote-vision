@@ -24,6 +24,7 @@ capture_h = 720
 
 
 
+
 now = 0 # timing reference updated each rem cycle
 counter = 0 # has to do with the hud laout. sort of a hack
 
@@ -186,14 +187,14 @@ stepfx_default = [
 
 program.append({
 	'name':'cambrian-explanation',
-	'iterations':5,
+	'iterations':10,
 	'step_size':3.,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.5,
-	'iteration_mult':-0.2,
+	'iteration_mult':0.0,
 	'step_mult':0.03,
-	'model':'googlenet',
+	'model':'places365',
 	'layers':[
 		'inception_4c/pool',
 		'inception_4b/3x3_reduce',
@@ -215,10 +216,10 @@ program.append({
 		# 	'name': 'inception_xform',
 		# 	'params': {'scale':0.2}
 		# },
-		# {
-		#   	'name': 'octave_scaler',
-		#   	'params': {'step':0.1, 'min_scale':153, 'max_scale':2.0}
-		# },
+		{
+		  	'name': 'octave_scaler',
+		  	'params': {'step':0.01, 'min_scale':1.3, 'max_scale':2.0}
+		},
 	],
 	'stepfx': [
 		# {
@@ -227,12 +228,12 @@ program.append({
 		# },
 		{
 			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':50, 'sigma_xy': 20}
+			'params': {'radius': -1, 'sigma_color':24, 'sigma_xy':3}
 		},
-		{
-		  	'name': 'octave_scaler',
-		  	'params': {'step':0.01, 'min_scale':1.4, 'max_scale':2.0}
-		},
+		# {
+		#   	'name': 'octave_scaler',
+		#   	'params': {'step':0.1, 'min_scale':1.4, 'max_scale':2.0}
+		# },
 	]
 })
 

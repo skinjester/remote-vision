@@ -118,7 +118,7 @@ class Model(object):
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
-            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([20.0, 16.0, 222.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -281,10 +281,10 @@ class Composer(object):
     # this happens on init
     def __init__(self):
         self.isDreaming = False
-        self.opacity = 1.0
         self.is_compositing_enabled = False
         self.xform_scale = 0.03
         self.buffer = []
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
@@ -293,6 +293,7 @@ class Composer(object):
         self.ramp_stopped = False
         self.ramp_started = False
         self.opacity = 0
+        self.buffer3_opacity = 1.0
         self.ramp_increment = 0
         self.b_cycle = False
 
@@ -766,14 +767,14 @@ def postprocess_step(net, net_data_blob):
     return rgb2caffe(Model.net, img)
 
 
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=True, feature=-1, objective=objective_L2):
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=False, feature=-1, objective=objective_L2):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
-    src = net.blobs['data'] # input image is stored in Net's 'data' blob
+    src = net.blobs['data']
     dst = net.blobs[end]
 
     ox, oy = np.random.randint(-jitter, jitter+1, 2)
-    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # shift image (jitter)
+    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
     net.forward(end=end)
 
     if feature == -1:
@@ -785,17 +786,15 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
     net.backward(start=end)
     g = src.diff[0]
     src.data[:] += step_size/np.abs(g).mean() * g
-    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
+    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)
 
-    # if clip:
-    bias = net.transformer.mean['data']
-    src.data[:] = np.clip(src.data, -bias, 200-bias)
+    if clip:
+        bias = net.transformer.mean['data']
+        src.data[:] = np.clip(src.data, -bias, 200-bias)
 
-    # postprocessor
     src.data[0] = postprocess_step(net, src.data[0])
-    # src.data[0] = postprocess_step(net, src.data[0])
 
-    # sequencer. don't run if program_duration is -1 though
+    # program sequencer. don't run if program_duration is -1 though
     program_elapsed_time = time.time() - Model.program_start_time
     if Model.program_duration != -1:
         if program_elapsed_time > Model.program_duration:
@@ -811,7 +810,7 @@ def remapValuetoRange(val, src, dst):
 # -------
 # REM CYCLE
 # -------
-def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
+def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
 
     # point to webcam
     motion = Webcam.get().motiondetector
@@ -841,13 +840,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # OCTAVECYCLE
         i=0
         while i < iteration_max:
-
-
-
-            # delegate gradient ascent to step function
-            make_step(Model.net, end=end, **step_params)
+            make_step(Model.net, end=end, clip=clip, **step_params)
             log.debug('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
+            Composer.buffer3_opacity -= Composer.buffer3_opacity*0.05
+            if Composer.buffer3_opacity < 0.0:
+                Composer.buffer3_opacity = 0.0
             # stored here for postproduction fx
             Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
             # Composer.dreambuffer = Composer.dreambuffer*(255.0/np.percentile(Composer.dreambuffer, 98.0))
@@ -869,8 +867,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             # if peak < 10:
             #     Composer.send(1, Composer.dreambuffer)
 
-
-            log.error(
+            log.debug(
                 'history:{:06} peak:{:06} opacity:{:03.2}'
                 .format(
                     motion.delta_count_history,
@@ -879,22 +876,27 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 )
             )
 
-
             # send the main mix to the viewport
-            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity))
+            comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
+            Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
+
+            log.warning('buffer3_opacity:{}'.format(Composer.buffer3_opacity))
 
             # check if motion detected
             if motion.wasMotionDetected:
                 Viewport.force_refresh = True
                 Composer.send(1, Webcam.get().read())
 
+
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
+                # copy current state of neural net to this buffer
+                log.warning('resetting buffer3_opacity to 1.0')
+                Composer.send(3, caffe2rgb(Model.net, src.data[0]))
+                Composer.buffer3_opacity = 1.0
+
                 Composer.isDreaming = False
                 Viewport.force_refresh = False
-                # Composer.ramp_start()
-
-                 # return webcam to refresh neural net next cycle
                 return Webcam.get().read()
 
             # attenuate step size over rem cycle
@@ -944,6 +946,11 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     Composer.isDreaming = True # yes, we'll be dreaming about this output again
 
+    # copy current state of neural net to this buffer
+    log.warning('resetting buffer3_opacity to 1.0')
+    Composer.send(3, caffe2rgb(Model.net, src.data[0]))
+    Composer.buffer3_opacity = 1.0
+
     # return the resulting image (converted back to x,y,RGB structured matrix)
     return caffe2rgb(Model.net, src.data[0])
 
@@ -953,14 +960,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 # MAIN
 # -------
 def main():
-
     now = time.time() # start timer
-
-    # set GPU mode
     caffe.set_device(0)
     caffe.set_mode_gpu()
-
-    # parameters
     iterations = Model.iterations
     stepsize = Model.stepsize_base
     octaves = Model.octaves
@@ -972,16 +974,10 @@ def main():
     update_HUD_log('username',Viewport.username)
     update_HUD_log('settings',Model.package_name)
 
-    #
-    # Composer.ramp_init()
-
     # the madness begins
     img = Webcam.get().read()
-
-
     Composer.send(1, img)
     Composer.dreambuffer = img # initial camera image for starting
-
 
     while True:
         log.debug('new cycle')
@@ -1008,16 +1004,14 @@ def main():
             feature = Model.features[Model.current_feature]
             )
 
-        # commenting out this block allows unfiltered signal only
-        # if Viewport.force_refresh:
-        #     Viewport.force_refresh = False
-        #     Composer.ramp_start()
-
-
         # post-cycle composite
         if Composer.isDreaming:
             Composer.send(0, Composer.dreambuffer) # return value from deepdream
-        Viewport.show( Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.opacity))
+            Composer.send(3, Composer.dreambuffer) # return value from deepdream
+
+
+        comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
+        Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
 
         # logging
         later = time.time()
@@ -1091,7 +1085,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[1], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.5, floor=4000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=5000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
