@@ -118,7 +118,7 @@ class Model(object):
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
-            self.param_fn, mean=np.float32([20.0, 16.0, 222.0]), channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -862,7 +862,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             Composer.opacity = remapValuetoRange(
                 motion.delta_count_history,
                 [0.0, peak],
-                [0.0, 0.5]
+                [0.0, 1.0]
             )
             # if peak < 10:
             #     Composer.send(1, Composer.dreambuffer)
@@ -877,7 +877,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             )
 
             # send the main mix to the viewport
-            comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
+            comp1 = Composer.mix( Composer.buffer[1], Composer.buffer[0], Composer.opacity)
             Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
 
             log.warning('buffer3_opacity:{}'.format(Composer.buffer3_opacity))
@@ -1005,13 +1005,13 @@ def main():
             )
 
         # post-cycle composite
-        if Composer.isDreaming:
-            Composer.send(0, Composer.dreambuffer) # return value from deepdream
-            Composer.send(3, Composer.dreambuffer) # return value from deepdream
+        # if Composer.isDreaming:
+        #     Composer.send(0, Composer.dreambuffer) # return value from deepdream
+        #     Composer.send(3, Composer.dreambuffer) # return value from deepdream
 
 
-        comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
-        Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
+        # comp1 = Composer.mix( Composer.buffer[1], Composer.buffer[0], Composer.opacity)
+        # Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
 
         # logging
         later = time.time()
