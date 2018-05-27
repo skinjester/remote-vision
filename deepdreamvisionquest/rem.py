@@ -869,7 +869,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             peak = motion.delta_count_history_peak
 
-            if peak < motion.delta_trigger:
+            if peak < motion.floor:
                 Composer.opacity -= 0.1
                 if Composer.opacity <= 0.1:
                     Composer.opacity = 0.0
@@ -886,10 +886,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             #     Composer.opacity = 1.0
 
             log.warning(
-                'detect:{} history:{:06} peak:{:06} opacity:{:03.2}'
+                'count:{:>06} trigger:{:>06} peak:{:>06} opacity:{:03.2}'
                 .format(
-                    motion.wasMotionDetected,
-                    motion.delta_count_history,
+                    motion.delta_count,
+                    motion.delta_trigger,
                     motion.delta_count_history_peak,
                     Composer.opacity
                 )
