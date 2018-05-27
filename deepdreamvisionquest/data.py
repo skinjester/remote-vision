@@ -186,6 +186,57 @@ stepfx_default = [
 ]
 
 program.append({
+	'name':'cambrian-candidate-googlenet',
+	'iterations':20,
+	'step_size':2,
+	'octaves':4,
+	'octave_cutoff':4,
+	'octave_scale':1.7,
+	'iteration_mult':0.0,
+	'step_mult':0.0,
+	'model':'googlenet',
+	'layers':[
+		'inception_4b/pool',
+		'inception_4c/pool',
+		'inception_4b/3x3_reduce',
+		'inception_4b/5x5',
+		'inception_4b/5x5_reduce',
+		'inception_4b/output',
+		'inception_4b/pool_proj',
+		'inception_4c/1x1',
+		'inception_4c/3x3',
+		'inception_4c/3x3_reduce',
+		'inception_4c/5x5',
+		'inception_4c/5x5_reduce',
+		'inception_4c/output',
+		'inception_3a/1x1',
+		'inception_3a/3x3',
+		'inception_3b/5x5',
+		'inception_3b/output',
+		'inception_3b/pool',
+	],
+	'features':range(-1,256),
+	'cyclefx': [
+		{
+			'name': 'inception_xform',
+			'params': {'scale':0.05}
+		},
+		{
+			'name': 'octave_scaler',
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':2.2}
+		},
+	],
+	'stepfx': [
+		{
+			'name': 'bilateral_filter',
+			'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 15}
+		},
+
+	]
+})
+
+
+program.append({
 	'name':'cambrian-explanation',
 	'iterations':10,
 	'step_size':3.,
@@ -358,55 +409,6 @@ program.append({
 	]
 })
 
-program.append({
-	'name':'cambrian-candidate-googlenet',
-	'iterations':20,
-	'step_size':2,
-	'octaves':4,
-	'octave_cutoff':4,
-	'octave_scale':1.7,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
-	'model':'googlenet',
-	'layers':[
-		'inception_4b/pool',
-		'inception_4c/pool',
-		'inception_4b/3x3_reduce',
-		'inception_4b/5x5',
-		'inception_4b/5x5_reduce',
-		'inception_4b/output',
-		'inception_4b/pool_proj',
-		'inception_4c/1x1',
-		'inception_4c/3x3',
-		'inception_4c/3x3_reduce',
-		'inception_4c/5x5',
-		'inception_4c/5x5_reduce',
-		'inception_4c/output',
-		'inception_3a/1x1',
-		'inception_3a/3x3',
-		'inception_3b/5x5',
-		'inception_3b/output',
-		'inception_3b/pool',
-	],
-	'features':range(-1,256),
-	'cyclefx': [
-		{
-			'name': 'inception_xform',
-			'params': {'scale':0.05}
-		},
-		{
-			'name': 'octave_scaler',
-			'params': {'step':0.01, 'min_scale':1.4, 'max_scale':2.2}
-		},
-	],
-	'stepfx': [
-		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 15}
-		},
-
-	]
-})
 
 
 # program.append({

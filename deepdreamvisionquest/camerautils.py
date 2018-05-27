@@ -175,6 +175,10 @@ class MotionDetector(object):
         self.history = []
         self.history_queue_length = 10
         self.monitor_msg = '****'
+        self.peak = 0
+        self.peak_last = 0
+        self.peak_avg = 0
+        self.peak_statusmsg = 'Peak is static'
 
         # dataexport
         self.export = open("motiondata/motiondata-test-11.txt","w+")

@@ -223,18 +223,13 @@ class Viewport(object):
         self.listener = listener
         self.force_refresh = True
         self.image = None
-        self.time_counter = 0
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     def show(self, image):
-        self.time_counter += 1
-        # image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
-        image = Composer.update(image) # post process with cycleFX
-
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
 
-        # temp support to show debug messagiung  in main window
+        # temp support to show debug messaging  in main window
         motiondetector = Webcam.get().motiondetector
         cv2.putText(image, 'count', (20, 20), FONT, 0.5, WHITE)
         cv2.putText(image, '{:>10}'.format(motiondetector.delta_count), (80, 20), FONT, 0.5, WHITE)
@@ -248,6 +243,11 @@ class Viewport(object):
         cv2.putText(image, 'history', (20, 80), FONT, 0.5, WHITE)
         cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history), (80, 80), FONT, 0.5, WHITE)
 
+        cv2.putText(image, 'dreaming', (20, 100), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(Composer.isDreaming), (80, 100), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:10}'.format(motiondetector.peak_statusmsg), (80, 120), FONT, 0.5, WHITE)
 
         cv2.imshow(self.window_name, image) # draw to window
 
@@ -288,21 +288,15 @@ class Composer(object):
     # this happens on init
     def __init__(self):
         self.isDreaming = False
-        self.is_compositing_enabled = False
-        self.xform_scale = 0.03
+        self.xform_scale = 0.05
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
-        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
-        self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
-        self.ramp_stopped = False
-        self.ramp_started = False
+        self.dreambuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.opacity = 0
         self.buffer3_opacity = 1.0
-        self.ramp_increment = 0
-        self.b_cycle = False
 
     def send(self, channel, img):
         self.buffer[channel] = img
@@ -326,60 +320,10 @@ class Composer(object):
         return self.mixbuffer
 
     def update(self, image):
-        if self.isDreaming:
-            for fx in Model.cyclefx:
-                if fx['name'] == 'inception_xform':
-                    image = FX.inception_xform(image, Display.screensize, **fx['params'])
-                    Composer.dreambuffer = image
-            Composer.opacity = 0.0
-        # else:
-        #     motion.dream_offset = 0
-        self.isDreaming = False
-
+        for fx in Model.cyclefx:
+            if fx['name'] == 'inception_xform':
+                image = FX.inception_xform(image, **fx['params'])
         return image
-
-    def ramp_init(self):
-        log.debug('ramp start')
-        Thread(target=self.ramp_update, args=()).start()
-        return self
-
-    def ramp_update(self):
-        # loop until the thread is stopped
-
-        while True:
-            if self.ramp_stopped:
-                log.debug('ramp stopped')
-                return
-
-            if self.ramp_started:
-                self.ramp_increment = -0.1
-                # time.sleep(0.2)
-            else:
-                self.ramp_increment = 0
-                self.opacity = 0.3
-
-            self.opacity += self.ramp_increment
-            if self.opacity <= 0.0:
-                self.opacity = 0.0
-                self.ramp_started = False
-
-        return
-        # Where does this return to?
-
-    def ramp_start(self):
-        if not self.ramp_started:
-            self.ramp_started = True
-            self.opacity = 0.5
-
-    def ramp_pause(self):
-        pass
-
-
-    def ramp_stop(self):
-        log.debug('ramp stop')
-        self.ramp_stopped = True
-
-
 
 class FX(object):
     def __init__(self):
@@ -411,9 +355,11 @@ class FX(object):
         update_HUD_log('scale',model.octave_scale)
         log.debug('octave_scale: {}'.format(model.octave_scale))
 
-    def inception_xform(self, image, capture_size, scale):
-        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[1]*scale/2, capture_size[0]*scale/2, 0], order=1)
+    def inception_xform(self, image, scale):
+        h = image.shape[0]
+        w = image.shape[1]
+        image = nd.affine_transform(image, [1-scale,1-scale,1], [h*scale/2,w*scale/2,0], order=1)
+        return image
 
     def median_blur(self, image, kernel_shape):
         return cv2.medianBlur(image, kernel_shape)
@@ -719,7 +665,6 @@ def listener():
 
     if key == 27: # ESC: Exit
         log.warning('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
-        Composer.ramp_stop() # shutdown down the Composer ramp counter
         Viewport.shutdown()
         Webcam.get().motiondetector.export.close() # close the motion detector data export file
         return
@@ -810,8 +755,6 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Fal
 def remapValuetoRange(val, src, dst):
     # src [min,max] old range
     # dst [min,max] new range
-    # if src[1] == 0:
-    #     src[1] = 0.1
     remapped_Value = ((val-src[0])/(src[1]-src[0]))*(dst[1]-dst[0])+dst[0]
     return clamp(remapped_Value, [0.0, 1.0])
 
@@ -824,68 +767,69 @@ def clamp(value, range):
 # -------
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
 
-    # point to webcam
     motion = Webcam.get().motiondetector
+    peak_history = 0
+    peak = 0
+    peak_statusmsg = 'static'
 
-    # SETUPOCTAVES---
+    # SETUP OCTAVES
     src = Model.net.blobs['data']
     octaves = [rgb2caffe(Model.net, base_img)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, round((1.0 / octave_scale),2), round((1.0 / octave_scale),2)), order=1))
     detail = np.zeros_like(octaves[-1])
 
-    # OCTAVEARRAY CYCLE, last (smallest) octave first
     for octave, octave_current in enumerate(octaves[::-1]):
         h, w = octave_current.shape[-2:]
         h1, w1 = detail.shape[-2:]
         detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
-
-        # reshape the network's input image data to match octave_current shape
         src.reshape(1,3,h,w)
-
-        # add the changed details to the network's input image
         src.data[0] = octave_current + detail
-
         Model.stepsize = Model.stepsize_base # reset step size to default each octave
-        step_params['step_size'] = Model.stepsize # modifying the **step_params list for makestep
+        step_params['step_size'] = Model.stepsize # modify the **step_params list for makestep
 
-        # OCTAVECYCLE
+        # OCTAVE CYCLE
         i=0
         while i < iteration_max:
             make_step(Model.net, end=end, clip=clip, **step_params)
-            log.debug('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
 
-            Composer.buffer3_opacity -= Composer.buffer3_opacity*0.05
-            if Composer.buffer3_opacity < 0.0:
-                Composer.buffer3_opacity = 0.0
-            # stored here for postproduction fx
-            Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
-            # Composer.dreambuffer = Composer.dreambuffer*(255.0/np.percentile(Composer.dreambuffer, 98.0))
+            motion.peak_last = motion.peak
+            motion.peak = motion.delta_count_history_peak
 
-            Composer.send(0, Composer.dreambuffer)
-            if Composer.isDreaming == False:
-                Composer.send(1, Webcam.get().read())
-                Composer.send(0, Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity))
+            # is peak value increasing or decreasing?
+            motion.peak_avg = (motion.peak+motion.peak_last)/2
 
-            peak = motion.delta_count_history_peak
+            if motion.peak > motion.peak_avg:
+                motion.peak_statusmsg = 'Peak is increasing'
+                if motion.peak > motion.floor:
+                    if Composer.opacity < 0.5:
+                        Viewport.force_refresh = True
+            else:
+                if motion.peak == motion.peak_avg:
+                    motion.peak_statusmsg = 'Peak is static'
+                    Viewport.force_refresh = False
+                else:
+                    motion.peak_statusmsg = 'Peak is decreasing'
+                    if Composer.opacity < 0.1:
+                        Viewport.force_refresh = True
 
-            if peak < motion.floor:
+            log.warning(motion.peak_statusmsg)
+
+
+
+            if motion.peak < motion.floor:
                 Composer.opacity -= 0.1
                 if Composer.opacity <= 0.1:
                     Composer.opacity = 0.0
             else:
                 Composer.opacity = remapValuetoRange(
                     motion.delta_count_history,
-                    [0.0, 100000],
+                    [20.0, 120000],
                     [0.0, 1.0]
                 )
 
-            # if Composer.opacity < 0.0:
-            #     Composer.opacity = 0.0
-            # if Composer.opacity > 1.0:
-            #     Composer.opacity = 1.0
 
-            log.warning(
+            log.debug(
                 'count:{:>06} trigger:{:>06} peak:{:>06} opacity:{:03.2}'
                 .format(
                     motion.delta_count,
@@ -895,29 +839,20 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 )
             )
 
-            # ***
+            # update Composer buffers
+            Composer.send(0, caffe2rgb(Model.net, src.data[0]))
+            Composer.send(1, Webcam.get().read())
+
             # send the main mix to the viewport
             comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
-            # Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
             Viewport.show(comp1)
-
-
-            # log.warning('buffer3_opacity:{}'.format(Composer.buffer3_opacity))
-
-            # check if motion detected
-            # if motion.wasMotionDetected:
-                # Viewport.force_refresh = True
-                # Composer.send(1, Webcam.get().read())
-
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
-                # copy current state of neural net to this buffer
-                log.warning('resetting buffer3_opacity to 1.0')
-                Composer.send(0, caffe2rgb(Model.net, src.data[0]))
+                log.warning('**** Viewport Force refresh ****')
+                # Composer.send(0, caffe2rgb(Model.net, src.data[0]))
                 Composer.buffer3_opacity = 1.0
-
-                Composer.isDreaming = False
+                # Composer.isDreaming = False
                 Viewport.force_refresh = False
                 return Webcam.get().read()
 
@@ -929,7 +864,11 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             if step_params['step_size'] < 1.1:
                 step_params['step_size'] = 1.1
 
-            i += 1
+            # increment step
+            i += 1            
+
+            # LOGGING
+            log.debug('{:02d} {:02d} {:02d} peak:{} peak_history:{}'.format(octave, i, iteration_max, motion.peak, motion.peak_last))
 
             # HUD logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
@@ -954,29 +893,38 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('interval', intervalmsg)
             update_HUD_log('runtime', round(time.time() - Model.installation_startup, 2))
 
-        # CUTOFF
-        # this turned out to be the last octave calculated in the series
-        if octave == Model.octave_cutoff:
-            Composer.isDreaming = True
-            return caffe2rgb(Model.net, src.data[0])
-
+        # SETUP FOR NEXT OCTAVE
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
 
-        # reduce iteration count for the next octave
+        # calulate iteration count for the next octave
         iteration_max = int(iteration_max - (iteration_max * Model.iteration_mult))
 
-    Composer.isDreaming = True # yes, we'll be dreaming about this output again
+        # CUTOFF THOUGH?
+        # this turned out to be the last octave calculated in the series
+        if octave == Model.octave_cutoff:
+            log.warning('cutoff at octave: {}'.format(octave))
+            break
 
-    # copy current state of neural net to this buffer
-    log.warning('resetting buffer3_opacity to 1.0')
-    # Composer.send(0, caffe2rgb(Model.net, src.data[0]))
-    # Composer.buffer3_opacity = 1.0
+    motion.peak_last = motion.peak
+    motion.peak = motion.delta_count_history_peak
 
-    # rwe mad it through the function without interruption
-    # return the current state of net data blob
+    # is peak value increasing or decreasing?
+    motion.peak_avg = (motion.peak+motion.peak_last)/2
+
+    if motion.peak > motion.peak_avg:
+        motion.peak_statusmsg = 'Peak is increasing'
+    else:
+        if motion.peak == motion.peak_avg:
+            motion.peak_statusmsg = 'Peak is static'
+        else:
+            motion.peak_statusmsg = 'Peak is decreasing'
+
+    log.warning(motion.peak_statusmsg)
+
+    log.warning('completed full rem cycle')
+    # Composer.isDreaming = True # yes, we'll be dreaming about this output again
     return caffe2rgb(Model.net, src.data[0])
-
 
 
 # -------
@@ -998,9 +946,9 @@ def main():
     update_HUD_log('settings',Model.package_name)
 
     # the madness begins
-    img = Webcam.get().read()
-    Composer.send(1, img)
-    Composer.dreambuffer = img # initial camera image for starting
+    initial_image = Webcam.get().read()
+    Composer.send(1, initial_image)
+    Composer.dreambuffer = initial_image # initial camera image for starting
 
     while True:
         log.debug('new cycle')
@@ -1027,21 +975,14 @@ def main():
             feature = Model.features[Model.current_feature]
             )
 
-        # post-cycle composite
-        # if Composer.isDreaming:
-        #     Composer.send(0, Composer.dreambuffer) # return value from deepdream
-        #     Composer.send(3, Composer.dreambuffer) # return value from deepdream
-
-
-        # comp1 = Composer.mix( Composer.buffer[1], Composer.buffer[0], Composer.opacity)
-        # Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
+        Composer.dreambuffer = Composer.update(Composer.dreambuffer)
 
         # logging
         later = time.time()
         duration_msg = '{:.2f}s'.format(later - now)
         now = time.time() # the new now
         update_HUD_log('cycle_time',duration_msg)
-        log.debug('cycle time: {}\n{}'.format(duration_msg,'-'*80))
+        log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
 
 
 
