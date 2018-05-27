@@ -810,9 +810,14 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Fal
 def remapValuetoRange(val, src, dst):
     # src [min,max] old range
     # dst [min,max] new range
-    if src[1] == 0:
-        src[1] = 0.1
-    return ((val-src[0])/(src[1]-src[0]))*(dst[1]-dst[0])+dst[0]
+    # if src[1] == 0:
+    #     src[1] = 0.1
+    remapped_Value = ((val-src[0])/(src[1]-src[0]))*(dst[1]-dst[0])+dst[0]
+    return clamp(remapped_Value, [0.0, 1.0])
+
+# clamps provided value between provided range
+def clamp(value, range):
+    return max( range[0], min(value, range[1]))
 
 # -------
 # REM CYCLE
