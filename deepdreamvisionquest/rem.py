@@ -233,16 +233,27 @@ class Viewport(object):
 
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
+
+        # temp support to show debug messagiung  in main window
+        motiondetector = Webcam.get().motiondetector
+        cv2.putText(image, 'count', (20, 20), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count), (80, 20), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'trigger', (20, 40), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_trigger), (80, 40), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'peak', (20, 60), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history_peak), (80, 60), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'history', (20, 80), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history), (80, 80), FONT, 0.5, WHITE)
+
+
         cv2.imshow(self.window_name, image) # draw to window
 
         self.monitor() # handle motion detection viewport
         self.listener() # listen for keyboard events
 
-        # GRB: temp structure for saving fully rendered frames
-        if self.time_counter > 1 and self.username != 'silent':
-            self.export(image)
-            self.time_counter = 0
-        self.image = image
 
     def export(self,image):
         make_sure_path_exists(self.imagesavepath)
@@ -261,14 +272,10 @@ class Viewport(object):
 
     def monitor(self):
         if self.motiondetect_log_enabled:
-            img = Webcam.get().t_delta_framebuffer
             msg = Webcam.get().motiondetector.monitor_msg
-            # overlay = img # composite motion stats here
-            # opacity = 1.0
+            img = Webcam.get().t_delta_framebuffer
             cv2.putText(img, msg, (20, 20), FONT, 0.5, WHITE)
-            # img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
             cv2.imshow('delta', img)
-
 
     def shutdown(self):
         cv2.destroyAllWindows()
@@ -402,7 +409,7 @@ class FX(object):
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
-        log.warning('octave_scale: {}'.format(model.octave_scale))
+        log.debug('octave_scale: {}'.format(model.octave_scale))
 
     def inception_xform(self, image, capture_size, scale):
         # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
@@ -852,47 +859,57 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             Composer.send(0, Composer.dreambuffer)
             if Composer.isDreaming == False:
-                Composer.send(2, Webcam.get().read())
-                Composer.send(0, Composer.mix( Composer.buffer[0], Composer.buffer[2], Composer.opacity))
+                Composer.send(1, Webcam.get().read())
+                Composer.send(0, Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity))
 
             peak = motion.delta_count_history_peak
-            if peak < motion.floor * 2:
-                peak = 100000.0
-                Composer.send(1, Composer.dreambuffer)
-            Composer.opacity = remapValuetoRange(
-                motion.delta_count_history,
-                [0.0, peak],
-                [0.0, 1.0]
-            )
-            # if peak < 10:
-            #     Composer.send(1, Composer.dreambuffer)
 
-            log.debug(
-                'history:{:06} peak:{:06} opacity:{:03.2}'
+            if peak < motion.delta_trigger:
+                Composer.opacity -= 0.1
+                if Composer.opacity <= 0.1:
+                    Composer.opacity = 0.0
+            else:
+                Composer.opacity = remapValuetoRange(
+                    motion.delta_count_history,
+                    [0.0, 100000],
+                    [0.0, 1.0]
+                )
+
+            # if Composer.opacity < 0.0:
+            #     Composer.opacity = 0.0
+            # if Composer.opacity > 1.0:
+            #     Composer.opacity = 1.0
+
+            log.warning(
+                'detect:{} history:{:06} peak:{:06} opacity:{:03.2}'
                 .format(
+                    motion.wasMotionDetected,
                     motion.delta_count_history,
                     motion.delta_count_history_peak,
                     Composer.opacity
                 )
             )
 
+            # ***
             # send the main mix to the viewport
-            comp1 = Composer.mix( Composer.buffer[1], Composer.buffer[0], Composer.opacity)
-            Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
+            comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
+            # Viewport.show(Composer.mix(comp1, Composer.buffer[3], Composer.buffer3_opacity))
+            Viewport.show(comp1)
 
-            log.warning('buffer3_opacity:{}'.format(Composer.buffer3_opacity))
+
+            # log.warning('buffer3_opacity:{}'.format(Composer.buffer3_opacity))
 
             # check if motion detected
-            if motion.wasMotionDetected:
-                Viewport.force_refresh = True
-                Composer.send(1, Webcam.get().read())
+            # if motion.wasMotionDetected:
+                # Viewport.force_refresh = True
+                # Composer.send(1, Webcam.get().read())
 
 
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
                 # copy current state of neural net to this buffer
                 log.warning('resetting buffer3_opacity to 1.0')
-                Composer.send(3, caffe2rgb(Model.net, src.data[0]))
+                Composer.send(0, caffe2rgb(Model.net, src.data[0]))
                 Composer.buffer3_opacity = 1.0
 
                 Composer.isDreaming = False
@@ -948,10 +965,11 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     # copy current state of neural net to this buffer
     log.warning('resetting buffer3_opacity to 1.0')
-    Composer.send(3, caffe2rgb(Model.net, src.data[0]))
-    Composer.buffer3_opacity = 1.0
+    # Composer.send(0, caffe2rgb(Model.net, src.data[0]))
+    # Composer.buffer3_opacity = 1.0
 
-    # return the resulting image (converted back to x,y,RGB structured matrix)
+    # rwe mad it through the function without interruption
+    # return the current state of net data blob
     return caffe2rgb(Model.net, src.data[0])
 
 
