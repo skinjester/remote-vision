@@ -233,7 +233,7 @@ class MotionDetector(object):
         # keep track of peak value
         if self.delta_count_history > self.delta_count_history_peak:
             self.delta_count_history_peak = self.delta_count_history
-        if self.delta_count_history == 0:
+        if self.delta_count_history < self.floor:
             self.delta_count_history_peak = 0
 
     def add_to_history(self,value):

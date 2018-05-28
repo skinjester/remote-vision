@@ -118,7 +118,8 @@ class Model(object):
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
-            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+            # self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([200.0, 0.0,0.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -368,6 +369,7 @@ class FX(object):
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
     def nd_gaussian(self, img, sigma, order):
+        print '******'
         img[0] = nd.filters.gaussian_filter(img[0], sigma, order=0)
         img[1] = nd.filters.gaussian_filter(img[1], sigma, order=0)
         img[2] = nd.filters.gaussian_filter(img[2], sigma, order=0)
@@ -702,9 +704,11 @@ def postprocess_step(net, net_data_blob):
             if fx['name'] == 'bilateral_filter':
                 img = FX.bilateral_filter(img, **fx['params'])
 
-            # if fx['name'] == 'nd_gaussian':
-            #     img = net_data_blob
-            #     img = FX.nd_gaussian(img, **fx['params'])
+            if fx['name'] == 'nd_gaussian':
+                # img = net_data_blob
+
+                img = FX.nd_gaussian(net_data_blob, **fx['params'])
+                img = caffe2rgb(net, net_data_blob)
 
             # if fx['name'] == 'step_opacity':
             #     FX.step_mixer(**fx['params'])
@@ -768,9 +772,11 @@ def clamp(value, range):
 def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
 
     motion = Webcam.get().motiondetector
-    peak_history = 0
-    peak = 0
-    peak_statusmsg = 'static'
+
+'''
+cycle_count +=1
+'''
+
 
     # SETUP OCTAVES
     src = Model.net.blobs['data']
@@ -801,21 +807,16 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             if motion.peak > motion.peak_avg:
                 motion.peak_statusmsg = 'Peak is increasing'
-                if motion.peak > motion.floor:
-                    if Composer.opacity < 0.5:
-                        Viewport.force_refresh = True
             else:
                 if motion.peak == motion.peak_avg:
                     motion.peak_statusmsg = 'Peak is static'
-                    Viewport.force_refresh = False
+                    # Viewport.force_refresh = False
                 else:
                     motion.peak_statusmsg = 'Peak is decreasing'
-                    if Composer.opacity < 0.1:
-                        Viewport.force_refresh = True
+                    Viewport.force_refresh = True
+
 
             log.warning(motion.peak_statusmsg)
-
-
 
             if motion.peak < motion.floor:
                 Composer.opacity -= 0.1
@@ -854,6 +855,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 Composer.buffer3_opacity = 1.0
                 # Composer.isDreaming = False
                 Viewport.force_refresh = False
+                '''
+                cycle+count = 0
+                '''
                 return Webcam.get().read()
 
             # attenuate step size over rem cycle
@@ -865,7 +869,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                 step_params['step_size'] = 1.1
 
             # increment step
-            i += 1            
+            i += 1
 
             # LOGGING
             log.debug('{:02d} {:02d} {:02d} peak:{} peak_history:{}'.format(octave, i, iteration_max, motion.peak, motion.peak_last))
@@ -905,22 +909,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         if octave == Model.octave_cutoff:
             log.warning('cutoff at octave: {}'.format(octave))
             break
-
-    motion.peak_last = motion.peak
-    motion.peak = motion.delta_count_history_peak
-
-    # is peak value increasing or decreasing?
-    motion.peak_avg = (motion.peak+motion.peak_last)/2
-
-    if motion.peak > motion.peak_avg:
-        motion.peak_statusmsg = 'Peak is increasing'
-    else:
-        if motion.peak == motion.peak_avg:
-            motion.peak_statusmsg = 'Peak is static'
-        else:
-            motion.peak_statusmsg = 'Peak is decreasing'
-
-    log.warning(motion.peak_statusmsg)
 
     log.warning('completed full rem cycle')
     # Composer.isDreaming = True # yes, we'll be dreaming about this output again
@@ -1049,7 +1037,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=5000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=50000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
