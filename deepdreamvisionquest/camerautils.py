@@ -173,7 +173,7 @@ class MotionDetector(object):
         self.floor = floor
         self.update_hud_log = log
         self.history = []
-        self.history_queue_length = 10
+        self.history_queue_length = 100
         self.monitor_msg = '****'
         self.peak = 0
         self.peak_last = 0

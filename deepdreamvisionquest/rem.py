@@ -773,10 +773,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     motion = Webcam.get().motiondetector
 
-'''
-cycle_count +=1
-'''
-
+    '''
+    cycle_count +=1
+    '''
 
     # SETUP OCTAVES
     src = Model.net.blobs['data']
@@ -906,7 +905,7 @@ cycle_count +=1
 
         # CUTOFF THOUGH?
         # this turned out to be the last octave calculated in the series
-        if octave == Model.octave_cutoff:
+        if octave > Model.octave_cutoff:
             log.warning('cutoff at octave: {}'.format(octave))
             break
 
@@ -1037,7 +1036,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=50000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=30000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
