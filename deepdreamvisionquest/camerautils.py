@@ -173,7 +173,7 @@ class MotionDetector(object):
         self.floor = floor
         self.update_hud_log = log
         self.history = []
-        self.history_queue_length = 100
+        self.history_queue_length = 50
         self.monitor_msg = '****'
         self.peak = 0
         self.peak_last = 0
@@ -231,10 +231,14 @@ class MotionDetector(object):
         self.delta_count_history = self.delta_count
 
         # keep track of peak value
-        if self.delta_count_history > self.delta_count_history_peak:
-            self.delta_count_history_peak = self.delta_count_history
-        if self.delta_count_history < self.floor:
+        # if self.delta_count_history > self.delta_count_history_peak:
+        #     self.delta_count_history_peak = self.delta_count_history
+        self.delta_count_history_peak = max(self.history)
+
+        if self.delta_count < self.floor:
             self.delta_count_history_peak = 0
+
+        log.warning('max history:{} vs peak:{}'.format(max(self.history), self.delta_count_history_peak))
 
     def add_to_history(self,value):
         self.history.append(self.delta_count)

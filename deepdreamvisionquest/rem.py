@@ -819,10 +819,10 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
                     # Viewport.force_refresh = False
                 else:
                     motion.peak_statusmsg = 'Peak is decreasing'
+                    # if motion.delta_count > motion.floor: 
                     Viewport.force_refresh = True
 
-
-            log.warning(motion.peak_statusmsg)
+            log.debug(motion.peak_statusmsg)
 
             if motion.peak < motion.floor:
                 Composer.opacity -= 0.1
@@ -831,8 +831,8 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             else:
                 Composer.opacity = remapValuetoRange(
                     motion.delta_count_history,
-                    [20.0, 120000],
-                    [0.0, 1.0]
+                    [20.0, motion.delta_count_history_peak],
+                    [0.0, 0.5]
                 )
 
 
@@ -1043,7 +1043,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=30000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=60000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
