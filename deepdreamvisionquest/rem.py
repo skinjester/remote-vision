@@ -248,7 +248,7 @@ class Viewport(object):
         cv2.putText(image, '{:>10}'.format(Composer.isDreaming), (80, 100), FONT, 0.5, WHITE)
 
         cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:10}'.format(motiondetector.peak_statusmsg), (80, 120), FONT, 0.5, WHITE)
+        cv2.putText(image, '{}'.format(motiondetector.peak_statusmsg), (120, 120), FONT, 0.5, WHITE)
 
         cv2.imshow(self.window_name, image) # draw to window
 
@@ -812,13 +812,13 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             motion.peak_avg = (motion.peak+motion.peak_last)/2
 
             if motion.peak > motion.peak_avg:
-                motion.peak_statusmsg = 'Peak is increasing'
+                motion.peak_statusmsg = '+++++'
             else:
                 if motion.peak == motion.peak_avg:
-                    motion.peak_statusmsg = 'Peak is static'
+                    motion.peak_statusmsg = '.'
                     # Viewport.force_refresh = False
                 else:
-                    motion.peak_statusmsg = 'Peak is decreasing'
+                    motion.peak_statusmsg = '-----'
                     # if motion.delta_count > motion.floor: 
                     Viewport.force_refresh = True
 

@@ -13,8 +13,8 @@ capture_h = 720
 # capture_h = 720
 
 # 4K camera doesn't support this display size
-capture_w = 864
-capture_h = 480
+# capture_w = 864
+# capture_h = 480
 
 # capture_w = 640
 # capture_h = 360
