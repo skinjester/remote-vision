@@ -186,22 +186,72 @@ stepfx_default = [
 ]
 
 program.append({
-	'name':'cambrian-candidate-googlenet',
-	'iterations':20,
-	'step_size':2,
+	'name':'cambrian-implosion',
+	'iterations':10,
+	'step_size':10.,
 	'octaves':4,
 	'octave_cutoff':4,
-	'octave_scale':1.7,
-	'iteration_mult':0.0,
-	'step_mult':0.0,
+	'octave_scale':1.8,
+	'iteration_mult':0.25,
+	'step_mult':-0.01,
 	'model':'googlenet',
 	'layers':[
+		'inception_4b/5x5',
+		'inception_4c/pool',
 		'inception_4b/pool',
 		'inception_4c/pool',
 		'inception_4b/3x3_reduce',
 		'inception_4b/5x5',
 		'inception_4b/5x5_reduce',
 		'inception_4b/output',
+		'inception_4b/pool_proj',
+		'inception_4c/1x1',
+		'inception_4c/3x3',
+		'inception_4c/3x3_reduce',
+		'inception_5a/output',
+		'inception_5a/pool',
+		'inception_5b/1x1',
+		'inception_5b/3x3',
+		'inception_5b/3x3_reduce',
+	],
+	'features':range(-1,256),
+	'cyclefx': [
+	    {
+			'name': 'inception_xform',
+			'params': {'scale':0.02}
+		},
+	],
+	'stepfx': [
+
+	    {
+	    	'name': 'nd_gaussian',
+			'params': {'sigma': 0.7, 'order':0}
+	    },
+	    {
+	    	'name': 'octave_scaler',
+	    	'params': {'step':0.001, 'min_scale':1.2, 'max_scale':1.8}
+	    },
+	]
+})
+
+
+program.append({
+	'name':'cambrian-candidate-googlenet',
+	'iterations':30,
+	'step_size':2.2,
+	'octaves':5,
+	'octave_cutoff':5,
+	'octave_scale':1.5,
+	'iteration_mult':0.5,
+	'step_mult':0.05,
+	'model':'googlenet',
+	'layers':[
+		'inception_4b/output',
+		'inception_4b/pool',
+		'inception_4c/pool',
+		'inception_4b/3x3_reduce',
+		'inception_4b/5x5',
+		'inception_4b/5x5_reduce',
 		'inception_4b/pool_proj',
 		'inception_4c/1x1',
 		'inception_4c/3x3',
@@ -223,14 +273,19 @@ program.append({
 		},
 		{
 			'name': 'octave_scaler',
-			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':2.2}
+			'params': {'step':0.1, 'min_scale':1.4, 'max_scale':2.0}
 		},
+
 	],
 	'stepfx': [
+		# {
+		# 	'name': 'bilateral_filter',
+		# 	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 23}
+		# },
 		{
-			'name': 'bilateral_filter',
-			'params': {'radius': 3, 'sigma_color':20, 'sigma_xy': 15}
-		},
+			'name': 'median_blur',
+			'params': {'kernel_shape':3, 'interval': 3}
+		}
 
 	]
 })
@@ -647,7 +702,7 @@ program.append({
 program.append({
 	'name':'cambrian-implosion',
 	'iterations':10,
-	'step_size':1.8,
+	'step_size':2.8,
 	'octaves':5,
 	'octave_cutoff':5,
 	'octave_scale':1.5,
@@ -673,8 +728,8 @@ program.append({
 	'stepfx': [
 
 	    {
-	    	'name': 'bilateral_filter',
-	    	'params': {'radius': 3, 'sigma_color':10, 'sigma_xy': 10}
+	    	'name': 'nd_gaussian',
+			'params': {'sigma': 3.0, 'order':0}
 	    },
 	]
 })

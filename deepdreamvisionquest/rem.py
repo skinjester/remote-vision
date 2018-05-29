@@ -119,7 +119,7 @@ class Model(object):
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
             # self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
-            self.param_fn, mean=np.float32([200.0, 0.0,0.0]), channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([200.0, 10.0,190.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -298,6 +298,7 @@ class Composer(object):
         self.dreambuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
         self.opacity = 0
         self.buffer3_opacity = 1.0
+        self.cycle_count = 0
 
     def send(self, channel, img):
         self.buffer[channel] = img
@@ -334,11 +335,15 @@ class FX(object):
         self.program_start_time = 0
 
     def xform_array(self, img, amplitude, wavelength):
-        def shiftfunc(n):
-            return int(amplitude*np.sin(n/wavelength))
-        for n in range(img.shape[1]): # number of rows in the image
-            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+
+        # def shiftfunc(n):
+        #     return int(amplitude*np.sin(n/wavelength))
+        # for n in range(img.shape[1]): # number of rows in the image
+        #     img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+        print '****'
+        img = sobel(img)
         return img
+
 
     def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
         print 'model: ', model
@@ -362,14 +367,18 @@ class FX(object):
         image = nd.affine_transform(image, [1-scale,1-scale,1], [h*scale/2,w*scale/2,0], order=1)
         return image
 
-    def median_blur(self, image, kernel_shape):
-        return cv2.medianBlur(image, kernel_shape)
+    def median_blur(self, image, kernel_shape, interval):
+        if interval == 0:
+            image = cv2.medianBlur(image, kernel_shape)
+            return image
+        if (int(time.time()) % interval):
+            image = cv2.medianBlur(image, kernel_shape)
+        return image
 
     def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
     def nd_gaussian(self, img, sigma, order):
-        print '******'
         img[0] = nd.filters.gaussian_filter(img[0], sigma, order=0)
         img[1] = nd.filters.gaussian_filter(img[1], sigma, order=0)
         img[2] = nd.filters.gaussian_filter(img[2], sigma, order=0)
@@ -773,9 +782,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     motion = Webcam.get().motiondetector
 
-    '''
-    cycle_count +=1
-    '''
+    Composer.cycle_count += 1
 
     # SETUP OCTAVES
     src = Model.net.blobs['data']
@@ -943,11 +950,11 @@ def main():
 
         if Model.cyclefx is not None:
             for fx in Model.cyclefx:
+                if fx['name'] == 'octave_scaler':
+                    FX.octave_scaler(model=Model, **fx['params'])
                 if fx['name'] == 'xform_array':
                     FX.xform_array(Composer.dreambuffer, **fx['params'])
 
-                if fx['name'] == 'octave_scaler':
-                    FX.octave_scaler(model=Model, **fx['params'])
 
         # kicks off rem sleep
         Composer.dreambuffer = deepdream(
