@@ -118,8 +118,8 @@ class Model(object):
 
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
-            # self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
-            self.param_fn, mean=np.float32([200.0, 10.0,190.0]), channel_swap=(2, 1, 0))
+            self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+            # self.param_fn, mean=np.float32([20.0, 10.0,190.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -156,7 +156,7 @@ class Model(object):
 
     def set_endlayer(self,end):
         self.end = end
-        Viewport.force_refresh = True
+        Viewport.refresh()
         log.warning('layer: {} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
         update_HUD_log('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
 
@@ -173,7 +173,7 @@ class Model(object):
         self.set_endlayer(self.layers[self.current_layer])
 
     def set_featuremap(self):
-        Viewport.force_refresh = True
+        Viewport.refresh()
         # featuremap = self.features[self.current_feature]
         log.warning('featuremap:{}'.format(self.features[self.current_feature]))
         update_HUD_log('featuremap',self.features[self.current_feature])
@@ -250,6 +250,7 @@ class Viewport(object):
         cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
         cv2.putText(image, '{}'.format(motiondetector.peak_statusmsg), (120, 120), FONT, 0.5, WHITE)
 
+
         cv2.imshow(self.window_name, image) # draw to window
 
         self.monitor() # handle motion detection viewport
@@ -274,9 +275,9 @@ class Viewport(object):
     def monitor(self):
         if self.motiondetect_log_enabled:
             msg = Webcam.get().motiondetector.monitor_msg
-            img = Webcam.get().t_delta_framebuffer
-            cv2.putText(img, msg, (20, 20), FONT, 0.5, WHITE)
-            cv2.imshow('delta', img)
+            image = Webcam.get().t_delta_framebuffer
+            cv2.putText(image, msg, (20, 20), FONT, 0.5, WHITE)
+            cv2.imshow('delta', image)
 
     def shutdown(self):
         cv2.destroyAllWindows()
@@ -300,8 +301,8 @@ class Composer(object):
         self.buffer3_opacity = 1.0
         self.cycle_count = 0
 
-    def send(self, channel, img):
-        self.buffer[channel] = img
+    def send(self, channel, image):
+        self.buffer[channel] = image
 
         ### any input is resized to match viewport dimensions
         self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
@@ -309,11 +310,11 @@ class Composer(object):
         # convert and clip any floating point values into RGB bounds as integers
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
 
-    def mix(self, img_back, img_front, mix_opacity):
+    def mix(self, image_back, image_front, mix_opacity):
         cv2.addWeighted(
-            img_front,
+            image_front,
             mix_opacity,#
-            img_back,
+            image_back,
             1-mix_opacity,
             0,
             self.mixbuffer
@@ -334,15 +335,14 @@ class FX(object):
         self.cycle_start_time = 0
         self.program_start_time = 0
 
-    def xform_array(self, img, amplitude, wavelength):
+    def xform_array(self, image, amplitude, wavelength):
 
         # def shiftfunc(n):
         #     return int(amplitude*np.sin(n/wavelength))
-        # for n in range(img.shape[1]): # number of rows in the image
-        #     img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
+        # for n in range(image.shape[1]): # number of rows in the image
+        #     image[:, n] = np.roll(image[:, n], 3*shiftfunc(n))
         print '****'
-        img = sobel(img)
-        return img
+        return image
 
 
     def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
@@ -378,12 +378,12 @@ class FX(object):
     def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
-    def nd_gaussian(self, img, sigma, order):
-        img[0] = nd.filters.gaussian_filter(img[0], sigma, order=0)
-        img[1] = nd.filters.gaussian_filter(img[1], sigma, order=0)
-        img[2] = nd.filters.gaussian_filter(img[2], sigma, order=0)
-        # img = nd.filters.gaussian_filter(img, sigma, order=0)
-        return img
+    def nd_gaussian(self, image, sigma, order):
+        image[0] = nd.filters.gaussian_filter(image[0], sigma, order=0)
+        image[1] = nd.filters.gaussian_filter(image[1], sigma, order=0)
+        image[2] = nd.filters.gaussian_filter(image[2], sigma, order=0)
+        # image = nd.filters.gaussian_filter(image, sigma, order=0)
+        return image
 
     def step_mixer(self,opacity):
         self.stepfx_opacity = opacity
@@ -399,33 +399,16 @@ class FX(object):
     def set_cycle_start_time(self, start_time):
         self.cycle_start_time = start_time
 
-
-
-
-
-# rename this function plz
-def blur(img, sigmax, sigmay):
-    img2 = img.copy()
-    return cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
-
-
-def vignette(img,param):
-    rows,cols = img.shape[:2]
+def vignette(image,param):
+    rows,cols = image.shape[:2]
     kernel_x = cv2.getGaussianKernel(cols,param)
     kernel_y = cv2.getGaussianKernel(rows,param)
     kernel = kernel_y * kernel_x.T
-    mask = 255 * kernel / np.linalg.norm(kernel)
-    output = np.copy(img)
-    for i in range(3):
-        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 2))
+    mask = 22 * kernel / np.linalg.norm(kernel)
+    output = np.copy(image)
+    for i in range(1):
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 512))
     return output
-
-def sobel(img):
-    xgrad = nd.filters.sobel(img, 0)
-    ygrad = nd.filters.sobel(img, 1)
-    combined = np.hypot(xgrad, ygrad)
-    sob = 255 * combined / np.max(combined) # normalize
-    return sob
 
 
 def make_sure_path_exists(directoryname):
@@ -681,11 +664,11 @@ def listener():
         return
 
 # a couple of utility functions for converting to and from Caffe's input image layout
-def rgb2caffe(net, img):
-    return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
+def rgb2caffe(net, image):
+    return np.float32(np.rollaxis(image, 2)[::-1]) - net.transformer.mean['data']
 
-def caffe2rgb(net, img):
-    return np.dstack((img + net.transformer.mean['data'])[::-1])
+def caffe2rgb(net, image):
+    return np.dstack((image + net.transformer.mean['data'])[::-1])
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
@@ -702,25 +685,25 @@ def objective_guide(dst):
 def postprocess_step(net, net_data_blob):
 # takes neural net data blob and converts to RGB
 # then after processing, takes the RGB image and converts back to caffe
-    img = caffe2rgb(net, net_data_blob)
+    image = caffe2rgb(net, net_data_blob)
 
     #  apply any defined stepFX
     if Model.stepfx is not None:
         for fx in Model.stepfx:
             if fx['name'] == 'median_blur':
-                img = FX.median_blur(img, **fx['params'])
+                image = FX.median_blur(image, **fx['params'])
 
             if fx['name'] == 'bilateral_filter':
-                img = FX.bilateral_filter(img, **fx['params'])
+                image = FX.bilateral_filter(image, **fx['params'])
 
             if fx['name'] == 'nd_gaussian':
-                # img = net_data_blob
+                # image = net_data_blob
 
-                img = FX.nd_gaussian(net_data_blob, **fx['params'])
-                img = caffe2rgb(net, net_data_blob)
+                image = FX.nd_gaussian(net_data_blob, **fx['params'])
+                image = caffe2rgb(net, net_data_blob)
 
-            # if fx['name'] == 'step_opacity':
-            #     FX.step_mixer(**fx['params'])
+            if fx['name'] == 'step_opacity':
+                FX.step_mixer(**fx['params'])
 
             if fx['name'] == 'duration_cutoff':
                 FX.duration_cutoff(**fx['params'])
@@ -728,8 +711,8 @@ def postprocess_step(net, net_data_blob):
             if fx['name'] == 'octave_scaler':
                 FX.octave_scaler(model=Model, **fx['params'])
 
-    # img = cv2.addWeighted(img, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
-    return rgb2caffe(Model.net, img)
+    # image = cv2.addWeighted(image, FX.stepfx_opacity, image, 1.0-FX.stepfx_opacity, 0, image)
+    return rgb2caffe(Model.net, image)
 
 
 def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=False, feature=-1, objective=objective_L2):
@@ -778,7 +761,7 @@ def clamp(value, range):
 # -------
 # REM CYCLE
 # -------
-def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
+def deepdream(net, base_image, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
 
     motion = Webcam.get().motiondetector
 
@@ -786,7 +769,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
     # SETUP OCTAVES
     src = Model.net.blobs['data']
-    octaves = [rgb2caffe(Model.net, base_img)]
+    octaves = [rgb2caffe(Model.net, base_image)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, round((1.0 / octave_scale),2), round((1.0 / octave_scale),2)), order=1))
     detail = np.zeros_like(octaves[-1])
@@ -803,6 +786,12 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
         # OCTAVE CYCLE
         i=0
         while i < iteration_max:
+            # handle vieport refresh per iteration
+            if Viewport.force_refresh:
+                log.warning('**** Viewport Force refresh ****')
+                Viewport.force_refresh = False
+                return Webcam.get().read()
+
             make_step(Model.net, end=end, clip=clip, **step_params)
 
             motion.peak_last = motion.peak
@@ -816,13 +805,15 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             else:
                 if motion.peak == motion.peak_avg:
                     motion.peak_statusmsg = '.'
-                    # Viewport.force_refresh = False
                 else:
                     motion.peak_statusmsg = '-----'
-                    # if motion.delta_count > motion.floor: 
-                    Viewport.force_refresh = True
+                    # if motion.delta_count > motion.delta_trigger:
+                    #     Viewport.refresh()
 
             log.debug(motion.peak_statusmsg)
+
+            if motion.delta_count > motion.delta_trigger:
+                Viewport.refresh()
 
             if motion.peak < motion.floor:
                 Composer.opacity -= 0.1
@@ -831,7 +822,7 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             else:
                 Composer.opacity = remapValuetoRange(
                     motion.delta_count_history,
-                    [20.0, motion.delta_count_history_peak],
+                    [0.0, motion.delta_count_history_peak],
                     [0.0, 0.5]
                 )
 
@@ -852,19 +843,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 
             # send the main mix to the viewport
             comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
-            Viewport.show(comp1)
 
-            # handle vieport refresh per iteration
-            if Viewport.force_refresh:
-                log.warning('**** Viewport Force refresh ****')
-                # Composer.send(0, caffe2rgb(Model.net, src.data[0]))
-                Composer.buffer3_opacity = 1.0
-                # Composer.isDreaming = False
-                Viewport.force_refresh = False
-                '''
-                cycle+count = 0
-                '''
-                return Webcam.get().read()
+
+            Viewport.show(comp1)
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
@@ -917,7 +898,6 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             break
 
     log.warning('completed full rem cycle')
-    # Composer.isDreaming = True # yes, we'll be dreaming about this output again
     return caffe2rgb(Model.net, src.data[0])
 
 
@@ -1043,7 +1023,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=60000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=50000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
