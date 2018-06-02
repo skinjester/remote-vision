@@ -164,16 +164,21 @@ class MotionDetector(object):
     def __init__(self, floor, log):
 
         self.wasMotionDetected = False
-        self.detection_toggle = False
+        self.wasMotionDetected = False
         self.delta_count_history = 0
+        self.delta_count_history_peak = 0
         self.delta_trigger = 0
         self.delta_count = 0
         self.is_paused = False
         self.floor = floor
         self.update_hud_log = log
         self.history = []
-        self.history_queue_length = 10
+        self.history_queue_length = 100
         self.monitor_msg = '****'
+        self.peak = 0
+        self.peak_last = 0
+        self.peak_avg = 0
+        self.peak_statusmsg = 'Peak is static'
 
         # dataexport
         self.export = open("motiondata/motiondata-test-11.txt","w+")
@@ -202,47 +207,20 @@ class MotionDetector(object):
         _delta_count_history = self.delta_count_history
         _delta_trigger = self.delta_trigger
 
-        if (self.delta_count > self.delta_trigger):
-            # self.delta_count -= int(self.delta_count/2)
-            self.wasMotionDetected = True
-            self.detection_toggle = True #  gets reset from motion detector queries elsewhere
-            self.monitor_msg = '***'
-            self.update_hud_log('detect','***')
-            threadlog.critical('movement detected')
+        # if (self.delta_count > self.delta_trigger) and (self.wasMotionDetected==False):
+        #     # self.delta_count -= int(self.delta_count/2)
+        #     self.wasMotionDetected = True
+        #     self.monitor_msg = '***'
+        #     self.update_hud_log('detect','***')
+        #     threadlog.critical('{} movement detected'.format('-'*10))
 
-        elif (self.delta_count < self.delta_trigger and self.delta_count_history >= self.delta_trigger):
-            self.wasMotionDetected = False
-            self.monitor_msg = '---'
-            self.update_hud_log('detect','-')
-            threadlog.critical('movement ended')
-        else:
-            self.wasMotionDetected = False
-            self.monitor_msg = '-'
-            self.update_hud_log('detect','-')
 
         # for detection monitor window overlay
-        self.monitor_msg += ' | {}:{}'.format(self.delta_count, self.delta_trigger)
+        self.monitor_msg = 'count:{} trigger:{} peak:{} ___:{}'.format(self.delta_count, self.delta_trigger,self.delta_count_history, self.delta_count_history_peak)
 
         self.elapsed = time.time() - self.now # elapsed time for logging function
         if self.elapsed > 5 and self.elapsed < 6:
             self.counted += 1
-
-        # logging
-        # # preprocess self.wasMotionDetected to appear as 1/0 in datafile
-        b_condition = 0
-        if self.wasMotionDetected:
-            b_condition = 1
-
-        # ### export data to previously defined datafile
-        self.export.write('%f,%d,%d,%d,%d\n'%(
-            _elapsed,
-            self.delta_count,
-            _delta_count_history,
-            _delta_trigger,
-            b_condition
-            ))
-
-        self._counter_ += 1 # used to index delta_count_history in datafile
 
         lastmsg = '{:0>6}'.format(self.delta_count_history)
         nowmsg = '{:0>6}'.format(self.delta_count)
@@ -252,6 +230,15 @@ class MotionDetector(object):
         #  keep track of current/prev values 
         self.delta_count_history = self.delta_count
 
+        # keep track of peak value
+        # if self.delta_count_history > self.delta_count_history_peak:
+        #     self.delta_count_history_peak = self.delta_count_history
+        self.delta_count_history_peak = max(self.history)
+
+        if self.delta_count < self.floor:
+            self.delta_count_history_peak = 0
+
+        log.warning('max history:{} vs peak:{}'.format(max(self.history), self.delta_count_history_peak))
 
     def add_to_history(self,value):
         self.history.append(self.delta_count)
@@ -263,7 +250,6 @@ class MotionDetector(object):
 
     def force_detection(self): 
         self.wasMotionDetected = True
-        self.detection_toggle = True 
 
 # --------
 # INIT.

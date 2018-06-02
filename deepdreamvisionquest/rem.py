@@ -119,6 +119,7 @@ class Model(object):
         # the neural network model
         self.net = caffe.Classifier('tmp.prototxt',
             self.param_fn, mean=np.float32([104.0, 116.0, 122.0]), channel_swap=(2, 1, 0))
+            # self.param_fn, mean=np.float32([20.0, 10.0,190.0]), channel_swap=(2, 1, 0))
 
         update_HUD_log('model',self.caffemodel)
 
@@ -155,7 +156,7 @@ class Model(object):
 
     def set_endlayer(self,end):
         self.end = end
-        Viewport.force_refresh = True
+        Viewport.refresh()
         log.warning('layer: {} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
         update_HUD_log('layer','{} ({})'.format(self.end,self.net.blobs[self.end].data.shape[1]))
 
@@ -172,7 +173,7 @@ class Model(object):
         self.set_endlayer(self.layers[self.current_layer])
 
     def set_featuremap(self):
-        Viewport.force_refresh = True
+        Viewport.refresh()
         # featuremap = self.features[self.current_feature]
         log.warning('featuremap:{}'.format(self.features[self.current_feature]))
         update_HUD_log('featuremap',self.features[self.current_feature])
@@ -223,26 +224,38 @@ class Viewport(object):
         self.listener = listener
         self.force_refresh = True
         self.image = None
-        self.time_counter = 0
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
     def show(self, image):
-        self.time_counter += 1
-        image = np.uint8(np.clip(image, 0, 255)) # cast floating point matrix to RGB bounds as int
-        image = Composer.update(image) # post process with cycleFX
-
         if self.b_show_HUD: # HUD overlay
             image = draw_HUD(image)
+
+        # temp support to show debug messaging  in main window
+        motiondetector = Webcam.get().motiondetector
+        cv2.putText(image, 'count', (20, 20), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count), (80, 20), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'trigger', (20, 40), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_trigger), (80, 40), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'peak', (20, 60), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history_peak), (80, 60), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'history', (20, 80), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history), (80, 80), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'dreaming', (20, 100), FONT, 0.5, WHITE)
+        cv2.putText(image, '{:>10}'.format(Composer.isDreaming), (80, 100), FONT, 0.5, WHITE)
+
+        cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
+        cv2.putText(image, '{}'.format(motiondetector.peak_statusmsg), (120, 120), FONT, 0.5, WHITE)
+
+
         cv2.imshow(self.window_name, image) # draw to window
 
         self.monitor() # handle motion detection viewport
         self.listener() # listen for keyboard events
 
-        # GRB: temp structure for saving fully rendered frames
-        if self.time_counter > 1 and self.username != 'silent':
-            self.export(image)
-            self.time_counter = 0
-        self.image = image
 
     def export(self,image):
         make_sure_path_exists(self.imagesavepath)
@@ -261,13 +274,10 @@ class Viewport(object):
 
     def monitor(self):
         if self.motiondetect_log_enabled:
-            img = Webcam.get().t_delta_framebuffer # pointer to the motion detectors framebuffer
-            overlay = img # composite motion stats here
-            opacity = 1.0
-            cv2.putText(overlay,Webcam.get().motiondetector.monitor_msg, (20, 20), FONT, 0.5, WHITE)
-            img = cv2.addWeighted(overlay, opacity, img, 1-opacity, 0, img) # add overlay back to source
-            cv2.imshow('delta', img)
-
+            msg = Webcam.get().motiondetector.monitor_msg
+            image = Webcam.get().t_delta_framebuffer
+            cv2.putText(image, msg, (20, 20), FONT, 0.5, WHITE)
+            cv2.imshow('delta', image)
 
     def shutdown(self):
         cv2.destroyAllWindows()
@@ -280,35 +290,31 @@ class Composer(object):
     # this happens on init
     def __init__(self):
         self.isDreaming = False
-        self.opacity = 1.0
-        self.is_compositing_enabled = False
-        self.xform_scale = 0.03
+        self.xform_scale = 0.05
         self.buffer = []
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
+        self.buffer.append( Webcam.get().read() ) # uses camera capture dimensions
         self.mixbuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
-        self.dreambuffer = Webcam.get().read() # uses camera capture dimensions
-        self.ramp_stopped = False
-        self.ramp_toggle_flag = False
-        self.ramp_counter = 0
-        self.ramp_increment = 0
-        self.b_cycle = False
+        self.dreambuffer = np.zeros((Display.height, Display.width ,3), np.uint8)
+        self.opacity = 0
+        self.buffer3_opacity = 1.0
+        self.cycle_count = 0
 
-    def send(self, channel, img):
-        self.buffer[channel] = img
+    def send(self, channel, image):
+        self.buffer[channel] = image
 
-        ### resize channel to match viewport dimensions
-        if img.shape[1] != Display.width:
-            self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
+        ### any input is resized to match viewport dimensions
+        self.buffer[channel] = cv2.resize(self.buffer[channel], (Display.width, Display.height), interpolation = cv2.INTER_LINEAR)
 
         # convert and clip any floating point values into RGB bounds as integers
         self.buffer[channel] = np.uint8(np.clip(self.buffer[channel], 0, 255))
 
-    def mix(self, img_back, img_front, mix_opacity):
+    def mix(self, image_back, image_front, mix_opacity):
         cv2.addWeighted(
-            img_front,
+            image_front,
             mix_opacity,#
-            img_back,
+            image_back,
             1-mix_opacity,
             0,
             self.mixbuffer
@@ -317,60 +323,10 @@ class Composer(object):
         return self.mixbuffer
 
     def update(self, image):
-        if self.isDreaming:
-            for fx in Model.cyclefx:
-                if fx['name'] == 'inception_xform':
-                    image = FX.inception_xform(image, Display.screensize, **fx['params'])
-                    Composer.dreambuffer = image
-
-            self.isDreaming = False
-
+        for fx in Model.cyclefx:
+            if fx['name'] == 'inception_xform':
+                image = FX.inception_xform(image, **fx['params'])
         return image
-
-    def ramp_start(self):
-        log.debug('ramp start')
-        Thread(target=self.ramp_update, args=()).start()
-        return self
-
-    def ramp_update(self):
-        # loop until the thread is stopped
-
-        while True:
-            if self.ramp_stopped:
-                log.debug('ramp stopped')
-                return
-
-            if self.ramp_toggle_flag:
-                log.critical('!!!!!!!!! ramp toggle: True')
-                self.ramp_counter = 0.3
-                # self.b_cycle = True
-
-                # if self.b_cycle:
-                self.ramp_increment = -0.1
-                # time.sleep(0.1)
-
-                if self.ramp_counter <= 0.0:
-                    self.ramp_toggle_flag = False
-            else:
-                self.ramp_increment = 0
-                self.ramp_counter = 0.0
-                self.b_cycle = False
-
-            self.ramp_counter += self.ramp_increment
-
-        return
-        # Where does this return to?
-
-    def ramp_toggle(self, b_state=True):
-        self.ramp_toggle_flag = b_state
-        self.ramp_counter = 1.0
-
-
-    def ramp_stop(self):
-        log.debug('ramp stop')
-        self.ramp_stopped = True
-
-
 
 class FX(object):
     def __init__(self):
@@ -379,12 +335,15 @@ class FX(object):
         self.cycle_start_time = 0
         self.program_start_time = 0
 
-    def xform_array(self, img, amplitude, wavelength):
-        def shiftfunc(n):
-            return int(amplitude*np.sin(n/wavelength))
-        for n in range(img.shape[1]): # number of rows in the image
-            img[:, n] = np.roll(img[:, n], 3*shiftfunc(n))
-        return img
+    def xform_array(self, image, amplitude, wavelength):
+
+        # def shiftfunc(n):
+        #     return int(amplitude*np.sin(n/wavelength))
+        # for n in range(image.shape[1]): # number of rows in the image
+        #     image[:, n] = np.roll(image[:, n], 3*shiftfunc(n))
+        print '****'
+        return image
+
 
     def test_args(self, model=Model, step=0.05, min_scale=1.2, max_scale=1.6):
         print 'model: ', model
@@ -400,20 +359,31 @@ class FX(object):
         if model.octave_scale > max_scale or model.octave_scale <= min_scale:
             self.direction = -1 * self.direction
         update_HUD_log('scale',model.octave_scale)
-        log.warning('octave_scale: {}'.format(model.octave_scale))
+        log.debug('octave_scale: {}'.format(model.octave_scale))
 
-    def inception_xform(self, image, capture_size, scale):
-        # return nd.affine_transform(image, [1-scale, 1, 1], [capture_size[1]*scale/2, 0, 0], order=1)
-        return nd.affine_transform(image, [1-scale, 1-scale, 1], [capture_size[0]*scale/2, capture_size[1]*scale/2, 0], order=1)
+    def inception_xform(self, image, scale):
+        h = image.shape[0]
+        w = image.shape[1]
+        image = nd.affine_transform(image, [1-scale,1-scale,1], [h*scale/2,w*scale/2,0], order=1)
+        return image
 
-    def median_blur(self, image, kernel_shape):
-        return cv2.medianBlur(image, kernel_shape)
+    def median_blur(self, image, kernel_shape, interval):
+        if interval == 0:
+            image = cv2.medianBlur(image, kernel_shape)
+            return image
+        if (int(time.time()) % interval):
+            image = cv2.medianBlur(image, kernel_shape)
+        return image
 
     def bilateral_filter(self, image, radius, sigma_color, sigma_xy):
         return cv2.bilateralFilter(image, radius, sigma_color, sigma_xy)
 
     def nd_gaussian(self, image, sigma, order):
-        return nd.filters.gaussian_filter(image, sigma, order)
+        image[0] = nd.filters.gaussian_filter(image[0], sigma, order=0)
+        image[1] = nd.filters.gaussian_filter(image[1], sigma, order=0)
+        image[2] = nd.filters.gaussian_filter(image[2], sigma, order=0)
+        # image = nd.filters.gaussian_filter(image, sigma, order=0)
+        return image
 
     def step_mixer(self,opacity):
         self.stepfx_opacity = opacity
@@ -429,58 +399,16 @@ class FX(object):
     def set_cycle_start_time(self, start_time):
         self.cycle_start_time = start_time
 
-
-# stepfx wrapper takes neural net data blob and converts to caffe image
-# then after processing, takes the caffe image and converts back to caffe
-def iterationPostProcess(net, net_data_blob):
-    img = caffe2rgb(net, net_data_blob)
-    img2 = img
-
-    #  apply stepfx, assuming they've been defined
-    if Model.stepfx is not None:
-        for fx in Model.stepfx:
-            if fx['name'] == 'median_blur':
-                img2 = FX.median_blur(img2, **fx['params'])
-
-            if fx['name'] == 'bilateral_filter':
-                img2 = FX.bilateral_filter(img2, **fx['params'])
-
-            if fx['name'] == 'nd_gaussian':
-                img2 = FX.nd_gaussian(img2, **fx['params'])
-
-            if fx['name'] == 'step_opacity':
-                FX.step_mixer(**fx['params'])
-
-            if fx['name'] == 'duration_cutoff':
-                FX.duration_cutoff(**fx['params'])
-
-    img = cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
-    return rgb2caffe(Model.net, img)
-
-
-# rename this function plz
-def blur(img, sigmax, sigmay):
-    img2 = img.copy()
-    return cv2.addWeighted(img2, FX.stepfx_opacity, img, 1.0-FX.stepfx_opacity, 0, img)
-
-
-def vignette(img,param):
-    rows,cols = img.shape[:2]
+def vignette(image,param):
+    rows,cols = image.shape[:2]
     kernel_x = cv2.getGaussianKernel(cols,param)
     kernel_y = cv2.getGaussianKernel(rows,param)
     kernel = kernel_y * kernel_x.T
-    mask = 255 * kernel / np.linalg.norm(kernel)
-    output = np.copy(img)
-    for i in range(3):
-        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 2))
+    mask = 22 * kernel / np.linalg.norm(kernel)
+    output = np.copy(image)
+    for i in range(1):
+        output[:,:,i] = np.uint8(np.clip((output[:,:,i] * mask ), 0, 512))
     return output
-
-def sobel(img):
-    xgrad = nd.filters.sobel(img, 0)
-    ygrad = nd.filters.sobel(img, 1)
-    combined = np.hypot(xgrad, ygrad)
-    sob = 255 * combined / np.max(combined) # normalize
-    return sob
 
 
 def make_sure_path_exists(directoryname):
@@ -526,7 +454,7 @@ def draw_HUD(image):
     #cv2.rectangle(image_to_draw_on, (x1,y1), (x2,y2), (r,g,b), line_width )
 
     # list setup
-    x,xoff = 140,280
+    x,xoff = 40,180
     y,yoff = 150,20
 
     data.counter = 0
@@ -650,12 +578,12 @@ def listener():
     elif key==196: # F7: show network details
         log.warning('{}:{} {} {}'.format('D1',key,'F7','***'))
         # Model.show_network_details()
-        Composer.ramp_toggle(True)
+        # Composer.ramp_start(True)
         return
 
     elif key==197: # F8
         log.warning('{}:{} {} {}'.format('D2',key,'F8','***'))
-        Composer.ramp_toggle(False)
+        # Composer.ramp_start(False)
         return
 
     elif key == 44: # , key : previous featuremap
@@ -730,20 +658,17 @@ def listener():
     # --------------------------------
 
     if key == 27: # ESC: Exit
-        ### the order of these operations is unreasonably specific
         log.warning('{}:{} {} {}'.format('**',key,'ESC','SHUTDOWN'))
-        Composer.ramp_stop() # shutdown down the Composer ramp counter
         Viewport.shutdown()
         Webcam.get().motiondetector.export.close() # close the motion detector data export file
         return
 
-
 # a couple of utility functions for converting to and from Caffe's input image layout
-def rgb2caffe(net, img):
-    return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
+def rgb2caffe(net, image):
+    return np.float32(np.rollaxis(image, 2)[::-1]) - net.transformer.mean['data']
 
-def caffe2rgb(net, img):
-    return np.dstack((img + net.transformer.mean['data'])[::-1])
+def caffe2rgb(net, image):
+    return np.dstack((image + net.transformer.mean['data'])[::-1])
 
 def objective_L2(dst):
     dst.diff[:] = dst.data
@@ -757,23 +682,49 @@ def objective_guide(dst):
     A = x.T.dot(y) # compute the matrix of dot produts with guide features
     dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select one that matches best
 
+def postprocess_step(net, net_data_blob):
+# takes neural net data blob and converts to RGB
+# then after processing, takes the RGB image and converts back to caffe
+    image = caffe2rgb(net, net_data_blob)
 
-# -------
-# implements forward and backward passes thru the network
-# apply normalized ascent step upon the image in the networks data blob
-# supports Feature Map activation
-# -------
-def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=True, feature=-1, objective=objective_L2):
+    #  apply any defined stepFX
+    if Model.stepfx is not None:
+        for fx in Model.stepfx:
+            if fx['name'] == 'median_blur':
+                image = FX.median_blur(image, **fx['params'])
+
+            if fx['name'] == 'bilateral_filter':
+                image = FX.bilateral_filter(image, **fx['params'])
+
+            if fx['name'] == 'nd_gaussian':
+                # image = net_data_blob
+
+                image = FX.nd_gaussian(net_data_blob, **fx['params'])
+                image = caffe2rgb(net, net_data_blob)
+
+            if fx['name'] == 'step_opacity':
+                FX.step_mixer(**fx['params'])
+
+            if fx['name'] == 'duration_cutoff':
+                FX.duration_cutoff(**fx['params'])
+
+            if fx['name'] == 'octave_scaler':
+                FX.octave_scaler(model=Model, **fx['params'])
+
+    # image = cv2.addWeighted(image, FX.stepfx_opacity, image, 1.0-FX.stepfx_opacity, 0, image)
+    return rgb2caffe(Model.net, image)
+
+
+def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=False, feature=-1, objective=objective_L2):
 
     log.info('step_size:{} feature:{} end:{}\n{}'.format(step_size, feature, end,'-'*10))
-    src = net.blobs['data'] # input image is stored in Net's 'data' blob
+    src = net.blobs['data']
     dst = net.blobs[end]
 
     ox, oy = np.random.randint(-jitter, jitter+1, 2)
-    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2) # shift image (jitter)
+    src.data[0] = np.roll(np.roll(src.data[0], ox, -1), oy, -2)
     net.forward(end=end)
 
-    # feature inspection
     if feature == -1:
         objective(dst)
     else:
@@ -782,109 +733,141 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=500, clip=Tr
 
     net.backward(start=end)
     g = src.diff[0]
-
-    # apply normalized ascent step to the input image
-    src.data[:] += step_size/np.abs(g).mean() * (g*step_size)
-
-    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2) # unshift image
+    src.data[:] += step_size/np.abs(g).mean() * g
+    src.data[0] = np.roll(np.roll(src.data[0], -ox, -1), -oy, -2)
 
     if clip:
         bias = net.transformer.mean['data']
-        src.data[:] = np.clip(src.data, -bias, 240-bias)
+        src.data[:] = np.clip(src.data, -bias, 200-bias)
 
-    # postprocessor
-    src.data[0] = iterationPostProcess(net, src.data[0])
+    src.data[0] = postprocess_step(net, src.data[0])
 
-    # sequencer. don't run if program_duration is -1 though
+    # program sequencer. don't run if program_duration is -1 though
     program_elapsed_time = time.time() - Model.program_start_time
     if Model.program_duration != -1:
         if program_elapsed_time > Model.program_duration:
             Model.next_program()
 
+def remapValuetoRange(val, src, dst):
+    # src [min,max] old range
+    # dst [min,max] new range
+    remapped_Value = ((val-src[0])/(src[1]-src[0]))*(dst[1]-dst[0])+dst[0]
+    return clamp(remapped_Value, [0.0, 1.0])
+
+# clamps provided value between provided range
+def clamp(value, range):
+    return max( range[0], min(value, range[1]))
+
 # -------
 # REM CYCLE
 # -------
-def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', **step_params):
+def deepdream(net, base_image, iteration_max=10, octave_n=4, octave_scale=1.4, end='inception_4c/output', clip=True, **step_params):
 
-    # SETUPOCTAVES---
+    motion = Webcam.get().motiondetector
+
+    Composer.cycle_count += 1
+
+    # SETUP OCTAVES
     src = Model.net.blobs['data']
-    octaves = [rgb2caffe(Model.net, base_img)]
+    octaves = [rgb2caffe(Model.net, base_image)]
     for i in xrange(octave_n - 1):
         octaves.append(nd.zoom(octaves[-1], (1, round((1.0 / octave_scale),2), round((1.0 / octave_scale),2)), order=1))
     detail = np.zeros_like(octaves[-1])
 
-    # OCTAVEARRAY CYCLE, last (smallest) octave first
     for octave, octave_current in enumerate(octaves[::-1]):
         h, w = octave_current.shape[-2:]
         h1, w1 = detail.shape[-2:]
         detail = nd.zoom(detail, (1, 1.0 * h / h1, 1.0 * w / w1), order=0)
-
-        # reshape the network's input image data to match octave_current shape
         src.reshape(1,3,h,w)
-
-        # add the changed details to the network's input image
         src.data[0] = octave_current + detail
-
         Model.stepsize = Model.stepsize_base # reset step size to default each octave
-        step_params['step_size'] = Model.stepsize # modifying the **step_params list for makestep
+        step_params['step_size'] = Model.stepsize # modify the **step_params list for makestep
 
-        # OCTAVECYCLE
+        # OCTAVE CYCLE
         i=0
         while i < iteration_max:
-
-            # check if motion detected
-            if Webcam.get().motiondetector.detection_toggle:
-                Composer.ramp_toggle(True)
-                Viewport.force_refresh = True
-                Webcam.get().motiondetector.detection_toggle = False # reset the toggle
-
             # handle vieport refresh per iteration
             if Viewport.force_refresh:
-                Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-                img = Webcam.get().read()
+                log.warning('**** Viewport Force refresh ****')
+                Viewport.force_refresh = False
+                return Webcam.get().read()
 
-                # older method
-                # Composer.send(1, Composer.dreambuffer)
+            make_step(Model.net, end=end, clip=clip, **step_params)
 
-                # alt method - more responsive but a bit less hallucinogenic?
-                Composer.send(1, caffe2rgb(Model.net, src.data[0]))
+            motion.peak_last = motion.peak
+            motion.peak = motion.delta_count_history_peak
 
-                return img
+            # is peak value increasing or decreasing?
+            motion.peak_avg = (motion.peak+motion.peak_last)/2
 
-            # delegate gradient ascent to step function
-            make_step(Model.net, end=end, **step_params)
-            log.warning('{:02d} {:02d} {:02d}'.format(octave, i, iteration_max))
+            if motion.peak > motion.peak_avg:
+                motion.peak_statusmsg = '+++++'
+            else:
+                if motion.peak == motion.peak_avg:
+                    motion.peak_statusmsg = '.'
+                else:
+                    motion.peak_statusmsg = '-----'
+                    # if motion.delta_count > motion.delta_trigger:
+                    #     Viewport.refresh()
 
-            # stored here for postproduction fx
-            Composer.dreambuffer = caffe2rgb(Model.net, src.data[0])
+            log.debug(motion.peak_statusmsg)
 
-            # write netblob to Composer - channel 0
-            Composer.send(0, Composer.dreambuffer)
+            if motion.delta_count > motion.delta_trigger:
+                Viewport.refresh()
 
-            # write webcam to Composer - channel 1
+            if motion.peak < motion.floor:
+                Composer.opacity -= 0.1
+                if Composer.opacity <= 0.1:
+                    Composer.opacity = 0.0
+            else:
+                Composer.opacity = remapValuetoRange(
+                    motion.delta_count_history,
+                    [0.0, motion.delta_count_history_peak],
+                    [0.0, 0.5]
+                )
+
+
+            log.debug(
+                'count:{:>06} trigger:{:>06} peak:{:>06} opacity:{:03.2}'
+                .format(
+                    motion.delta_count,
+                    motion.delta_trigger,
+                    motion.delta_count_history_peak,
+                    Composer.opacity
+                )
+            )
+
+            # update Composer buffers
+            Composer.send(0, caffe2rgb(Model.net, src.data[0]))
             Composer.send(1, Webcam.get().read())
 
             # send the main mix to the viewport
-            Viewport.show(Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
-            # Viewport.show(Composer.buffer[0])
+            comp1 = Composer.mix( Composer.buffer[0], Composer.buffer[1], Composer.opacity)
+
+
+            Viewport.show(comp1)
 
             # attenuate step size over rem cycle
             x = step_params['step_size']
             step_params['step_size'] += x * Model.step_mult * 1.0
 
-            # set a floor for any cyuclefx step modification
+            # set a floor for any cyclefx step modification
             if step_params['step_size'] < 1.1:
                 step_params['step_size'] = 1.1
 
+            # increment step
             i += 1
+
+            # LOGGING
+            log.debug('{:02d} {:02d} {:02d} peak:{} peak_history:{}'.format(octave, i, iteration_max, motion.peak, motion.peak_last))
 
             # HUD logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
             guidemsg = '({}/{}) {}'.format(Model.current_guide,len(Model.guides),Model.guides[Model.current_guide])
             iterationmsg = '{:0>3}:{:0>3} x{}'.format(i,iteration_max,Model.iteration_mult)
             stepsizemsg = '{:02.3f} x{:02.3f}'.format(step_params['step_size'],Model.step_mult)
-            thresholdmsg = '{:0>6}'.format(Webcam.get().motiondetector.delta_trigger)
-            floormsg = '{:0>6}'.format(Webcam.get().motiondetector.floor)
+            thresholdmsg = '{:0>6}'.format(motion.delta_trigger)
+            floormsg = '{:0>6}'.format(motion.floor)
             gammamsg = '{}'.format(Webcam.get().gamma)
             intervalmsg = '{:01.2f}/{:01.2f}'.format(round(time.time() - Model.program_start_time, 2), Model.program_duration)
             update_HUD_log('octave',octavemsg)
@@ -901,34 +884,20 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
             update_HUD_log('interval', intervalmsg)
             update_HUD_log('runtime', round(time.time() - Model.installation_startup, 2))
 
-
-
-
-        # CUTOFF
-        # this turned out to be the last octave calculated in the series
-        if octave == Model.octave_cutoff:
-            Composer.isDreaming = True
-            return caffe2rgb(Model.net, src.data[0])
-
-        # EARLY EXIT
-        # motion detected so we're ending this REM cycle
-        # if Webcam.get().motiondetector.detection_toggle:
-        #     Composer.ramp_toggle(True)
-        #     Composer.isDreaming = False # no, we'll be refreshing the frane buffer
-        #     Webcam.get().motiondetector.detection_toggle = False # reset the detection flag
-        #     img = Webcam.get().read()
-        #     Composer.send(1, img)
-        #     return img
-
+        # SETUP FOR NEXT OCTAVE
         # extract details produced on the current octave
         detail = src.data[0] - octave_current  # these feed into next octave presumably?
 
-        # reduce iteration count for the next octave
+        # calulate iteration count for the next octave
         iteration_max = int(iteration_max - (iteration_max * Model.iteration_mult))
 
-    Composer.isDreaming = True # yes, we'll be dreaming about this output again
+        # CUTOFF THOUGH?
+        # this turned out to be the last octave calculated in the series
+        if octave > Model.octave_cutoff:
+            log.warning('cutoff at octave: {}'.format(octave))
+            break
 
-    # return the resulting image (converted back to x,y,RGB structured matrix)
+    log.warning('completed full rem cycle')
     return caffe2rgb(Model.net, src.data[0])
 
 
@@ -936,14 +905,9 @@ def deepdream(net, base_img, iteration_max=10, octave_n=4, octave_scale=1.4, end
 # MAIN
 # -------
 def main():
-
     now = time.time() # start timer
-
-    # set GPU mode
     caffe.set_device(0)
     caffe.set_mode_gpu()
-
-    # parameters
     iterations = Model.iterations
     stepsize = Model.stepsize_base
     octaves = Model.octaves
@@ -955,61 +919,45 @@ def main():
     update_HUD_log('username',Viewport.username)
     update_HUD_log('settings',Model.package_name)
 
-    #
-    Composer.ramp_start()
-
     # the madness begins
-    img = Webcam.get().read()
-
-
-    Composer.send(1, img)
-    Composer.dreambuffer = img # initial camera image for starting
-
+    initial_image = Webcam.get().read()
+    Composer.send(1, initial_image)
+    Composer.dreambuffer = initial_image # initial camera image for starting
 
     while True:
-        log.warning('new cycle')
+        log.debug('new cycle')
         FX.set_cycle_start_time(time.time()) # register cycle start for duration_cutoff stepfx
-        Viewport.show(Composer.mix(Composer.buffer[0], Composer.buffer[1], Composer.ramp_counter))
 
-        ### handle viewport refresh per cycle
-        if Composer.isDreaming == False:
-            # Viewport.save_next_frame = True
+        if Model.cyclefx is not None:
+            for fx in Model.cyclefx:
+                if fx['name'] == 'octave_scaler':
+                    FX.octave_scaler(model=Model, **fx['params'])
+                if fx['name'] == 'xform_array':
+                    FX.xform_array(Composer.dreambuffer, **fx['params'])
 
-            #  apply cyclefx, assuming they've been defined
-            if Model.cyclefx is not None:
-                for fx in Model.cyclefx:
-                    if fx['name'] == 'xform_array':
-                        FX.xform_array(Composer.dreambuffer, **fx['params'])
 
-                    if fx['name'] == 'octave_scaler':
-                        FX.octave_scaler(model=Model, **fx['params'])
+        # kicks off rem sleep
+        Composer.dreambuffer = deepdream(
+            net,
+            Composer.dreambuffer,
+            objective=objective_L2,
+            iteration_max = Model.iterations,
+            octave_n = Model.octaves,
+            octave_scale = Model.octave_scale,
+            step_size = Model.stepsize_base,
+            end = Model.end,
+            feature = Model.features[Model.current_feature]
+            )
 
-            # kicks off rem sleep
-            Composer.dreambuffer = deepdream(
-                net,
-                Composer.dreambuffer,
-                objective=objective_L2,
-                iteration_max = Model.iterations,
-                octave_n = Model.octaves,
-                octave_scale = Model.octave_scale,
-                step_size = Model.stepsize_base,
-                end = Model.end,
-                feature = Model.features[Model.current_feature]
-                )
-
-            # commenting out this block allows unfiltered signal only
-            if Viewport.force_refresh:
-                Viewport.force_refresh = False
-
-        # a bit later
-        later = time.time()
-        difference = later - now
-        duration_msg = '{:.2f}s'.format(difference)
-        now = time.time() # the new now
+        Composer.dreambuffer = Composer.update(Composer.dreambuffer)
 
         # logging
-        update_HUD_log('cycle_time',duration_msg) # HUD
+        later = time.time()
+        duration_msg = '{:.2f}s'.format(later - now)
+        now = time.time() # the new now
+        update_HUD_log('cycle_time',duration_msg)
         log.warning('cycle time: {}\n{}'.format(duration_msg,'-'*80))
+
 
 
 # --------
@@ -1074,7 +1022,8 @@ Device = [0,1] # debug
 w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=True, flip_v=True, gamma=0.7, floor=4000, threshold_filter=16).start())
+
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=50000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
@@ -1084,13 +1033,17 @@ Composer = Composer()
 
 # --- PERFORMANCE SETTINGS AND rFX ---c
 Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
-Model.set_program(11) # start with program[0]``
+Model.set_program(0)
 FX = FX()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--username',help='twitter userid for sharing')
+    parser.add_argument('--cameraID',help='camera device ID to use as video input')
     args = parser.parse_args()
     if args.username:
         Viewport.username = '@{}'.format(args.username)
+    # if args.cameraID:
+
+
     main()
