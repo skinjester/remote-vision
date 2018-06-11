@@ -232,23 +232,23 @@ class Viewport(object):
 
         # temp support to show debug messaging  in main window
         motiondetector = Webcam.get().motiondetector
-        cv2.putText(image, 'count', (20, 20), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count), (80, 20), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'count', (20, 20), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{:>10}'.format(motiondetector.delta_count), (80, 20), FONT, 0.5, WHITE)
 
-        cv2.putText(image, 'trigger', (20, 40), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:>10}'.format(motiondetector.delta_trigger), (80, 40), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'trigger', (20, 40), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{:>10}'.format(motiondetector.delta_trigger), (80, 40), FONT, 0.5, WHITE)
 
-        cv2.putText(image, 'peak', (20, 60), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history_peak), (80, 60), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'peak', (20, 60), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history_peak), (80, 60), FONT, 0.5, WHITE)
 
-        cv2.putText(image, 'history', (20, 80), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history), (80, 80), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'history', (20, 80), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{:>10}'.format(motiondetector.delta_count_history), (80, 80), FONT, 0.5, WHITE)
 
-        cv2.putText(image, 'dreaming', (20, 100), FONT, 0.5, WHITE)
-        cv2.putText(image, '{:>10}'.format(Composer.isDreaming), (80, 100), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'dreaming', (20, 100), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{:>10}'.format(Composer.isDreaming), (80, 100), FONT, 0.5, WHITE)
 
-        cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
-        cv2.putText(image, '{}'.format(motiondetector.peak_statusmsg), (120, 120), FONT, 0.5, WHITE)
+        # cv2.putText(image, 'direction', (20, 120), FONT, 0.5, WHITE)
+        # cv2.putText(image, '{}'.format(motiondetector.peak_statusmsg), (120, 120), FONT, 0.5, WHITE)
 
 
         cv2.imshow(self.window_name, image) # draw to window
@@ -613,7 +613,7 @@ def listener():
         log.warning('{}:{} {} {}'.format('B2',key,'PAGEDOWN','GAMMA-'))
 
     if key == 45: # _ key (underscore) : decrease detection floor
-        Webcam.get().motiondetector.floor -= 500
+        Webcam.get().motiondetector.floor -= 5000
         if Webcam.get().motiondetector.floor < 0:
             Webcam.get().motiondetector.floor = 0
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
@@ -621,7 +621,7 @@ def listener():
         return
 
     if key == 61: # = key (equals): increase detection floor
-        Webcam.get().motiondetector.floor += 500
+        Webcam.get().motiondetector.floor += 5000
         update_HUD_log('floor',Webcam.get().motiondetector.floor)
         log.warning('{}:{} {} {} :{}'.format('E4',key,'=','FLOOR+',Webcam.get().motiondetector.floor))
         return
@@ -823,7 +823,7 @@ def deepdream(net, base_image, iteration_max=10, octave_n=4, octave_scale=1.4, e
                 Composer.opacity = remapValuetoRange(
                     motion.delta_count_history,
                     [0.0, motion.delta_count_history_peak],
-                    [0.0, 0.5]
+                    [0.0, 1.0]
                 )
 
 
@@ -859,7 +859,7 @@ def deepdream(net, base_image, iteration_max=10, octave_n=4, octave_scale=1.4, e
             i += 1
 
             # LOGGING
-            log.debug('{:02d} {:02d} {:02d} peak:{} peak_history:{}'.format(octave, i, iteration_max, motion.peak, motion.peak_last))
+            log.warning('{:02d} {:02d} {:02d} peak:{} peak_history:{}'.format(octave, i, iteration_max, motion.peak, motion.peak_last))
 
             # HUD logging
             octavemsg = '{}/{}({})'.format(octave,octave_n,Model.octave_cutoff)
@@ -1023,7 +1023,7 @@ w = data.capture_w  # capture width
 h = data.capture_h # capture height
 
 
-Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=False, log=update_HUD_log, flip_h=True, flip_v=False, gamma=0.5, floor=50000, threshold_filter=8).start())
+Camera.append(WebcamVideoStream(Device[0], w, h, portrait_alignment=True, log=update_HUD_log, flip_h=False, flip_v=False, gamma=0.5, floor=30000, threshold_filter=8).start())
 Webcam = Cameras(source=Camera, current=Device[0])
 
 # --- DISPLAY ---
@@ -1032,7 +1032,7 @@ Viewport = Viewport('deepdreamvisionquest','silent', listener) # no screenshots 
 Composer = Composer()
 
 # --- PERFORMANCE SETTINGS AND rFX ---c
-Model = Model(program_duration=-1) # seconds each program will run, -1 is manual
+Model = Model(program_duration=45) # seconds each program will run, -1 is manual
 Model.set_program(0)
 FX = FX()
 
